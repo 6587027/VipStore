@@ -27,4 +27,41 @@ export const productsAPI = {
   delete: (id) => api.delete(`/products/${id}`),
 };
 
+// Auth API - เพิ่มใหม่
+export const authAPI = {
+  // Login
+  login: (username, password) => 
+    api.post('/auth/login', { username, password }),
+  
+  // Logout
+  logout: () => 
+    api.post('/auth/logout'),
+  
+  // Get test accounts (development)
+  getTestAccounts: () => 
+    api.get('/auth/users'),
+  
+  // Verify token (optional)
+  verify: () => 
+    api.get('/auth/verify'),
+};
+
+// Helper functions สำหรับใช้งานง่าย
+export const loginUser = async (username, password) => {
+  try {
+    const response = await authAPI.login(username, password);
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Login failed'
+    };
+  }
+};
+
+export const getAllProducts = () => productsAPI.getAll();
+
 export default api;

@@ -21,6 +21,7 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // Import routes
 const productRoutes = require('./routes/products');
+const authRoutes = require('./routes/auth'); 
 
 // Test route
 app.get('/', (req, res) => {
@@ -29,22 +30,36 @@ app.get('/', (req, res) => {
     status: 'success',
     database: mongoose.connection.readyState === 1 ? 'Connected' : 'Disconnected',
     port: PORT,
+    endpoints: {
+      products: '/api/products',
+      auth: '/api/auth' 
+    },
     timestamp: new Date().toISOString()
   });
 });
 
 // Use routes
 app.use('/api/products', productRoutes);
+app.use('/api/auth', authRoutes); 
 
 // Error handling
 app.use('*', (req, res) => {
   res.status(404).json({ 
     error: 'Route not found',
-    path: req.originalUrl 
+    path: req.originalUrl,
+    availableRoutes: [
+      'GET /',
+      'GET /api/products',
+      'POST /api/products',
+      'POST /api/auth/login',     
+      'POST /api/auth/logout',    
+      'GET /api/auth/users'       
+    ]
   });
 });
 
 app.listen(PORT, () => {
   console.log(`🚀 Vip Store Server running on http://localhost:${PORT}`);
-  console.log(`📱 Test API: http://localhost:${PORT}/api/products`);
+  console.log(`📱 Products API: http://localhost:${PORT}/api/products`);
+  console.log(`🔐 Auth API: http://localhost:${PORT}/api/auth`); 
 });

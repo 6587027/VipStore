@@ -40,3 +40,127 @@
 .read-the-docs {
   color: #888;
 }
+/* เพิ่มใน App.css หรือ index.css */
+
+/* Button Styles */
+.btn-outline {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid;
+  background: transparent;
+}
+
+.btn-outline:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Primary Button Updates */
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* Secondary Button Updates */
+.btn-secondary {
+  background: #f8f9fa;
+  color: #495057;
+  border: 2px solid #e9ecef;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: #e9ecef;
+  border-color: #dee2e6;
+  transform: translateY(-1px);
+}
+
+/* User Info Styles */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f0f8ff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.user-avatar {
+  font-size: 1.2rem;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.user-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.user-role {
+  font-size: 0.75rem;
+  color: #666;
+  text-transform: capitalize;
+}
+
+/* Header Responsive */
+@media (max-width: 768px) {
+  .header .container > div {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  
+  .header .container > div > div {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .user-info {
+    order: -1;
+    margin-bottom: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .btn-primary,
+  .btn-secondary,
+  .btn-outline {
+    padding: 8px 12px;
+    font-size: 0.8rem;
+  }
+  
+  .user-name {
+    font-size: 0.8rem;
+  }
+  
+  .user-role {
+    font-size: 0.7rem;
+  }
+}
