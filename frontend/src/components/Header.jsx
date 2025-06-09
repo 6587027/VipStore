@@ -1,13 +1,55 @@
+// frontend/src/components/Header.jsx - Fixed User Display
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 
-const Header = ({ onLoginClick }) => {
+const Header = ({ onLoginClick, onAdminClick, onBackToHome, currentView }) => {
   const { user, logout, isAdmin, isLoggedIn } = useAuth();
   const { totalItems, toggleCart, formatCurrency, totalAmount } = useCart();
 
   const handleLogout = () => {
     logout();
+    // Return to home view after logout
+    if (currentView === 'admin') {
+      onBackToHome();
+    }
+  };
+
+  const handleAdminClick = () => {
+    if (isAdmin()) {
+      onAdminClick();
+    }
+  };
+
+  // Helper function to get display name
+  const getDisplayName = () => {
+    if (!user) return '';
+    
+    // Priority: firstName + lastName > username > email
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    } else if (user.firstName) {
+      return user.firstName;
+    } else if (user.username) {
+      return user.username;
+    } else if (user.email) {
+      return user.email.split('@')[0]; // Use email prefix
+    }
+    return 'User';
+  };
+
+  // Helper function to get user role display
+  const getRoleDisplay = () => {
+    if (!user || !user.role) return '';
+    
+    switch (user.role.toLowerCase()) {
+      case 'admin':
+        return 'ผู้ดูแลระบบ';
+      case 'customer':
+        return 'ลูกค้า';
+      default:
+        return user.role;
+    }
   };
 
   return (
@@ -15,79 +57,167 @@ const Header = ({ onLoginClick }) => {
       <div className="container">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {/* Logo */}
-          <h1>🛍️ Vip Store</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            <h1 
+              style={{ cursor: 'pointer' }}
+              onClick={onBackToHome}
+            >
+              🛍️ Vip Store
+            </h1>
+            
+            {/* View Indicator */}
+            {currentView === 'admin' && (
+              <span style={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                padding: '5px 12px',
+                borderRadius: '15px',
+                fontSize: '0.8rem',
+                fontWeight: '600'
+              }}>
+                👨‍💼 Admin Panel
+              </span>
+            )}
+          </div>
           
           {/* Navigation Buttons */}
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            {/* Cart Button */}
-            <button 
-              className="btn-secondary cart-button"
-              onClick={toggleCart}
-              style={{ position: 'relative' }}
-            >
-              🛒 ตะกร้า ({totalItems})
-              {totalItems > 0 && (
-                <span className="cart-badge">{totalItems}</span>
-              )}
-              {totalAmount > 0 && (
-                <div className="cart-amount">
-                  {formatCurrency(totalAmount)}
-                </div>
-              )}
-            </button>
+            
+            {/* Back to Home Button (Admin view only) */}
+            {currentView === 'admin' && (
+              <button 
+                className="btn-secondary"
+                onClick={onBackToHome}
+                style={{
+                  background: 'white',
+                  color: '#667eea',
+                  border: '2px solid #667eea'
+                }}
+              >
+                🏠 Back to VipStore
+              </button>
+            )}
+
+            {/* Cart Button (Home view only) */}
+            {currentView === 'home' && (
+              <button 
+                className="btn-secondary cart-button"
+                onClick={toggleCart}
+                style={{ position: 'relative' }}
+              >
+                🛒 ตะกร้า ({totalItems})
+                {totalItems > 0 && (
+                  <span className="cart-badge">{totalItems}</span>
+                )}
+                {totalAmount > 0 && (
+                  <div className="cart-amount">
+                    {formatCurrency(totalAmount)}
+                  </div>
+                )}
+              </button>
+            )}
             
             {/* User Status & Actions */}
             {isLoggedIn() ? (
               <>
-                {/* User Info */}
+                {/* User Info Card - Compact Size */}
                 <div style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
                   gap: '8px',
-                  background: '#f0f8ff',
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid #e0e0e0'
+                  background: isAdmin() ? 
+                    'linear-gradient(135deg, #667eea20 0%, #764ba220 100%)' : 
+                    'linear-gradient(135deg, #10b98120 0%, #05966920 100%)',
+                  padding: '6px 12px',
+                  borderRadius: '20px',
+                  border: isAdmin() ? 
+                    '1px solid #667eea40' : 
+                    '1px solid #10b98140',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.08)'
                 }}>
-                  <span style={{ fontSize: '1.2rem' }}>
+                  {/* User Avatar - Smaller */}
+                  <div style={{
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    background: isAdmin() ? 
+                      'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' : 
+                      'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.9rem'
+                  }}>
                     {isAdmin() ? '👨‍💼' : '🛍️'}
-                  </span>
+                  </div>
+                  
+                  {/* User Details - Compact */}
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                     <span style={{ 
-                      fontSize: '0.9rem', 
+                      fontSize: '0.8rem', 
                       fontWeight: '600',
-                      color: '#333'
+                      color: '#333',
+                      maxWidth: '100px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      lineHeight: '1.1'
                     }}>
-                      {user.name}
+                      สวัสดี {getDisplayName()}
                     </span>
                     <span style={{ 
-                      fontSize: '0.75rem', 
+                      fontSize: '0.65rem', 
                       color: '#666',
-                      textTransform: 'capitalize'
+                      fontWeight: '500',
+                      lineHeight: '1.1'
                     }}>
-                      {user.role}
+                      {getRoleDisplay()}
                     </span>
                   </div>
                 </div>
 
-                {/* Admin Panel Button (Admin only) */}
-                {isAdmin() && (
-                  <button className="btn-primary">
-                    ⚙️ Admin Panel
+                {/* Admin Panel Button (Admin only, Home view only) - Compact */}
+                {isAdmin() && currentView === 'home' && (
+                  <button 
+                    className="btn-primary"
+                    onClick={handleAdminClick}
+                    style={{
+                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      border: 'none',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      fontWeight: '600',
+                      fontSize: '0.8rem'
+                    }}
+                  >
+                    ⚙️ จัดการ
                   </button>
                 )}
 
-                {/* Logout Button */}
+                {/* Logout Button - Compact */}
                 <button 
                   className="btn-outline"
                   onClick={handleLogout}
                   style={{
                     background: 'white',
                     color: '#dc3545',
-                    border: '2px solid #dc3545'
+                    border: '1px solid #dc3545',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    fontWeight: '600',
+                    fontSize: '0.8rem',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={(e) => {
+                    e.target.style.background = '#dc3545';
+                    e.target.style.color = 'white';
+                  }}
+                  onMouseOut={(e) => {
+                    e.target.style.background = 'white';
+                    e.target.style.color = '#dc3545';
                   }}
                 >
-                  🚪 Logout
+                  🚪 ออก
                 </button>
               </>
             ) : (
@@ -95,8 +225,16 @@ const Header = ({ onLoginClick }) => {
               <button 
                 className="btn-primary"
                 onClick={onLoginClick}
+                style={{
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '6px',
+                  fontWeight: '600',
+                  fontSize: '0.9rem'
+                }}
               >
-                🔐 Login
+                🔐 เข้าสู่ระบบ
               </button>
             )}
           </div>

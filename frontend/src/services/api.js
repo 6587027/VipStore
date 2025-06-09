@@ -27,11 +27,15 @@ export const productsAPI = {
   delete: (id) => api.delete(`/products/${id}`),
 };
 
-// Auth API - เพิ่มใหม่
+// Auth API - อัพเดตเพิ่ม register
 export const authAPI = {
   // Login
   login: (username, password) => 
     api.post('/auth/login', { username, password }),
+  
+  // 🆕 Register - เพิ่มใหม่!
+  register: (userData) => 
+    api.post('/auth/register', userData),
   
   // Logout
   logout: () => 
@@ -46,6 +50,41 @@ export const authAPI = {
     api.get('/auth/verify'),
 };
 
+// 🆕 Orders API
+export const ordersAPI = {
+  // Create new order
+  create: (orderData) => 
+    api.post('/orders', orderData),
+  
+  // Get user's orders
+  getMyOrders: (userId) => 
+    api.get('/orders/my-orders', { params: { userId } }),
+  
+  // Get single order
+  getById: (id) => 
+    api.get(`/orders/${id}`),
+  
+  // Admin endpoints
+  admin: {
+    // Get all orders
+    getAll: (params = {}) => 
+      api.get('/orders/admin/all', { params }),
+    
+    // Update order status
+    updateStatus: (id, updateData) => 
+      api.put(`/orders/admin/${id}/status`, updateData),
+    
+    // Get statistics
+    getStats: () => 
+      api.get('/orders/admin/stats'),
+
+    // ordersAPI.admin object delete order by ID
+    delete: (orderId) => 
+      api.delete(`/orders/admin/${orderId}`)
+
+}
+};
+
 // Helper functions สำหรับใช้งานง่าย
 export const loginUser = async (username, password) => {
   try {
@@ -58,6 +97,38 @@ export const loginUser = async (username, password) => {
     return {
       success: false,
       message: error.response?.data?.message || 'Login failed'
+    };
+  }
+};
+
+// 🆕 Helper function สำหรับ register
+export const registerUser = async (userData) => {
+  try {
+    const response = await authAPI.register(userData);
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Registration failed'
+    };
+  }
+};
+
+// 🆕 Helper function สำหรับสร้าง Order
+export const createOrder = async (orderData) => {
+  try {
+    const response = await ordersAPI.create(orderData);
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to create order'
     };
   }
 };

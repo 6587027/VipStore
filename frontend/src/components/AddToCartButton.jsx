@@ -28,9 +28,27 @@ const AddToCartButton = ({
   const currentQuantity = getItemQuantity(product._id);
   const isOutOfStock = product.stock === 0;
   const isLowStock = product.stock <= 5 && product.stock > 0;
+  
+  // 🆕 เพิ่ม Stock Validation Logic
+  const quantityToAdd = showQuantity ? localQuantity : quantity;
+  const totalAfterAdd = currentQuantity + quantityToAdd;
+  const availableStock = product.stock - currentQuantity;
+  const canAddToCart = !isOutOfStock && totalAfterAdd <= product.stock && availableStock > 0;
 
   const handleAddToCart = async () => {
     if (disabled || isOutOfStock || isAdding) return;
+
+    // 🆕 ตรวจสอบ Stock Validation ก่อนเพิ่ม
+    if (!canAddToCart) {
+      if (isOutOfStock) {
+        alert('สินค้าหมดแล้ว ไม่สามารถเพิ่มได้');
+      } else if (currentQuantity >= product.stock) {
+        alert(`ไม่สามารถเพิ่มสินค้าได้อีก คุณมีสินค้านี้ในตะกร้าแล้ว ${currentQuantity} ชิ้น (สต็อกทั้งหมด ${product.stock} ชิ้น)`);
+      } else if (totalAfterAdd > product.stock) {
+        alert(`ไม่สามารถเพิ่มได้ ${quantityToAdd} ชิ้น เหลือในสต็อกอีกแค่ ${availableStock} ชิ้น`);
+      }
+      return;
+    }
 
     setIsAdding(true);
     
@@ -38,7 +56,7 @@ const AddToCartButton = ({
       // Simulate API delay for better UX
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      addToCart(product, showQuantity ? localQuantity : quantity);
+      addToCart(product, quantityToAdd);
       
       // Show success animation
       setShowSuccess(true);
@@ -46,6 +64,7 @@ const AddToCartButton = ({
       
     } catch (error) {
       console.error('Error adding to cart:', error);
+      alert('เกิดข้อผิดพลาดในการเพิ่มสินค้า กรุณาลองใหม่อีกครั้ง');
     } finally {
       setIsAdding(false);
     }
@@ -53,7 +72,12 @@ const AddToCartButton = ({
 
   const handleUpdateQuantity = (newQuantity) => {
     if (newQuantity <= 0) return;
-    if (newQuantity > product.stock) return;
+    
+    // 🆕 เพิ่มการตรวจสอบ stock ในการอัพเดต quantity
+    if (newQuantity > product.stock) {
+      alert(`ไม่สามารถเพิ่มได้ เหลือในสต็อกแค่ ${product.stock} ชิ้น`);
+      return;
+    }
     
     setLocalQuantity(newQuantity);
     if (isProductInCart) {
@@ -61,11 +85,35 @@ const AddToCartButton = ({
     }
   };
 
+  const handleQuickIncrease = () => {
+    // 🆕 ตรวจสอบ stock ก่อนเพิ่มใน quick actions
+    if (currentQuantity >= product.stock) {
+      alert(`ไม่สามารถเพิ่มได้อีก เหลือในสต็อกแค่ ${product.stock} ชิ้น และคุณมีในตะกร้าแล้ว ${currentQuantity} ชิ้น`);
+      return;
+    }
+    increaseQuantity(product._id);
+  };
+
+  const handleQuickDecrease = () => {
+    if (currentQuantity <= 1) return;
+    updateQuantity(product._id, currentQuantity - 1);
+  };
+
   const getButtonText = () => {
     if (isAdding) return 'กำลังเพิ่ม...';
     if (showSuccess) return 'เพิ่มแล้ว!';
     if (isOutOfStock) return 'สินค้าหมด';
-    if (isProductInCart) return `ในตะกร้า (${currentQuantity})`;
+    if (isProductInCart) {
+      // 🆕 แสดงสถานะการเต็มสต็อก
+      if (currentQuantity >= product.stock) {
+        return `เต็มแล้ว (${currentQuantity}/${product.stock})`;
+      }
+      return `ในตะกร้า (${currentQuantity}/${product.stock})`;
+    }
+    // 🆕 แสดงจำนวนที่เหลือ
+    if (showQuantity && availableStock > 0) {
+      return `เพิ่มลงตะกร้า (เหลือ ${availableStock})`;
+    }
     return 'เพิ่มลงตะกร้า';
   };
 
@@ -73,6 +121,7 @@ const AddToCartButton = ({
     if (isAdding) return '⏳';
     if (showSuccess) return '✅';
     if (isOutOfStock) return '❌';
+    if (isProductInCart && currentQuantity >= product.stock) return '🔒'; // 🆕 ไอคอนเมื่อเต็ม
     if (isProductInCart) return '✓';
     return '🛒';
   };
@@ -85,6 +134,8 @@ const AddToCartButton = ({
     showSuccess && 'success',
     isOutOfStock && 'out-of-stock',
     isProductInCart && 'in-cart',
+    currentQuantity >= product.stock && 'stock-full', // 🆕 CSS class เมื่อเต็ม
+    !canAddToCart && 'disabled', // 🆕 disabled เมื่อไม่สามารถเพิ่มได้
     className
   ].filter(Boolean).join(' ');
 
@@ -94,6 +145,13 @@ const AddToCartButton = ({
       {isLowStock && !isOutOfStock && (
         <div className="stock-warning">
           ⚠️ เหลือ {product.stock} ชิ้น
+        </div>
+      )}
+
+      {/* 🆕 แสดงสถานะตะกร้าเมื่อมีสินค้าในตะกร้าแล้ว */}
+      {isProductInCart && (
+        <div className="cart-status">
+          🛒 ในตะกร้า: {currentQuantity} ชิ้น | เหลือ: {availableStock} ชิ้น
         </div>
       )}
 
@@ -113,7 +171,7 @@ const AddToCartButton = ({
             <input
               type="number"
               min="1"
-              max={product.stock || 99}
+              max={Math.min(product.stock, availableStock + localQuantity)} // 🆕 จำกัด max
               value={localQuantity}
               onChange={(e) => handleUpdateQuantity(parseInt(e.target.value) || 1)}
               className="quantity-input"
@@ -122,7 +180,7 @@ const AddToCartButton = ({
               type="button"
               className="quantity-btn increase"
               onClick={() => handleUpdateQuantity(localQuantity + 1)}
-              disabled={localQuantity >= (product.stock || 99)}
+              disabled={localQuantity >= Math.min(product.stock, availableStock + localQuantity)} // 🆕 จำกัด max
             >
               +
             </button>
@@ -135,8 +193,12 @@ const AddToCartButton = ({
         type="button"
         className={buttonClasses}
         onClick={handleAddToCart}
-        disabled={disabled || isOutOfStock || isAdding}
-        title={isOutOfStock ? 'สินค้าหมด' : 'เพิ่มสินค้าลงตะกร้า'}
+        disabled={disabled || !canAddToCart || isAdding} // 🆕 เพิ่ม !canAddToCart
+        title={
+          isOutOfStock ? 'สินค้าหมด' : 
+          !canAddToCart ? 'ไม่สามารถเพิ่มสินค้าได้' : 
+          'เพิ่มสินค้าลงตะกร้า'
+        }
       >
         <span className="button-icon">
           {getButtonIcon()}
@@ -159,7 +221,7 @@ const AddToCartButton = ({
           <button
             type="button"
             className="quick-action-btn"
-            onClick={() => updateQuantity(product._id, currentQuantity - 1)}
+            onClick={handleQuickDecrease} // 🆕 ใช้ function ใหม่
             disabled={currentQuantity <= 1}
             title="ลดจำนวน"
           >
@@ -169,9 +231,9 @@ const AddToCartButton = ({
           <button
             type="button"
             className="quick-action-btn"
-            onClick={() => increaseQuantity(product._id)}
-            disabled={currentQuantity >= (product.stock || 99)}
-            title="เพิ่มจำนวน"
+            onClick={handleQuickIncrease} // 🆕 ใช้ function ใหม่
+            disabled={currentQuantity >= product.stock} // 🆕 เพิ่ม stock check
+            title={currentQuantity >= product.stock ? 'ไม่สามารถเพิ่มได้ (เต็มสต็อก)' : 'เพิ่มจำนวน'}
           >
             +
           </button>

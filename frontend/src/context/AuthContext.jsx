@@ -76,6 +76,51 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // 🆕 Register function - เพิ่มใหม่!
+  const register = async (userData) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('http://localhost:3001/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Registration failed');
+      }
+
+      if (data.success) {
+        // Auto-login after successful registration
+        setUser(data.user);
+        localStorage.setItem('vipstore_user', JSON.stringify(data.user));
+        
+        return {
+          success: true,
+          user: data.user,
+          message: data.message || 'Account created successfully!'
+        };
+      } else {
+        throw new Error(data.message || 'Registration failed');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      setError(error.message);
+      return {
+        success: false,
+        message: error.message
+      };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Logout function
   const logout = () => {
     setUser(null);
@@ -116,6 +161,7 @@ export const AuthProvider = ({ children }) => {
     
     // Actions
     login,
+    register, 
     logout,
     clearError,
     
