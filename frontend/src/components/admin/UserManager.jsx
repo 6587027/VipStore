@@ -7,6 +7,8 @@ const UserManager = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [passwordRequests, setPasswordRequests] = useState([]);
+  const [showPasswordRequests, setShowPasswordRequests] = useState(false);
   const [filterRole, setFilterRole] = useState('all');
   const [showUserDetails, setShowUserDetails] = useState(null);
   const [showCreateAdmin, setShowCreateAdmin] = useState(false);
@@ -39,6 +41,7 @@ const UserManager = () => {
   useEffect(() => {
     fetchUsers();
     fetchStats();
+    fetchPasswordRequests();
   }, []);
 
   // Fetch users from API
@@ -76,6 +79,102 @@ const UserManager = () => {
       console.error('Fetch stats error:', error);
     }
   };
+
+  // เพิ่มหลัง fetchStats function
+const fetchPasswordRequests = async () => {
+  try {
+    const response = await fetch('http://localhost:3001/api/auth/password-requests');
+    const data = await response.json();
+    if (data.success) {
+      setPasswordRequests(data.requests || []);
+    }
+  } catch (error) {
+    console.error('Error fetching password requests:', error);
+  }
+};
+// เพิ่มหลัง fetchPasswordRequests function
+const requestPasswordChange = async (userId, username) => {
+  const reason = prompt(`เหตุผลในการขอเปลี่ยนรหัสผ่านสำหรับ ${username}:`);
+  if (!reason) return;
+
+  try {
+    const response = await fetch('http://localhost:3001/api/auth/request-password-change', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId,
+        requestedBy: currentUser.id,
+        reason
+      })
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      alert('✅ ส่งคำขอเปลี่ยนรหัสผ่านเรียบร้อย');
+      fetchPasswordRequests();
+    } else {
+      alert('❌ เกิดข้อผิดพลาด: ' + data.message);
+    }
+  } catch (error) {
+    alert('❌ เกิดข้อผิดพลาดในการส่งคำขอ');
+  }
+};
+
+const approvePasswordRequest = async (requestId) => {
+  const newPass = prompt('ใส่รหัสผ่านใหม่ (อย่างน้อย 6 ตัวอักษร):');
+  if (!newPass || newPass.length < 6) {
+    alert('❌ รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+    return;
+  }
+
+  try {
+    const response = await fetch(`http://localhost:3001/api/auth/approve-password-request/${requestId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        newPassword: newPass,
+        approvedBy: currentUser.id 
+      })
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      alert('✅ อนุมัติและเปลี่ยนรหัสผ่านเรียบร้อย');
+      fetchPasswordRequests();
+    } else {
+      alert('❌ เกิดข้อผิดพลาด: ' + data.message);
+    }
+  } catch (error) {
+    alert('❌ เกิดข้อผิดพลาดในการอนุมัติ');
+  }
+};
+
+const rejectPasswordRequest = async (requestId) => {
+  const reason = prompt('เหตุผลในการปฏิเสธ:');
+  if (!reason) return;
+
+  try {
+    const response = await fetch(`http://localhost:3001/api/auth/reject-password-request/${requestId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        rejectionReason: reason,
+        rejectedBy: currentUser.id 
+      })
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      alert('✅ ปฏิเสธคำขอเรียบร้อย');
+      fetchPasswordRequests();
+    } else {
+      alert('❌ เกิดข้อผิดพลาด: ' + data.message);
+    }
+  } catch (error) {
+    alert('❌ เกิดข้อผิดพลาดในการปฏิเสธ');
+  }
+};
+
 
   // Filter users based on search and role
   const filteredUsers = users.filter(user => {
@@ -328,22 +427,64 @@ const UserManager = () => {
   return (
     <div style={{ padding: '20px' }}>
       {/* Header Section */}
-      <div style={{ marginBottom: '24px' }}>
-        <h2 style={{ 
-          fontSize: '1.8rem', 
-          fontWeight: '700', 
-          color: '#333',
-          marginBottom: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
-          👥 จัดการผู้ใช้งาน
-        </h2>
-        <p style={{ color: '#666', fontSize: '1rem' }}>
-          จัดการและติดตามผู้ใช้งานในระบบ
-        </p>
-      </div>
+<div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+  <div>
+    <h2 style={{ 
+      fontSize: '1.8rem', 
+      fontWeight: '700', 
+      color: '#333',
+      marginBottom: '8px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px'
+    }}>
+      👥 จัดการผู้ใช้งาน
+    </h2>
+    <p style={{ color: '#666', fontSize: '1rem' }}>
+      จัดการและติดตามผู้ใช้งานในระบบ
+    </p>
+  </div>
+  
+  {/* 🆕 Notification Bell */}
+  <div style={{ position: 'relative' }}>
+    <button
+      onClick={() => setShowPasswordRequests(true)}
+      style={{
+        background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+        color: 'white',
+        border: 'none',
+        borderRadius: '50%',
+        width: '50px',
+        height: '50px',
+        fontSize: '1.5rem',
+        cursor: 'pointer',
+        position: 'relative',
+        boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+      }}
+    >
+      🔔
+    </button>
+    {passwordRequests.filter(req => req.status === 'pending').length > 0 && (
+      <span style={{
+        position: 'absolute',
+        top: '-5px',
+        right: '-5px',
+        background: '#ef4444',
+        color: 'white',
+        borderRadius: '50%',
+        width: '24px',
+        height: '24px',
+        fontSize: '0.75rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: '600'
+      }}>
+        {passwordRequests.filter(req => req.status === 'pending').length}
+      </span>
+    )}
+  </div>
+</div>
 
       {/* Stats Cards */}
       <div style={{ 
@@ -652,6 +793,22 @@ const UserManager = () => {
                         >
                           ✏️ แก้ไข
                         </button>
+                        
+<button
+  onClick={() => requestPasswordChange(user.id || user._id, user.username)}
+  style={{
+    padding: '6px 10px',
+    background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+    color: 'white',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '0.8rem',
+    fontWeight: '600',
+    cursor: 'pointer'
+  }}
+>
+  🔐 รหัส
+</button>
 
                         {/* Delete button - not for current user */}
                         {(user.id !== currentUser?.id && user._id !== currentUser?.id) && (
@@ -1197,6 +1354,126 @@ const UserManager = () => {
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 🆕 Password Requests Modal */}
+      {showPasswordRequests && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '800px',
+            width: '100%',
+            maxHeight: '80vh',
+            overflowY: 'auto'
+          }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px'
+            }}>
+              <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>
+                🔐 คำขอเปลี่ยนรหัสผ่าน
+              </h3>
+              <button
+                onClick={() => setShowPasswordRequests(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  padding: '4px'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {passwordRequests.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+                <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🔐</div>
+                <p>ไม่มีคำขอเปลี่ยนรหัสผ่าน</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {passwordRequests.map((request) => (
+                  <div key={request.id} style={{
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    background: request.status === 'pending' ? '#fef3c7' : '#f3f4f6'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: '600', marginBottom: '8px' }}>
+                          👤 {request.userName}
+                        </div>
+                        <div style={{ fontSize: '0.9rem', color: '#6b7280', marginBottom: '8px' }}>
+                          📧 {request.userEmail}
+                        </div>
+                        <div style={{ fontSize: '0.9rem', color: '#6b7280', marginBottom: '8px' }}>
+                          📝 เหตุผล: {request.reason}
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+                          📅 {formatDate(request.createdAt)}
+                        </div>
+                      </div>
+                      
+                      {request.status === 'pending' && (
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            onClick={() => approvePasswordRequest(request.id)}
+                            style={{
+                              padding: '8px 16px',
+                              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '0.9rem',
+                              fontWeight: '600',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ✅ อนุมัติ
+                          </button>
+                          <button
+                            onClick={() => rejectPasswordRequest(request.id)}
+                            style={{
+                              padding: '8px 16px',
+                              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '0.9rem',
+                              fontWeight: '600',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ❌ ปฏิเสธ
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

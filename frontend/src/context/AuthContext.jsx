@@ -1,4 +1,4 @@
-// frontend/src/context/AuthContext.jsx
+// frontend/src/context/AuthContext.jsx - Updated with updateUser function
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // 🆕 Register function - เพิ่มใหม่!
+  // Register function
   const register = async (userData) => {
     setLoading(true);
     setError(null);
@@ -121,6 +121,41 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // 🆕 Update user function - for profile updates
+  const updateUser = (updatedUserData) => {
+    try {
+      // Merge current user data with updates
+      const newUserData = {
+        ...user,
+        ...updatedUserData,
+        // Preserve critical fields
+        _id: user._id || user.id,
+        id: user.id || user._id,
+        role: user.role // Don't allow role changes from frontend
+      };
+
+      // Update state
+      setUser(newUserData);
+      
+      // Update localStorage
+      localStorage.setItem('vipstore_user', JSON.stringify(newUserData));
+      
+      console.log('✅ User data updated in context:', newUserData);
+      
+      return {
+        success: true,
+        user: newUserData
+      };
+    } catch (error) {
+      console.error('Update user error:', error);
+      setError('ไม่สามารถอัปเดตข้อมูลผู้ใช้ได้');
+      return {
+        success: false,
+        message: error.message
+      };
+    }
+  };
+
   // Logout function
   const logout = () => {
     setUser(null);
@@ -153,6 +188,22 @@ export const AuthProvider = ({ children }) => {
     setError(null);
   };
 
+  // 🆕 Get user display name (helper function)
+  const getUserDisplayName = () => {
+    if (!user) return '';
+    
+    if (user.firstName && user.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    } else if (user.firstName) {
+      return user.firstName;
+    } else if (user.username) {
+      return user.username;
+    } else if (user.email) {
+      return user.email.split('@')[0];
+    }
+    return 'User';
+  };
+
   const value = {
     // State
     user,
@@ -163,17 +214,19 @@ export const AuthProvider = ({ children }) => {
     login,
     register, 
     logout,
+    updateUser, // 🆕 Add updateUser function
     clearError,
     
     // Helper functions
     isAdmin,
     isCustomer,
     isLoggedIn,
+    getUserDisplayName, // 🆕 Add helper function
     
     // User info shortcuts
-    userName: user?.name || user?.username || '',
+    userName: getUserDisplayName(),
     userRole: user?.role || '',
-    userId: user?.id || null
+    userId: user?.id || user?._id || null
   };
 
   return (

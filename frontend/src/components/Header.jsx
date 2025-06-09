@@ -1,9 +1,9 @@
-// frontend/src/components/Header.jsx - Fixed User Display
+// frontend/src/components/Header.jsx - Updated with Profile Edit Button
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 
-const Header = ({ onLoginClick, onAdminClick, onBackToHome, currentView }) => {
+const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, currentView }) => {
   const { user, logout, isAdmin, isLoggedIn } = useAuth();
   const { totalItems, toggleCart, formatCurrency, totalAmount } = useCart();
 
@@ -18,6 +18,13 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, currentView }) => {
   const handleAdminClick = () => {
     if (isAdmin()) {
       onAdminClick();
+    }
+  };
+
+  // 🆕 Handle profile edit click (Customer only)
+  const handleProfileClick = () => {
+    if (user && user.role === 'customer' && onProfileClick) {
+      onProfileClick();
     }
   };
 
@@ -56,29 +63,69 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, currentView }) => {
     <header className="header">
       <div className="container">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          {/* Logo */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-            <h1 
-              style={{ cursor: 'pointer' }}
-              onClick={onBackToHome}
-            >
-              🛍️ Vip Store
-            </h1>
-            
-            {/* View Indicator */}
-            {currentView === 'admin' && (
-              <span style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                padding: '5px 12px',
-                borderRadius: '15px',
-                fontSize: '0.8rem',
-                fontWeight: '600'
-              }}>
-                👨‍💼 Admin Panel
-              </span>
-            )}
-          </div>
+         {/* Logo */}
+<div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+    <h1 
+      style={{ 
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        margin: 0, // เอา default margin ออก
+        lineHeight: '1.2'
+      }}
+      onClick={onBackToHome}
+    >
+      {/* VipStore Logo Image */}
+      <img 
+        src="/VipStoreLogo.png" 
+        alt="Vip Store Logo"
+        style={{
+          width: '32px',
+          height: '32px',
+          objectFit: 'contain',
+          borderRadius: '6px'
+        }}
+        onError={(e) => {
+          // Fallback to emoji if image fails to load
+          e.target.style.display = 'none';
+          e.target.nextSibling.style.display = 'inline';
+        }}
+      />
+      {/* Fallback Emoji (hidden by default) */}
+      <span style={{ display: 'none' }}>🛍️</span>
+      Vip Store
+    </h1>
+    
+    {/* 🆕 Project Description */}
+    <p style={{
+      margin: 0,
+      fontSize: '0.75rem',
+      color: '#666',
+      fontWeight: '400',
+      fontStyle: 'italic',
+      lineHeight: '1.1',
+      marginTop: '2px'
+    }}>
+      * จำลองระบบจัดการร้านค้า (DEMO)
+    </p>
+  </div>
+  
+  {/* View Indicator */}
+  {currentView === 'admin' && (
+    <span style={{
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      color: 'white',
+      padding: '5px 12px',
+      borderRadius: '15px',
+      fontSize: '0.8rem',
+      fontWeight: '600'
+    }}>
+      👨‍💼 Admin Panel
+    </span>
+  )}
+</div>
           
           {/* Navigation Buttons */}
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -175,6 +222,28 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, currentView }) => {
                     </span>
                   </div>
                 </div>
+
+                {/* 🆕 Profile Edit Button (Customer only, Home view only) */}
+                {user && user.role === 'customer' && currentView === 'home' && (
+                  <button 
+                    className="btn-primary"
+                    onClick={handleProfileClick}
+                    style={{
+                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      border: 'none',
+                      padding: '8px 12px',
+                      borderRadius: '6px',
+                      fontWeight: '600',
+                      fontSize: '0.8rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                    title="แก้ไขข้อมูลส่วนตัว"
+                  >
+                    ⚙️ ข้อมูล
+                  </button>
+                )}
 
                 {/* Admin Panel Button (Admin only, Home view only) - Compact */}
                 {isAdmin() && currentView === 'home' && (
