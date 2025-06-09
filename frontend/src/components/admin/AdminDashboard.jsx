@@ -6,6 +6,7 @@ import ProductManager from './ProductManager';
 import AdminStats from './AdminStats';
 import UserManager from './UserManager';
 import OrderManager from './OrderManager'; 
+import ReportsManager from './ReportsManager'; 
 
 const AdminDashboard = () => {
   const { user, isAdmin } = useAuth();
@@ -128,6 +129,13 @@ const AdminDashboard = () => {
           >
             👥 Users 
           </button>
+          {/* 🆕 เพิ่มปุ่ม Reports */}
+          <button 
+            className={`admin-tab ${activeTab === 'reports' ? 'active' : ''}`}
+            onClick={() => setActiveTab('reports')}
+          >
+            📊 Reports 
+          </button>
         </div>
 
         {/* Content Area */}
@@ -152,23 +160,18 @@ const AdminDashboard = () => {
                     </div>
                   </button>
                   
-                  {/* <button className="action-card disabled">
+                  {/* 🆕 แก้ไขปุ่ม Reports ให้ทำงานได้จริง */}
+                  <button 
+                    className="action-card"
+                    onClick={() => setActiveTab('reports')}
+                  >
                     <div className="action-icon">📊</div>
                     <div className="action-text">
                       <h4>View Reports</h4>
                       <p>Sales and analytics</p>
                     </div>
-                    <span className="coming-soon">Coming Soon</span>
-                  </button>
+                  </button> 
                   
-                  <button className="action-card disabled">
-                    <div className="action-icon">⚙️</div>
-                    <div className="action-text">
-                      <h4>Settings</h4>
-                      <p>System configuration</p>
-                    </div>
-                    <span className="coming-soon">Coming Soon</span>
-                  </button> */}
                 </div>
               </div>
 
@@ -210,12 +213,16 @@ const AdminDashboard = () => {
           )}
 
           {activeTab === 'orders' && (
-  <OrderManager />
-)}
+            <OrderManager />
+          )}
 
           {activeTab === 'users' && (
-  <UserManager />
-)}
+            <UserManager />
+          )}
+          
+          {activeTab === 'reports' && (
+            <ReportsManager />
+          )}
         </div>
       </div>
     </div>

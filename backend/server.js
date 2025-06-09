@@ -1,3 +1,6 @@
+
+// src/backend/src/server.js
+
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
@@ -25,6 +28,7 @@ const productRoutes = require("./routes/products");
 const authRoutes = require("./routes/auth");
 const orderRoutes = require("./routes/orders");
 
+
 // Test route
 app.get("/", (req, res) => {
   res.json({
@@ -45,6 +49,8 @@ app.get("/", (req, res) => {
 app.use("/api/products", productRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/orders", orderRoutes);
+app.use('/api/reports', require('./routes/reports'));
+
 
 // Error handling
 app.use("*", (req, res) => {

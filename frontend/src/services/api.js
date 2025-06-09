@@ -1,3 +1,5 @@
+// src/frontend/src/services/api.js
+
 import axios from 'axios';
 
 const API_BASE_URL = 'http://localhost:3001/api';
@@ -33,7 +35,7 @@ export const authAPI = {
   login: (username, password) => 
     api.post('/auth/login', { username, password }),
   
-  // 🆕 Register - เพิ่มใหม่!
+  // Register
   register: (userData) => 
     api.post('/auth/register', userData),
   
@@ -50,7 +52,7 @@ export const authAPI = {
     api.get('/auth/verify'),
 };
 
-// 🆕 Orders API
+// Orders API
 export const ordersAPI = {
   // Create new order
   create: (orderData) => 
@@ -78,11 +80,33 @@ export const ordersAPI = {
     getStats: () => 
       api.get('/orders/admin/stats'),
 
-    // ordersAPI.admin object delete order by ID
+    // Delete order by ID
     delete: (orderId) => 
       api.delete(`/orders/admin/${orderId}`)
+  }
+};
 
-}
+// 🆕 Reports API - Dynamic Reports System
+export const reportsAPI = {
+  // 📊 Overview Report - ข้อมูลภาพรวมทั้งหมด
+  getOverview: (params = {}) => 
+    api.get('/reports/overview', { params }),
+  
+  // 💰 Sales Report - รายงานยอดขายละเอียด
+  getSales: (params = {}) => 
+    api.get('/reports/sales', { params }),
+  
+  // 📦 Products Report - รายงานสินค้า
+  getProducts: (params = {}) => 
+    api.get('/reports/products', { params }),
+  
+  // 👥 Users Report - รายงานผู้ใช้
+  getUsers: (params = {}) => 
+    api.get('/reports/users', { params }),
+  
+  // 🛒 Orders Report - รายงานออเดอร์
+  getOrders: (params = {}) => 
+    api.get('/reports/orders', { params }),
 };
 
 // Helper functions สำหรับใช้งานง่าย
@@ -101,7 +125,7 @@ export const loginUser = async (username, password) => {
   }
 };
 
-// 🆕 Helper function สำหรับ register
+// Helper function สำหรับ register
 export const registerUser = async (userData) => {
   try {
     const response = await authAPI.register(userData);
@@ -117,7 +141,7 @@ export const registerUser = async (userData) => {
   }
 };
 
-// 🆕 Helper function สำหรับสร้าง Order
+// Helper function สำหรับสร้าง Order
 export const createOrder = async (orderData) => {
   try {
     const response = await ordersAPI.create(orderData);
@@ -129,6 +153,87 @@ export const createOrder = async (orderData) => {
     return {
       success: false,
       message: error.response?.data?.message || 'Failed to create order'
+    };
+  }
+};
+
+// 🆕 Helper functions สำหรับ Reports
+export const getReportsOverview = async (params = {}) => {
+  try {
+    const response = await reportsAPI.getOverview(params);
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (error) {
+    console.error('Reports overview error:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to fetch reports overview'
+    };
+  }
+};
+
+export const getSalesReports = async (params = {}) => {
+  try {
+    const response = await reportsAPI.getSales(params);
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (error) {
+    console.error('Sales reports error:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to fetch sales reports'
+    };
+  }
+};
+
+export const getProductsReports = async (params = {}) => {
+  try {
+    const response = await reportsAPI.getProducts(params);
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (error) {
+    console.error('Products reports error:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to fetch products reports'
+    };
+  }
+};
+
+export const getUsersReports = async (params = {}) => {
+  try {
+    const response = await reportsAPI.getUsers(params);
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (error) {
+    console.error('Users reports error:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to fetch users reports'
+    };
+  }
+};
+
+export const getOrdersReports = async (params = {}) => {
+  try {
+    const response = await reportsAPI.getOrders(params);
+    return {
+      success: true,
+      data: response.data
+    };
+  } catch (error) {
+    console.error('Orders reports error:', error);
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to fetch orders reports'
     };
   }
 };

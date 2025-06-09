@@ -52,62 +52,62 @@ const OrderManager = () => {
       console.error('Fetch orders error:', error);
       
       // Mock data for development
-      setOrders([
-        {
-          _id: '1',
-          orderNumber: 'VIP-20250608-001',
-          customerInfo: {
-            firstName: 'วิป',
-            lastName: 'ลูกค้า',
-            email: 'vip@example.com',
-            phone: '080-123-4567'
-          },
-          items: [
-            {
-              productName: 'iPhone 15 Pro',
-              quantity: 1,
-              price: 45000,
-              subtotal: 45000
-            }
-          ],
-          pricing: {
-            subtotal: 45000,
-            shipping: 0,
-            total: 45000
-          },
-          status: 'pending',
-          paymentStatus: 'pending',
-          orderDate: new Date(),
-          createdAt: new Date()
-        },
-        {
-          _id: '2',
-          orderNumber: 'VIP-20250608-002',
-          customerInfo: {
-            firstName: 'ลูกค้า',
-            lastName: 'ทดสอบ',
-            email: 'test@example.com',
-            phone: '081-987-6543'
-          },
-          items: [
-            {
-              productName: 'MacBook Pro',
-              quantity: 1,
-              price: 89000,
-              subtotal: 89000
-            }
-          ],
-          pricing: {
-            subtotal: 89000,
-            shipping: 0,
-            total: 89000
-          },
-          status: 'confirmed',
-          paymentStatus: 'paid',
-          orderDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
-          createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
-        }
-      ]);
+      // setOrders([
+      //   {
+      //     _id: '1',
+      //     orderNumber: 'VIP-20250608-001',
+      //     customerInfo: {
+      //       firstName: 'วิป',
+      //       lastName: 'ลูกค้า',
+      //       email: 'vip@example.com',
+      //       phone: '080-123-4567'
+      //     },
+      //     items: [
+      //       {
+      //         productName: 'iPhone 15 Pro',
+      //         quantity: 1,
+      //         price: 45000,
+      //         subtotal: 45000
+      //       }
+      //     ],
+      //     pricing: {
+      //       subtotal: 45000,
+      //       shipping: 0,
+      //       total: 45000
+      //     },
+      //     status: 'pending',
+      //     paymentStatus: 'pending',
+      //     orderDate: new Date(),
+      //     createdAt: new Date()
+      //   },
+      //   {
+      //     _id: '2',
+      //     orderNumber: 'VIP-20250608-002',
+      //     customerInfo: {
+      //       firstName: 'ลูกค้า',
+      //       lastName: 'ทดสอบ',
+      //       email: 'test@example.com',
+      //       phone: '081-987-6543'
+      //     },
+      //     items: [
+      //       {
+      //         productName: 'MacBook Pro',
+      //         quantity: 1,
+      //         price: 89000,
+      //         subtotal: 89000
+      //       }
+      //     ],
+      //     pricing: {
+      //       subtotal: 89000,
+      //       shipping: 0,
+      //       total: 89000
+      //     },
+      //     status: 'confirmed',
+      //     paymentStatus: 'paid',
+      //     orderDate: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      //     createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
+      //   }
+      // ]);
     } finally {
       setLoading(false);
     }

@@ -231,11 +231,74 @@ router.get('/admin/all', async (req, res) => {
   }
 });
 
-// ✅ PUT /api/orders/admin/:id/status - Update order status (Admin)
+// 🔧 PUT /api/orders/admin/:id/status - Update order status (Admin) - FIXED WITH STOCK RESTORE
 router.put('/admin/:id/status', async (req, res) => {
   try {
     const { status, paymentStatus, trackingNumber, notes } = req.body;
+    const orderId = req.params.id;
 
+    // 🔍 ดึงข้อมูล order เดิมก่อน
+    const existingOrder = await Order.findById(orderId).populate('items.productId');
+    
+    if (!existingOrder) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    console.log(`📝 Updating order ${existingOrder.orderNumber} from ${existingOrder.status} to ${status}`);
+
+    // 🔄 ถ้าเปลี่ยนเป็น 'cancelled' และ order เดิมยังไม่ใช่ cancelled
+    if (status === 'cancelled' && existingOrder.status !== 'cancelled') {
+      console.log('🔄 Order cancelled - restoring stock...');
+      
+      // คืนสต็อกสินค้าทั้งหมดใน order
+      for (const item of existingOrder.items) {
+        try {
+          const product = await Product.findById(item.productId);
+          if (product) {
+            const oldStock = product.stock;
+            product.stock += item.quantity; // เพิ่มสต็อกกลับ
+            await product.save();
+            
+            console.log(`📦 Restored stock for ${product.name}: ${oldStock} + ${item.quantity} = ${product.stock}`);
+          }
+        } catch (error) {
+          console.error(`❌ Error restoring stock for product ${item.productId}:`, error);
+        }
+      }
+    }
+
+    // 🔄 ถ้าเปลี่ยนจาก 'cancelled' เป็นสถานะอื่น
+    if (existingOrder.status === 'cancelled' && status !== 'cancelled') {
+      console.log('🔄 Order reactivated - deducting stock...');
+      
+      // หักสต็อกใหม่ (เพราะเมื่อยกเลิกไปแล้วได้คืนสต็อกไว้)
+      for (const item of existingOrder.items) {
+        try {
+          const product = await Product.findById(item.productId);
+          if (product) {
+            if (product.stock >= item.quantity) {
+              const oldStock = product.stock;
+              product.stock -= item.quantity; // หักสต็อกใหม่
+              await product.save();
+              
+              console.log(`📦 Deducted stock for ${product.name}: ${oldStock} - ${item.quantity} = ${product.stock}`);
+            } else {
+              return res.status(400).json({
+                success: false,
+                message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Required: ${item.quantity}`
+              });
+            }
+          }
+        } catch (error) {
+          console.error(`❌ Error deducting stock for product ${item.productId}:`, error);
+        }
+      }
+    }
+
+    // 📝 อัพเดต order status
     const updateData = {};
     if (status) updateData.status = status;
     if (paymentStatus) updateData.paymentStatus = paymentStatus;
@@ -247,23 +310,18 @@ router.put('/admin/:id/status', async (req, res) => {
       updateData.deliveryDate = new Date();
     }
 
-    const order = await Order.findByIdAndUpdate(
-      req.params.id,
+    const updatedOrder = await Order.findByIdAndUpdate(
+      orderId,
       updateData,
       { new: true, runValidators: true }
     ).populate('items.productId');
 
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'Order not found'
-      });
-    }
+    console.log(`✅ Order ${updatedOrder.orderNumber} updated successfully`);
 
     res.json({
       success: true,
-      message: 'Order updated successfully',
-      order
+      message: `Order updated successfully. ${status === 'cancelled' ? 'Stock restored.' : ''}`,
+      order: updatedOrder
     });
 
   } catch (error) {
@@ -275,24 +333,51 @@ router.put('/admin/:id/status', async (req, res) => {
   }
 });
 
-// DELETE /api/orders/admin/:orderId - ลบออเดอร์
+// 🔧 DELETE /api/orders/admin/:orderId - ลบออเดอร์ - FIXED WITH STOCK RESTORE
 router.delete('/admin/:orderId', async (req, res) => {
   try {
     const { orderId } = req.params;
     
-    // ค้นหาและลบออเดอร์
-    const deletedOrder = await Order.findByIdAndDelete(orderId);
+    // 🔍 ดึงข้อมูล order ก่อนลบ
+    const orderToDelete = await Order.findById(orderId).populate('items.productId');
     
-    if (!deletedOrder) {
+    if (!orderToDelete) {
       return res.status(404).json({
         success: false,
         message: 'ไม่พบออเดอร์ที่ต้องการลบ'
       });
     }
+
+    console.log(`🗑️ Deleting order ${orderToDelete.orderNumber} - status: ${orderToDelete.status}`);
+
+    // 🔄 ถ้า order ยังไม่ถูก cancel ให้คืนสต็อกก่อนลบ
+    if (orderToDelete.status !== 'cancelled') {
+      console.log('🔄 Restoring stock before deletion...');
+      
+      for (const item of orderToDelete.items) {
+        try {
+          const product = await Product.findById(item.productId);
+          if (product) {
+            const oldStock = product.stock;
+            product.stock += item.quantity; // คืนสต็อก
+            await product.save();
+            
+            console.log(`📦 Restored stock for ${product.name}: ${oldStock} + ${item.quantity} = ${product.stock}`);
+          }
+        } catch (error) {
+          console.error(`❌ Error restoring stock for product ${item.productId}:`, error);
+        }
+      }
+    }
+    
+    // ✅ ลบ order
+    const deletedOrder = await Order.findByIdAndDelete(orderId);
+    
+    console.log(`✅ Order ${orderToDelete.orderNumber} deleted successfully with stock restoration`);
     
     res.json({
       success: true,
-      message: 'ลบออเดอร์สำเร็จ',
+      message: 'ลบออเดอร์สำเร็จ และคืนสต็อกสินค้าแล้ว',
       deletedOrder: deletedOrder
     });
     
