@@ -1,4 +1,6 @@
 // frontend/src/components/ProductCard.jsx
+
+
 import React from 'react';
 import AddToCartButton from './AddToCartButton';
 
