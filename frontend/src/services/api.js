@@ -1,116 +1,131 @@
-// src/frontend/src/services/api.js
+// src/frontend/src/services/api.js - Enhanced Version
 
 import axios from 'axios';
 
-const API_BASE_URL = 'https://vipstore-backend.onrender.com/api';
-// const API_BASE_URL = process.env.VITE_API_URL || 'http://localhost:3001/api';
+// ✅ Environment-based API URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com/api';
+
+console.log('🔗 API Base URL:', API_BASE_URL);
+console.log('🌍 Environment:', import.meta.env.MODE);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 15000, // เพิ่ม timeout สำหรับ production
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
+// ✅ Request interceptor สำหรับ debugging
+api.interceptors.request.use(
+  (config) => {
+    console.log(`📤 ${config.method?.toUpperCase()} ${config.url}`, config.data);
+    return config;
+  },
+  (error) => {
+    console.error('❌ Request Error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// ✅ Response interceptor สำหรับ debugging
+api.interceptors.response.use(
+  (response) => {
+    console.log(`📥 ${response.status} ${response.config.url}`, response.data);
+    return response;
+  },
+  (error) => {
+    console.error('❌ Response Error:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+      url: error.config?.url
+    });
+    return Promise.reject(error);
+  }
+);
+
 // Products API
 export const productsAPI = {
-  // ดึงสินค้าทั้งหมด
   getAll: (params = {}) => api.get('/products', { params }),
-  
-  // ดึงสินค้าตาม ID
   getById: (id) => api.get(`/products/${id}`),
-  
-  // สร้างสินค้าใหม่ (Admin)
   create: (data) => api.post('/products', data),
-  
-  // อัพเดตสินค้า (Admin)
   update: (id, data) => api.put(`/products/${id}`, data),
-  
-  // ลบสินค้า (Admin)
   delete: (id) => api.delete(`/products/${id}`),
 };
 
-// Auth API - อัพเดตเพิ่ม register
+// ✅ Enhanced Auth API with better error handling
 export const authAPI = {
-  // Login
-  login: (username, password) => 
-    api.post('/auth/login', { username, password }),
+  login: async (username, password) => {
+    try {
+      console.log('🔐 Attempting login...', { username });
+      const response = await api.post('/auth/login', { username, password });
+      console.log('✅ Login successful:', response.data);
+      return response;
+    } catch (error) {
+      console.error('❌ Login failed:', error.response?.data || error.message);
+      throw error;
+    }
+  },
   
-  // Register
-  register: (userData) => 
-    api.post('/auth/register', userData),
+  register: async (userData) => {
+    try {
+      console.log('📝 Attempting register...', { username: userData.username });
+      const response = await api.post('/auth/register', userData);
+      console.log('✅ Register successful:', response.data);
+      return response;
+    } catch (error) {
+      console.error('❌ Register failed:', error.response?.data || error.message);
+      throw error;
+    }
+  },
   
-  // Logout
-  logout: () => 
-    api.post('/auth/logout'),
-  
-  // Get test accounts (development)
-  getTestAccounts: () => 
-    api.get('/auth/users'),
-  
-  // Verify token (optional)
-  verify: () => 
-    api.get('/auth/verify'),
+  logout: () => api.post('/auth/logout'),
+  getTestAccounts: () => api.get('/auth/users'),
+  verify: () => api.get('/auth/verify'),
 };
 
 // Orders API
 export const ordersAPI = {
-  // Create new order
-  create: (orderData) => 
-    api.post('/orders', orderData),
+  create: (orderData) => api.post('/orders', orderData),
+  getMyOrders: (userId) => api.get('/orders/my-orders', { params: { userId } }),
+  getById: (id) => api.get(`/orders/${id}`),
   
-  // Get user's orders
-  getMyOrders: (userId) => 
-    api.get('/orders/my-orders', { params: { userId } }),
-  
-  // Get single order
-  getById: (id) => 
-    api.get(`/orders/${id}`),
-  
-  // Admin endpoints
   admin: {
-    // Get all orders
-    getAll: (params = {}) => 
-      api.get('/orders/admin/all', { params }),
-    
-    // Update order status
-    updateStatus: (id, updateData) => 
-      api.put(`/orders/admin/${id}/status`, updateData),
-    
-    // Get statistics
-    getStats: () => 
-      api.get('/orders/admin/stats'),
-
-    // Delete order by ID
-    delete: (orderId) => 
-      api.delete(`/orders/admin/${orderId}`)
+    getAll: (params = {}) => api.get('/orders/admin/all', { params }),
+    updateStatus: (id, updateData) => api.put(`/orders/admin/${id}/status`, updateData),
+    getStats: () => api.get('/orders/admin/stats'),
+    delete: (orderId) => api.delete(`/orders/admin/${orderId}`)
   }
 };
 
-// 🆕 Reports API - Dynamic Reports System
+// Reports API
 export const reportsAPI = {
-  // 📊 Overview Report - ข้อมูลภาพรวมทั้งหมด
-  getOverview: (params = {}) => 
-    api.get('/reports/overview', { params }),
-  
-  // 💰 Sales Report - รายงานยอดขายละเอียด
-  getSales: (params = {}) => 
-    api.get('/reports/sales', { params }),
-  
-  // 📦 Products Report - รายงานสินค้า
-  getProducts: (params = {}) => 
-    api.get('/reports/products', { params }),
-  
-  // 👥 Users Report - รายงานผู้ใช้
-  getUsers: (params = {}) => 
-    api.get('/reports/users', { params }),
-  
-  // 🛒 Orders Report - รายงานออเดอร์
-  getOrders: (params = {}) => 
-    api.get('/reports/orders', { params }),
+  getOverview: (params = {}) => api.get('/reports/overview', { params }),
+  getSales: (params = {}) => api.get('/reports/sales', { params }),
+  getProducts: (params = {}) => api.get('/reports/products', { params }),
+  getUsers: (params = {}) => api.get('/reports/users', { params }),
+  getOrders: (params = {}) => api.get('/reports/orders', { params }),
 };
 
-// Helper functions สำหรับใช้งานง่าย
+// ✅ API Health Check
+export const testAPIConnection = async () => {
+  try {
+    console.log('🔍 Testing API connection...');
+    const response = await api.get('/test');
+    console.log('✅ API Connection successful:', response.data);
+    return { success: true, data: response.data };
+  } catch (error) {
+    console.error('❌ API Connection failed:', error.message);
+    return { 
+      success: false, 
+      error: error.response?.data || error.message,
+      status: error.response?.status 
+    };
+  }
+};
+
+// Helper functions with enhanced error handling
 export const loginUser = async (username, password) => {
   try {
     const response = await authAPI.login(username, password);
@@ -121,12 +136,12 @@ export const loginUser = async (username, password) => {
   } catch (error) {
     return {
       success: false,
-      message: error.response?.data?.message || 'Login failed'
+      message: error.response?.data?.message || 'Login failed',
+      error: error.response?.data || error.message
     };
   }
 };
 
-// Helper function สำหรับ register
 export const registerUser = async (userData) => {
   try {
     const response = await authAPI.register(userData);
@@ -137,12 +152,12 @@ export const registerUser = async (userData) => {
   } catch (error) {
     return {
       success: false,
-      message: error.response?.data?.message || 'Registration failed'
+      message: error.response?.data?.message || 'Registration failed',
+      error: error.response?.data || error.message
     };
   }
 };
 
-// Helper function สำหรับสร้าง Order
 export const createOrder = async (orderData) => {
   try {
     const response = await ordersAPI.create(orderData);
@@ -153,19 +168,17 @@ export const createOrder = async (orderData) => {
   } catch (error) {
     return {
       success: false,
-      message: error.response?.data?.message || 'Failed to create order'
+      message: error.response?.data?.message || 'Failed to create order',
+      error: error.response?.data || error.message
     };
   }
 };
 
-// 🆕 Helper functions สำหรับ Reports
+// Report helpers
 export const getReportsOverview = async (params = {}) => {
   try {
     const response = await reportsAPI.getOverview(params);
-    return {
-      success: true,
-      data: response.data
-    };
+    return { success: true, data: response.data };
   } catch (error) {
     console.error('Reports overview error:', error);
     return {
@@ -178,10 +191,7 @@ export const getReportsOverview = async (params = {}) => {
 export const getSalesReports = async (params = {}) => {
   try {
     const response = await reportsAPI.getSales(params);
-    return {
-      success: true,
-      data: response.data
-    };
+    return { success: true, data: response.data };
   } catch (error) {
     console.error('Sales reports error:', error);
     return {
@@ -194,10 +204,7 @@ export const getSalesReports = async (params = {}) => {
 export const getProductsReports = async (params = {}) => {
   try {
     const response = await reportsAPI.getProducts(params);
-    return {
-      success: true,
-      data: response.data
-    };
+    return { success: true, data: response.data };
   } catch (error) {
     console.error('Products reports error:', error);
     return {
@@ -210,10 +217,7 @@ export const getProductsReports = async (params = {}) => {
 export const getUsersReports = async (params = {}) => {
   try {
     const response = await reportsAPI.getUsers(params);
-    return {
-      success: true,
-      data: response.data
-    };
+    return { success: true, data: response.data };
   } catch (error) {
     console.error('Users reports error:', error);
     return {
@@ -226,10 +230,7 @@ export const getUsersReports = async (params = {}) => {
 export const getOrdersReports = async (params = {}) => {
   try {
     const response = await reportsAPI.getOrders(params);
-    return {
-      success: true,
-      data: response.data
-    };
+    return { success: true, data: response.data };
   } catch (error) {
     console.error('Orders reports error:', error);
     return {
