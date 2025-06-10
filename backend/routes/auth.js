@@ -18,6 +18,12 @@ const testUsers = [
   }
 ];
 
+
+// หลัง const testUsers = [...];
+if (!global.passwordRequestHistory) {
+  global.passwordRequestHistory = [];
+}
+
 // Helper function to sanitize user data for response
 const sanitizeUser = (user) => {
   if (user.getPublicProfile) {
@@ -1033,7 +1039,8 @@ router.post('/request-password-change', async (req, res) => {
   }
 });
 
-// 🆕 PUT /api/auth/approve-password-request/:id - Approve password request
+
+
 router.put('/approve-password-request/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -1070,10 +1077,26 @@ router.put('/approve-password-request/:id', async (req, res) => {
       user.passwordChangedBy = approvedBy;
       await user.save();
 
-      // Remove notification
+      // 🆕 เก็บประวัติการอนุมัติ
+      const historyRecord = {
+        id: notification.id,
+        userId: notification.details.userId,
+        reason: notification.details.reason,
+        status: 'approved',
+        createdAt: notification.timestamp,
+        approvedAt: new Date().toISOString(),
+        approvedBy: approvedBy,
+        userName: notification.details.fullName || notification.details.username,
+        userEmail: notification.details.email
+      };
+
+      // เพิ่มเข้า history
+      global.passwordRequestHistory.push(historyRecord);
+
+      // ลบออกจาก notifications (เพราะดำเนินการแล้ว)
       global.adminNotifications = global.adminNotifications.filter(n => n.id !== id);
 
-      console.log(`✅ Password approved and changed for: ${user.username}`);
+      console.log(`✅ Password approved and saved to history for: ${user.username}`);
 
       res.json({
         success: true,
@@ -1097,7 +1120,7 @@ router.put('/approve-password-request/:id', async (req, res) => {
   }
 });
 
-// 🆕 PUT /api/auth/reject-password-request/:id - Reject password request
+// 3. แทนที่ router.put('/reject-password-request/:id') เดิม (ประมาณบรรทัดที่ 850+)
 router.put('/reject-password-request/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -1121,11 +1144,28 @@ router.put('/reject-password-request/:id', async (req, res) => {
 
     const notification = global.adminNotifications[notificationIndex];
     
+    // 🆕 เก็บประวัติการปฏิเสธ
+    const historyRecord = {
+      id: notification.id,
+      userId: notification.details.userId,
+      reason: notification.details.reason,
+      status: 'rejected',
+      createdAt: notification.timestamp,
+      rejectedAt: new Date().toISOString(),
+      rejectedBy: rejectedBy,
+      rejectionReason: rejectionReason,
+      userName: notification.details.fullName || notification.details.username,
+      userEmail: notification.details.email
+    };
+
+    // เพิ่มเข้า history
+    global.passwordRequestHistory.push(historyRecord);
+    
     // Log rejection
-    console.log(`❌ Password request rejected for: ${notification.details.username}`);
+    console.log(`❌ Password request rejected and saved to history for: ${notification.details.username}`);
     console.log(`❌ Reason: ${rejectionReason}`);
 
-    // Remove notification
+    // ลบออกจาก notifications (เพราะดำเนินการแล้ว)
     global.adminNotifications.splice(notificationIndex, 1);
 
     res.json({
@@ -1141,5 +1181,76 @@ router.put('/reject-password-request/:id', async (req, res) => {
     });
   }
 });
+
+// 4. แทนที่ router.get('/user-password-requests/:userId') เดิม (บรรทัดสุดท้าย)
+router.get('/user-password-requests/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    console.log('🔍 Fetching password requests for user:', userId);
+    
+    // 1. ดึงคำขอที่รอดำเนินการ (จาก notifications)
+    const notifications = global.adminNotifications || [];
+    const pendingRequests = notifications
+      .filter(n => n.type === 'password_change_request' && n.details.userId === userId)
+      .map(n => ({
+        id: n.id,
+        reason: n.details.reason,
+        status: 'pending',
+        createdAt: n.timestamp,
+        userId: n.details.userId,
+        userName: n.details.fullName || n.details.username,
+        userEmail: n.details.email
+      }));
+
+    // 2. ดึงประวัติที่ดำเนินการแล้ว (จาก history)
+    const history = global.passwordRequestHistory || [];
+    const completedRequests = history
+      .filter(record => record.userId === userId)
+      .map(record => ({
+        id: record.id,
+        reason: record.reason,
+        status: record.status,
+        createdAt: record.createdAt,
+        approvedAt: record.approvedAt,
+        rejectedAt: record.rejectedAt,
+        rejectionReason: record.rejectionReason,
+        userId: record.userId,
+        userName: record.userName,
+        userEmail: record.userEmail
+      }));
+
+    // 3. รวมกันและเรียงตามวันที่
+    const allRequests = [
+      ...pendingRequests,
+      ...completedRequests
+    ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    console.log(`✅ Found ${allRequests.length} password requests for user ${userId}`);
+    console.log(`📋 Breakdown: ${pendingRequests.length} pending, ${completedRequests.length} completed`);
+    
+    res.json({
+      success: true,
+      message: `Found ${allRequests.length} password requests`,
+      requests: allRequests,
+      summary: {
+        total: allRequests.length,
+        pending: pendingRequests.length,
+        approved: completedRequests.filter(r => r.status === 'approved').length,
+        rejected: completedRequests.filter(r => r.status === 'rejected').length
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Error fetching user password requests:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในการดึงประวัติคำขอ',
+      error: error.message
+    });
+  }
+});
+Improve
+Explain
 
 module.exports = router;
