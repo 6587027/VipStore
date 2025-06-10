@@ -2,6 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
+
+// ✅ Use Environment Variable or Fallback to Production URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com/api';
+
+console.log('🔗 UserManager API_BASE_URL:', API_BASE_URL);
+
+
 const UserManager = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +57,7 @@ const UserManager = () => {
     setError('');
     
     try {
-      const response = await fetch('http://localhost:3001/api/auth/users');
+      const response = await fetch(`${API_BASE_URL}/auth/users`);
       const data = await response.json();
       
       if (data.success) {
@@ -69,7 +76,7 @@ const UserManager = () => {
   // Fetch user statistics
   const fetchStats = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/auth/stats');
+      const response = await fetch(`${API_BASE_URL}/auth/stats`);
       const data = await response.json();
       
       if (data.success) {
@@ -83,7 +90,7 @@ const UserManager = () => {
   // เพิ่มหลัง fetchStats function
 const fetchPasswordRequests = async () => {
   try {
-    const response = await fetch('http://localhost:3001/api/auth/password-requests');
+    const response = await fetch(`${API_BASE_URL}/auth/password-requests`);
     const data = await response.json();
     if (data.success) {
       setPasswordRequests(data.requests || []);
@@ -98,7 +105,7 @@ const requestPasswordChange = async (userId, username) => {
   if (!reason) return;
 
   try {
-    const response = await fetch('http://localhost:3001/api/auth/request-password-change', {
+    const response = await fetch(`${API_BASE_URL}/auth/request-password-change`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -128,7 +135,8 @@ const approvePasswordRequest = async (requestId) => {
   }
 
   try {
-    const response = await fetch(`http://localhost:3001/api/auth/approve-password-request/${requestId}`, {
+    const response = await fetch(`${API_BASE_URL}/auth/approve-password-request/${requestId}`, {
+
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -154,7 +162,8 @@ const rejectPasswordRequest = async (requestId) => {
   if (!reason) return;
 
   try {
-    const response = await fetch(`http://localhost:3001/api/auth/reject-password-request/${requestId}`, {
+    const response = await fetch(`${API_BASE_URL}/auth/reject-password-request/${requestId}`, {
+
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -270,7 +279,8 @@ const rejectPasswordRequest = async (requestId) => {
 
     try {
       // 🆕 ใช้ endpoint ใหม่สำหรับสร้าง admin
-      const response = await fetch('http://localhost:3001/api/auth/create-admin', {
+      const response = await fetch(`${API_BASE_URL}/auth/create-admin`, {
+
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -313,7 +323,7 @@ const rejectPasswordRequest = async (requestId) => {
 
     try {
       // 🆕 ใช้ PUT endpoint สำหรับ update user
-      const response = await fetch(`http://localhost:3001/api/auth/users/${editUserForm.id}`, {
+      const response = await fetch(`${API_BASE_URL}/auth/users/${editUserForm.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -368,7 +378,7 @@ const rejectPasswordRequest = async (requestId) => {
       try {
         // 🆕 ใช้ DELETE endpoint สำหรับลบ user
         const userId = user.id || user._id;
-        const response = await fetch(`http://localhost:3001/api/auth/users/${userId}`, {
+        const response = await fetch(`${API_BASE_URL}/auth/users/${userId}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',

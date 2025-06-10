@@ -1,7 +1,12 @@
-// frontend/src/context/AuthContext.jsx - Updated with updateUser function
+// frontend/src/context/AuthContext.jsx - Fixed with Production URL
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
+
+// ✅ Use Environment Variable or Fallback to Production URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com/api';
+
+console.log('🔗 AuthContext API_BASE_URL:', API_BASE_URL);
 
 // Custom hook to use auth context
 export const useAuth = () => {
@@ -37,7 +42,10 @@ export const AuthProvider = ({ children }) => {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/login', {
+      console.log('🔐 AuthContext Login attempt:', { username, url: `${API_BASE_URL}/auth/login` });
+      
+      // ✅ Use Production URL
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -56,6 +64,8 @@ export const AuthProvider = ({ children }) => {
         setUser(data.user);
         localStorage.setItem('vipstore_user', JSON.stringify(data.user));
         
+        console.log('✅ AuthContext Login successful:', data.user);
+        
         return {
           success: true,
           user: data.user,
@@ -65,7 +75,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.message || 'Login failed');
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ AuthContext Login error:', error);
       setError(error.message);
       return {
         success: false,
@@ -82,7 +92,10 @@ export const AuthProvider = ({ children }) => {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/register', {
+      console.log('📝 AuthContext Register attempt:', { username: userData.username, url: `${API_BASE_URL}/auth/register` });
+      
+      // ✅ Use Production URL
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -101,6 +114,8 @@ export const AuthProvider = ({ children }) => {
         setUser(data.user);
         localStorage.setItem('vipstore_user', JSON.stringify(data.user));
         
+        console.log('✅ AuthContext Register successful:', data.user);
+        
         return {
           success: true,
           user: data.user,
@@ -110,7 +125,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.message || 'Registration failed');
       }
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('❌ AuthContext Register error:', error);
       setError(error.message);
       return {
         success: false,
@@ -162,8 +177,10 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     localStorage.removeItem('vipstore_user');
     
-    // Optional: call logout API
-    fetch('http://localhost:3001/api/auth/logout', {
+    console.log('👋 AuthContext Logout');
+    
+    // ✅ Optional: call logout API with Production URL
+    fetch(`${API_BASE_URL}/auth/logout`, {
       method: 'POST',
     }).catch(console.error);
   };
