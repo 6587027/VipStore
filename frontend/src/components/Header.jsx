@@ -242,7 +242,8 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
                     }}
                     title="แก้ไขข้อมูลส่วนตัว"
                   >
-                    ⚙️ ข้อมูล
+                    ข้อมูลผู้ใช้
+                    <span style={{ fontSize: '0.9rem' }}>👤</span>
                   </button>
                 )}
 

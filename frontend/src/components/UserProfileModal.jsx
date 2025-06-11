@@ -1,7 +1,8 @@
-// src/components/UserProfileModal.jsx
+// src/components/UserProfileModal.jsx - Enhanced with Order History
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { ordersAPI } from '../services/api'; // 🆕 Import ordersAPI
 
 // ✅ Use Environment Variable or Fallback to Production URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com/api';
@@ -27,6 +28,12 @@ const UserProfileModal = ({ isOpen, onClose }) => {
   const [showHistory, setShowHistory] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
 
+  // 🛒 เพิ่ม state สำหรับประวัติการสั่งซื้อ
+  const [orderHistory, setOrderHistory] = useState([]);
+  const [showOrderHistory, setShowOrderHistory] = useState(false);
+  const [orderLoading, setOrderLoading] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
   // Initialize form data when modal opens or user changes
   useEffect(() => {
     if (isOpen && currentUser) {
@@ -40,9 +47,13 @@ const UserProfileModal = ({ isOpen, onClose }) => {
       setSuccess('');
       setShowPasswordRequest(false);
       setPasswordRequestNote('');
+      setShowHistory(false);
+      setShowOrderHistory(false);
       
       // 🆕 โหลดประวัติคำขอเปลี่ยนรหัสผ่าน
       fetchPasswordHistory();
+      // 🛒 โหลดประวัติการสั่งซื้อ
+      fetchOrderHistory();
     }
   }, [isOpen, currentUser]);
 
@@ -64,6 +75,183 @@ const UserProfileModal = ({ isOpen, onClose }) => {
       console.error('Error fetching password history:', error);
     } finally {
       setHistoryLoading(false);
+    }
+  };
+
+  // 🛒 ฟังก์ชันโหลดประวัติการสั่งซื้อ
+  const fetchOrderHistory = async () => {
+    if (!currentUser) return;
+    
+    setOrderLoading(true);
+    try {
+      console.log('🛒 Fetching orders for user:', currentUser._id || currentUser.id);
+      const response = await ordersAPI.getMyOrders(currentUser._id || currentUser.id);
+      
+      if (response.data.success) {
+        console.log('✅ Orders fetched:', response.data.orders.length);
+        setOrderHistory(response.data.orders || []);
+      } else {
+        console.error('Failed to fetch orders:', response.data.message);
+        setOrderHistory([]);
+      }
+    } catch (error) {
+      console.error('Error fetching order history:', error);
+      setOrderHistory([]);
+    } finally {
+      setOrderLoading(false);
+    }
+  };
+
+  // 🚫 ฟังก์ชันยกเลิกการสั่งซื้อ
+  const handleCancelOrder = async (orderId, orderNumber) => {
+    // ยืนยันการยกเลิก
+    const confirmed = window.confirm(
+      `❗ ต้องการยกเลิกออเดอร์ ${orderNumber} ใช่หรือไม่?\n\n` +
+      `⚠️ การยกเลิกจะไม่สามารถทำใหม่ได้!\n` +
+      `💰 สินค้าจะถูกคืนสต็อก และการชำระเงิน (ถ้ามี) จะได้รับการคืนเงิน`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setLoading(true);
+      setError('');
+
+      console.log(`🚫 Cancelling order: ${orderNumber} (${orderId})`);
+
+      // เรียก API ยกเลิกออเดอร์ (ใช้ admin endpoint เพื่อเปลี่ยนสถานะ)
+      const response = await ordersAPI.admin.updateStatus(orderId, {
+        status: 'cancelled',
+        notes: `ยกเลิกโดยลูกค้า: ${currentUser.firstName} ${currentUser.lastName} เมื่อ ${new Date().toLocaleString('th-TH')}`
+      });
+
+      if (response.data.success) {
+        setSuccess(`✅ ยกเลิกออเดอร์ ${orderNumber} สำเร็จ! สินค้าถูกคืนสต็อกแล้ว`);
+        
+        // รีเฟรชรายการออเดอร์
+        await fetchOrderHistory();
+
+        // ซ่อนข้อความสำเร็จหลัง 3 วินาที
+        setTimeout(() => {
+          setSuccess('');
+        }, 3000);
+
+      } else {
+        setError(response.data.message || 'ไม่สามารถยกเลิกออเดอร์ได้');
+      }
+
+    } catch (error) {
+      console.error('Cancel order error:', error);
+      setError('เกิดข้อผิดพลาดในการยกเลิกออเดอร์ กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 💳 ฟังก์ชันจำลองการชำระเงิน
+  const handlePayment = async (orderId, orderNumber, totalAmount) => {
+    // แสดงหน้าต่างจำลองการชำระเงิน
+    const paymentMethod = window.prompt(
+      `💳 เลือกวิธีชำระเงินสำหรับออเดอร์ ${orderNumber}\n` +
+      `💰 ยอดเงิน: ${formatPrice(totalAmount)}\n\n` +
+      `กรุณาเลือกวิธีชำระเงิน:\n` +
+      `1. บัตรเครดิต/เดบิต\n` +
+      `2. โอนผ่านธนาคาร\n` +
+      `3. พร้อมเพย์\n` +
+      `4. เก็บเงินปลายทาง\n\n` +
+      `พิมพ์เลข 1-4:`,
+      "1"
+    );
+
+    if (!paymentMethod || !['1', '2', '3', '4'].includes(paymentMethod)) {
+      return; // ยกเลิกการชำระเงิน
+    }
+
+    const methods = {
+      '1': 'บัตรเครดิต/เดบิต 💳',
+      '2': 'โอนผ่านธนาคาร 🏦',
+      '3': 'พร้อมเพย์ 📱',
+      '4': 'เก็บเงินปลายทาง 💵'
+    };
+
+    const selectedMethod = methods[paymentMethod];
+
+    // จำลองกระบวนการชำระเงิน
+    const confirmed = window.confirm(
+      `💳 ยืนยันการชำระเงิน\n\n` +
+      `📦 ออเดอร์: ${orderNumber}\n` +
+      `💰 ยอดเงิน: ${formatPrice(totalAmount)}\n` +
+      `💳 วิธีชำระ: ${selectedMethod}\n\n` +
+      `⚠️ นี่เป็นการจำลองเท่านั้น ไม่มีการหักเงินจริง\n\n` +
+      `ต้องการดำเนินการต่อไหม?`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setLoading(true);
+      setError('');
+
+      console.log(`💳 Processing payment for order: ${orderNumber}`);
+
+      // จำลองเวลาการประมวลผล (1-3 วินาที)
+      const processingTime = Math.random() * 2000 + 1000;
+      
+      // แสดง loading message
+      setSuccess(`⏳ กำลังประมวลผลการชำระเงิน ${selectedMethod}...`);
+
+      await new Promise(resolve => setTimeout(resolve, processingTime));
+
+      // จำลองความสำเร็จ 95% (มีโอกาส 5% ที่จะ "ล้มเหลว" เพื่อความสมจริง)
+      const isSuccess = Math.random() > 0.05;
+
+      if (isSuccess) {
+        // อัพเดตสถานะการชำระเงินและออเดอร์
+        const response = await ordersAPI.admin.updateStatus(orderId, {
+          status: 'confirmed',
+          paymentStatus: 'paid',
+          notes: `ชำระเงินสำเร็จด้วย ${selectedMethod} เมื่อ ${new Date().toLocaleString('th-TH')} (จำลอง)`
+        });
+
+        if (response.data.success) {
+          setSuccess(
+            `🎉 ชำระเงินสำเร็จ!\n\n` +
+            `📦 ออเดอร์: ${orderNumber}\n` +
+            `💰 ยอดเงิน: ${formatPrice(totalAmount)}\n` +
+            `💳 วิธีชำระ: ${selectedMethod}\n` +
+            `📅 เวลา: ${new Date().toLocaleString('th-TH')}\n\n` +
+            `✅ ออเดอร์ได้รับการยืนยันแล้ว เตรียมจัดส่งสินค้า`
+          );
+
+          // รีเฟรชรายการออเดอร์
+          await fetchOrderHistory();
+
+          // ซ่อนข้อความสำเร็จหลัง 5 วินาที
+          setTimeout(() => {
+            setSuccess('');
+          }, 5000);
+
+        } else {
+          setError('ชำระเงินสำเร็จ แต่ไม่สามารถอัพเดตสถานะออเดอร์ได้');
+        }
+
+      } else {
+        // จำลองการชำระเงินล้มเหลว
+        setError(
+          `❌ การชำระเงินล้มเหลว\n\n` +
+          `สาเหตุที่เป็นไปได้:\n` +
+          `• ยอดเงินในบัญชีไม่เพียงพอ\n` +
+          `• ข้อมูลบัตรไม่ถูกต้อง\n` +
+          `• ปัญหาจากระบบธนาคาร\n\n` +
+          `กรุณาลองใหม่อีกครั้ง หรือเปลี่ยนวิธีชำระเงิน`
+        );
+      }
+
+    } catch (error) {
+      console.error('Payment processing error:', error);
+      setError('เกิดข้อผิดพลาดในระบบชำระเงิน กรุณาลองใหม่อีกครั้ง');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -255,6 +443,37 @@ const UserProfileModal = ({ isOpen, onClose }) => {
     }
   };
 
+  // 🛒 ฟังก์ชันแสดงสถานะ Order
+  const getOrderStatusBadge = (status) => {
+    const statusConfig = {
+      pending: { bg: '#fef3c7', color: '#d97706', icon: '⏳', text: 'รอดำเนินการ' },
+      confirmed: { bg: '#dbeafe', color: '#1d4ed8', icon: '✅', text: 'ยืนยันแล้ว' },
+      processing: { bg: '#e0e7ff', color: '#6366f1', icon: '⚙️', text: 'กำลังเตรียม' },
+      shipped: { bg: '#dcfce7', color: '#059669', icon: '🚚', text: 'จัดส่งแล้ว' },
+      delivered: { bg: '#dcfce7', color: '#166534', icon: '📦', text: 'สำเร็จ' },
+      cancelled: { bg: '#fee2e2', color: '#dc2626', icon: '❌', text: 'ยกเลิก' }
+    };
+
+    const config = statusConfig[status] || statusConfig.pending;
+
+    return (
+      <span style={{
+        background: config.bg,
+        color: config.color,
+        padding: '6px 12px',
+        borderRadius: '16px',
+        fontSize: '0.8rem',
+        fontWeight: '600',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        minWidth: 'fit-content'
+      }}>
+        {config.icon} {config.text}
+      </span>
+    );
+  };
+
   // 🆕 ฟังก์ชันฟอร์แมตวันที่
   const formatDate = (dateString) => {
     if (!dateString) return 'ไม่ระบุ';
@@ -265,6 +484,14 @@ const UserProfileModal = ({ isOpen, onClose }) => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  // 🛒 ฟังก์ชันฟอร์แมตราคา
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('th-TH', {
+      style: 'currency',
+      currency: 'THB'
+    }).format(price);
   };
 
   // Don't render if modal is not open
@@ -290,7 +517,7 @@ const UserProfileModal = ({ isOpen, onClose }) => {
         background: 'white',
         borderRadius: '16px',
         padding: '24px',
-        maxWidth: '600px',
+        maxWidth: '700px', // 🛒 เพิ่มขนาดเพื่อรองรับ order list
         width: '100%',
         maxHeight: '90vh',
         overflowY: 'auto',
@@ -334,47 +561,56 @@ const UserProfileModal = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        {/* 🆕 Tab Navigation */}
+        {/* 🛒 Enhanced Tab Navigation */}
         <div style={{
           display: 'flex',
           marginBottom: '20px',
-          borderBottom: '1px solid #e5e7eb'
+          borderBottom: '1px solid #e5e7eb',
+          flexWrap: 'wrap',
+          gap: '4px'
         }}>
           <button
             onClick={() => {
               setShowHistory(false);
               setShowPasswordRequest(false);
+              setShowOrderHistory(false);
             }}
             style={{
-              padding: '12px 20px',
-              background: !showHistory ? '#3b82f6' : 'transparent',
-              color: !showHistory ? 'white' : '#6b7280',
+              padding: '12px 16px',
+              background: (!showHistory && !showOrderHistory) ? '#3b82f6' : 'transparent',
+              color: (!showHistory && !showOrderHistory) ? 'white' : '#6b7280',
               border: 'none',
               borderRadius: '8px 8px 0 0',
               cursor: 'pointer',
               fontWeight: '600',
-              fontSize: '0.9rem'
+              fontSize: '0.85rem',
+              flex: '1',
+              minWidth: '120px'
             }}
           >
             📝 แก้ไขข้อมูล
           </button>
+          
           <button
             onClick={() => {
               setShowHistory(true);
               setShowPasswordRequest(false);
+              setShowOrderHistory(false);
             }}
             style={{
-              padding: '12px 20px',
+              padding: '12px 16px',
               background: showHistory ? '#3b82f6' : 'transparent',
               color: showHistory ? 'white' : '#6b7280',
               border: 'none',
               borderRadius: '8px 8px 0 0',
               cursor: 'pointer',
               fontWeight: '600',
-              fontSize: '0.9rem',
+              fontSize: '0.85rem',
               display: 'flex',
               alignItems: 'center',
-              gap: '8px'
+              gap: '6px',
+              flex: '1',
+              minWidth: '120px'
             }}
           >
             📋 ประวัติคำขอ
@@ -383,15 +619,57 @@ const UserProfileModal = ({ isOpen, onClose }) => {
                 background: '#ef4444',
                 color: 'white',
                 borderRadius: '50%',
-                width: '20px',
-                height: '20px',
-                fontSize: '0.75rem',
+                width: '18px',
+                height: '18px',
+                fontSize: '0.7rem',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontWeight: '600'
               }}>
                 {passwordHistory.filter(req => req.status === 'pending').length}
+              </span>
+            )}
+          </button>
+
+          {/* 🛒 Tab ประวัติการสั่งซื้อ */}
+          <button
+            onClick={() => {
+              setShowHistory(false);
+              setShowPasswordRequest(false);
+              setShowOrderHistory(true);
+            }}
+            style={{
+              padding: '12px 16px',
+              background: showOrderHistory ? '#10b981' : 'transparent',
+              color: showOrderHistory ? 'white' : '#6b7280',
+              border: 'none',
+              borderRadius: '8px 8px 0 0',
+              cursor: 'pointer',
+              fontWeight: '600',
+              fontSize: '0.85rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              flex: '1',
+              minWidth: '120px'
+            }}
+          >
+            🛒 ประวัติการสั่งซื้อ
+            {orderHistory.length > 0 && (
+              <span style={{
+                background: '#059669',
+                color: 'white',
+                borderRadius: '50%',
+                width: '18px',
+                height: '18px',
+                fontSize: '0.7rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: '600'
+              }}>
+                {orderHistory.length}
               </span>
             )}
           </button>
@@ -426,8 +704,389 @@ const UserProfileModal = ({ isOpen, onClose }) => {
           </div>
         )}
 
-        {/* 🆕 Password History Tab */}
-        {showHistory ? (
+        {/* 🛒 Order History Tab */}
+        {showOrderHistory ? (
+          <div>
+            <h4 style={{ margin: '0 0 20px', fontSize: '1.3rem', fontWeight: '700', color: '#374151' }}>
+              🛒 ประวัติการสั่งซื้อ
+            </h4>
+            
+            {orderLoading ? (
+              <div style={{ textAlign: 'center', padding: '40px' }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  border: '4px solid #f3f3f3',
+                  borderTop: '4px solid #10b981',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                  margin: '0 auto 16px'
+                }}></div>
+                <p style={{ color: '#6b7280' }}>กำลังโหลดประวัติการสั่งซื้อ...</p>
+              </div>
+            ) : orderHistory.length === 0 ? (
+              <div style={{
+                textAlign: 'center',
+                padding: '60px 20px',
+                color: '#6b7280',
+                background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                borderRadius: '16px',
+                border: '2px dashed #cbd5e1'
+              }}>
+                <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🛒</div>
+                <h3 style={{ margin: '0 0 8px', fontSize: '1.2rem', color: '#374151' }}>
+                  ยังไม่มีประวัติการสั่งซื้อ
+                </h3>
+                <p style={{ margin: 0, fontSize: '1rem' }}>
+                  เมื่อคุณสั่งซื้อสินค้า ประวัติจะแสดงที่นี่
+                </p>
+              </div>
+            ) : (
+              <div>
+                {/* 📊 สรุปสถิติ */}
+                <div style={{
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: 'white',
+                  padding: '20px',
+                  borderRadius: '12px',
+                  marginBottom: '20px'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.8rem', fontWeight: '700' }}>{orderHistory.length}</div>
+                      <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>คำสั่งซื้อทั้งหมด</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.8rem', fontWeight: '700' }}>
+                        {orderHistory.filter(order => order.status === 'delivered').length}
+                      </div>
+                      <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>สำเร็จแล้ว</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.8rem', fontWeight: '700' }}>
+                        {formatPrice(orderHistory.reduce((total, order) => {
+                          return order.status !== 'cancelled' ? total + (order.pricing?.total || 0) : total;
+                        }, 0))}
+                      </div>
+                      <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>ยอดซื้อสะสม</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 📋 รายการออเดอร์ */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {orderHistory.map((order, index) => (
+                    <div key={order._id || index} style={{
+                      border: '2px solid #e5e7eb',
+                      borderRadius: '16px',
+                      padding: '20px',
+                      background: 'white',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      transition: 'all 0.2s ease',
+                      cursor: 'pointer'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#10b981';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.15)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#e5e7eb';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                    }}
+                    onClick={() => setSelectedOrder(selectedOrder === order._id ? null : order._id)}
+                    >
+                      {/* Order Header */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                        <div style={{ flex: 1, minWidth: '200px' }}>
+                          <div style={{ fontWeight: '700', fontSize: '1.1rem', color: '#1f2937', marginBottom: '4px' }}>
+                            📦 {order.orderNumber}
+                          </div>
+                          <div style={{ fontSize: '0.9rem', color: '#6b7280', marginBottom: '8px' }}>
+                            📅 {formatDate(order.orderDate || order.createdAt)}
+                          </div>
+                          <div style={{ fontSize: '0.9rem', color: '#6b7280' }}>
+                            📋 {order.items?.length || 0} รายการ
+                          </div>
+                        </div>
+                        
+                        <div style={{ textAlign: 'right' }}>
+                          {getOrderStatusBadge(order.status)}
+                          <div style={{ 
+                            fontSize: '1.2rem', 
+                            fontWeight: '700', 
+                            color: '#1f2937',
+                            marginTop: '8px'
+                          }}>
+                            {formatPrice(order.pricing?.total || 0)}
+                          </div>
+                          
+                          {/* 💳 ปุ่มชำระเงิน */}
+                          {order.paymentStatus === 'pending' && order.status !== 'cancelled' && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation(); // ป้องกันไม่ให้เปิด/ปิด details
+                                handlePayment(order._id, order.orderNumber, order.pricing?.total || 0);
+                              }}
+                              disabled={loading}
+                              style={{
+                                marginTop: '8px',
+                                marginRight: '8px',
+                                padding: '6px 12px',
+                                background: loading ? '#9ca3af' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                fontSize: '0.8rem',
+                                fontWeight: '600',
+                                cursor: loading ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                minWidth: '90px',
+                                justifyContent: 'center'
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!loading) {
+                                  e.target.style.background = 'linear-gradient(135deg, #059669 0%, #047857 100%)';
+                                  e.target.style.transform = 'translateY(-1px)';
+                                  e.target.style.boxShadow = '0 4px 8px rgba(16, 185, 129, 0.3)';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!loading) {
+                                  e.target.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                                  e.target.style.transform = 'translateY(0)';
+                                  e.target.style.boxShadow = 'none';
+                                }
+                              }}
+                            >
+                              {loading ? '⏳' : '💳'} {loading ? 'กำลังประมวลผล...' : 'ชำระเงิน'}
+                            </button>
+                          )}
+                          
+                          {/* ✅ แสดงสถานะชำระเงินแล้ว */}
+                          {order.paymentStatus === 'paid' && (
+                            <div style={{
+                              marginTop: '8px',
+                              padding: '6px 12px',
+                              background: 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)',
+                              borderRadius: '6px',
+                              fontSize: '0.75rem',
+                              color: '#166534',
+                              fontWeight: '600',
+                              textAlign: 'center',
+                              border: '1px solid #10b981'
+                            }}>
+                              ✅ ชำระเงินแล้ว
+                            </div>
+                          )}
+                          
+                          {/* 🚫 ปุ่มยกเลิกออเดอร์ */}
+                          {(order.status === 'pending' || order.status === 'confirmed') && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation(); // ป้องกันไม่ให้เปิด/ปิด details
+                                handleCancelOrder(order._id, order.orderNumber);
+                              }}
+                              disabled={loading}
+                              style={{
+                                marginTop: '8px',
+                                padding: '6px 12px',
+                                background: loading ? '#9ca3af' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '6px',
+                                fontSize: '0.8rem',
+                                fontWeight: '600',
+                                cursor: loading ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s ease',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                minWidth: '90px',
+                                justifyContent: 'center'
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!loading) {
+                                  e.target.style.background = 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)';
+                                  e.target.style.transform = 'translateY(-1px)';
+                                  e.target.style.boxShadow = '0 4px 8px rgba(239, 68, 68, 0.3)';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!loading) {
+                                  e.target.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+                                  e.target.style.transform = 'translateY(0)';
+                                  e.target.style.boxShadow = 'none';
+                                }
+                              }}
+                            >
+                              {loading ? '⏳' : '🚫'} {loading ? 'กำลังยกเลิก...' : 'ยกเลิกออเดอร์'}
+                            </button>
+                          )}
+                          
+                          {/* แสดงข้อความสำหรับออเดอร์ที่ไม่สามารถยกเลิกได้ */}
+                          {(order.status === 'processing' || order.status === 'shipped') && (
+                            <div style={{
+                              marginTop: '8px',
+                              padding: '6px 12px',
+                              background: '#f3f4f6',
+                              borderRadius: '6px',
+                              fontSize: '0.75rem',
+                              color: '#6b7280',
+                              fontWeight: '500',
+                              textAlign: 'center'
+                            }}>
+                              ไม่สามารถยกเลิกได้
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Order Items Preview */}
+                      <div style={{
+                        background: '#f8fafc',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        marginBottom: '12px'
+                      }}>
+                        <div style={{ fontSize: '0.9rem', color: '#374151', fontWeight: '600', marginBottom: '8px' }}>
+                          🛍️ รายการสินค้า:
+                        </div>
+                        {order.items && order.items.slice(0, 2).map((item, itemIndex) => (
+                          <div key={itemIndex} style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            fontSize: '0.85rem',
+                            color: '#6b7280',
+                            marginBottom: '4px'
+                          }}>
+                            <span>• {item.productName} x{item.quantity}</span>
+                            <span>{formatPrice(item.subtotal || (item.price * item.quantity))}</span>
+                          </div>
+                        ))}
+                        {order.items && order.items.length > 2 && (
+                          <div style={{ fontSize: '0.8rem', color: '#9ca3af', fontStyle: 'italic' }}>
+                            และอีก {order.items.length - 2} รายการ...
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Expandable Details */}
+                      {selectedOrder === order._id && (
+                        <div style={{
+                          borderTop: '1px solid #e5e7eb',
+                          paddingTop: '16px',
+                          animation: 'fadeIn 0.3s ease'
+                        }}>
+                          {/* Customer Info */}
+                          <div style={{ marginBottom: '16px' }}>
+                            <h5 style={{ margin: '0 0 8px', fontSize: '1rem', fontWeight: '600', color: '#374151' }}>
+                              📍 ข้อมูลการจัดส่ง
+                            </h5>
+                            <div style={{ fontSize: '0.9rem', color: '#6b7280', lineHeight: 1.6 }}>
+                              <div><strong>{order.customerInfo?.firstName} {order.customerInfo?.lastName}</strong></div>
+                              <div>📧 {order.customerInfo?.email}</div>
+                              <div>📞 {order.customerInfo?.phone}</div>
+                              <div>🏠 {order.customerInfo?.address?.street}</div>
+                              <div>📍 {order.customerInfo?.address?.district} {order.customerInfo?.address?.province} {order.customerInfo?.address?.postalCode}</div>
+                            </div>
+                          </div>
+
+                          {/* All Items */}
+                          <div>
+                            <h5 style={{ margin: '0 0 8px', fontSize: '1rem', fontWeight: '600', color: '#374151' }}>
+                              📦 รายการสินค้าทั้งหมด
+                            </h5>
+                            {order.items && order.items.map((item, itemIndex) => (
+                              <div key={itemIndex} style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '8px 0',
+                                borderBottom: itemIndex < order.items.length - 1 ? '1px solid #f1f5f9' : 'none'
+                              }}>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontWeight: '600', color: '#374151' }}>
+                                    {item.productName}
+                                  </div>
+                                  <div style={{ fontSize: '0.8rem', color: '#9ca3af' }}>
+                                    {formatPrice(item.price)} x {item.quantity}
+                                  </div>
+                                </div>
+                                <div style={{ fontWeight: '600', color: '#1f2937' }}>
+                                  {formatPrice(item.subtotal || (item.price * item.quantity))}
+                                </div>
+                              </div>
+                            ))}
+
+                            {/* Price Summary */}
+                            <div style={{
+                              marginTop: '16px',
+                              padding: '12px',
+                              background: '#f8fafc',
+                              borderRadius: '8px'
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <span style={{ color: '#6b7280' }}>ราคาสินค้า:</span>
+                                <span style={{ fontWeight: '600' }}>{formatPrice(order.pricing?.subtotal || 0)}</span>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                <span style={{ color: '#6b7280' }}>ค่าจัดส่ง:</span>
+                                <span style={{ fontWeight: '600', color: order.pricing?.shipping === 0 ? '#10b981' : '#1f2937' }}>
+                                  {order.pricing?.shipping === 0 ? 'ฟรี' : formatPrice(order.pricing?.shipping || 0)}
+                                </span>
+                              </div>
+                              <hr style={{ margin: '8px 0', border: 'none', borderTop: '1px solid #d1d5db' }} />
+                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem', fontWeight: '700' }}>
+                                <span>รวมทั้งสิ้น:</span>
+                                <span style={{ color: '#10b981' }}>{formatPrice(order.pricing?.total || 0)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Tracking Info */}
+                          {order.trackingNumber && (
+                            <div style={{
+                              marginTop: '16px',
+                              padding: '12px',
+                              background: '#e0f2fe',
+                              borderRadius: '8px',
+                              border: '1px solid #0891b2'
+                            }}>
+                              <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#0c4a6e', marginBottom: '4px' }}>
+                                🚚 หมายเลขติดตาม
+                              </div>
+                              <div style={{ fontSize: '1rem', fontWeight: '700', color: '#0369a1' }}>
+                                {order.trackingNumber}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Expand/Collapse Indicator */}
+                      <div style={{
+                        textAlign: 'center',
+                        marginTop: '12px',
+                        color: '#6b7280',
+                        fontSize: '0.8rem',
+                        fontWeight: '500'
+                      }}>
+                        {selectedOrder === order._id ? '👆 คลิกเพื่อซ่อนรายละเอียด' : '👇 คลิกเพื่อดูรายละเอียด'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : 
+        
+        /* 🆕 Password History Tab */
+        showHistory ? (
           <div>
             <h4 style={{ margin: '0 0 16px', fontSize: '1.2rem', fontWeight: '600', color: '#374151' }}>
               📋 ประวัติคำขอเปลี่ยนรหัสผ่าน
@@ -757,7 +1416,7 @@ const UserProfileModal = ({ isOpen, onClose }) => {
                 }}>
                   เหตุผลในการเปลี่ยนรหัสผ่าน:
                 </label>
-                <textarea
+               <textarea
                   value={passwordRequestNote}
                   onChange={(e) => setPasswordRequestNote(e.target.value)}
                   rows="4"
@@ -774,6 +1433,17 @@ const UserProfileModal = ({ isOpen, onClose }) => {
                   onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
                   placeholder="เช่น: ลืมรหัสผ่าน, ต้องการเปลี่ยนเพื่อความปลอดภัย, ฯลฯ"
                 />
+                
+                {/* Red text below textarea */}
+                <div style={{
+                  marginTop: '6px',
+                  fontSize: '0.9rem',
+                  color: '#dc2626',
+                  fontWeight: '600',
+                  fontStyle: 'italic'
+                }}>
+                  (!!อย่าลืม โปรดระบุ "Password" ที่ต้องการเปลี่ยนด้วย (ห้ามต่ำกว่า 6 ตัวอักษร) เช่น "เปลี่ยนเป็น: newpassword123" หรือ "ต้องการเปลี่ยนรหัสผ่านเป็น: myNewPass456) 
+                </div>
               </div>
 
               {/* Password Request Actions */}
@@ -820,6 +1490,10 @@ const UserProfileModal = ({ isOpen, onClose }) => {
             @keyframes spin {
               0% { transform: rotate(0deg); }
               100% { transform: rotate(360deg); }
+            }
+            @keyframes fadeIn {
+              0% { opacity: 0; transform: translateY(-10px); }
+              100% { opacity: 1; transform: translateY(0); }
             }
           `}
         </style>
