@@ -541,7 +541,7 @@ const UserProfileModal = ({ isOpen, onClose }) => {
             alignItems: 'center',
             gap: '8px'
           }}>
-            👤 แก้ไขข้อมูลส่วนตัว
+            👤 ข้อมูลผู้ใช้งาน
           </h3>
           <button
             onClick={onClose}

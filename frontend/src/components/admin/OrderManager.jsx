@@ -752,10 +752,29 @@ const deleteOrder = async (orderId, orderNumber) => {
                     {showOrderDetails.customerInfo.address && (
                       <div><strong>ที่อยู่:</strong> {showOrderDetails.customerInfo.address.street}, {showOrderDetails.customerInfo.address.district}, {showOrderDetails.customerInfo.address.province} {showOrderDetails.customerInfo.address.postalCode}</div>
                     )}
+                    {/* 🆕 แสดงหมายเหตุเพิ่มเติม */}
+                    {showOrderDetails.customerInfo.address?.notes && (
+                      <div style={{ 
+                        marginTop: '8px', 
+                        padding: '12px', 
+                        background: '#fef3c7', 
+                        border: '1px solid #f59e0b',
+                        borderRadius: '6px'
+                      }}>
+                        <strong>📝 หมายเหตุเพิ่มเติม:</strong>
+                        <div style={{ 
+                          marginTop: '4px', 
+                          fontStyle: 'italic',
+                          color: '#92400e'
+                        }}>
+                          "{showOrderDetails.customerInfo.address.notes}"
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-
+              
               {/* Order Items */}
               <div>
                 <h4 style={{ margin: '0 0 12px', color: '#374151' }}>รายการสินค้า</h4>

@@ -1,9 +1,9 @@
-// frontend/src/components/CartModal.jsx
-import React, { useState } from 'react';
+// frontend/src/components/CartModal.jsx - Production-Ready Version
+import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import './CartModal.css';
-import { ordersAPI } from '../services/api'; 
+import { ordersAPI, authAPI } from '../services/api'; 
 
 const CartModal = ({ isOpen, onClose }) => {
   const {
@@ -23,7 +23,30 @@ const CartModal = ({ isOpen, onClose }) => {
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState('cart'); // 'cart', 'address', 'processing', 'success'
 
-  // 🆕 เพิ่ม Address Form State
+  // 🆕 Address Profile Management States
+  const [addressProfiles, setAddressProfiles] = useState([]);
+  const [selectedProfileId, setSelectedProfileId] = useState('');
+  const [showCreateProfile, setShowCreateProfile] = useState(false);
+  const [showManageProfiles, setShowManageProfiles] = useState(false);
+  const [loadingProfiles, setLoadingProfiles] = useState(false);
+
+  // 🆕 New Profile Form State
+  const [newProfileData, setNewProfileData] = useState({
+    profileName: '',
+    firstName: '',
+    lastName: '',
+    phone: '',
+    address: {
+      street: '',
+      district: '',
+      province: '',
+      postalCode: '',
+      notes: ''
+    },
+    isDefault: false
+  });
+
+  // Manual Address Form State (existing)
   const [shippingAddress, setShippingAddress] = useState({
     firstName: '',
     lastName: '',
@@ -34,6 +57,208 @@ const CartModal = ({ isOpen, onClose }) => {
     postalCode: '',
     notes: ''
   });
+
+  const [useManualAddress, setUseManualAddress] = useState(false);
+
+  // 🔧 Helper function to get user ID safely
+  const getUserId = () => {
+    if (!user) {
+      console.log('🔍 No user object found');
+      return null;
+    }
+    
+    const userId = user.id || user._id || user.userId;
+    console.log('🔍 User ID resolution:', {
+      'user.id': user.id,
+      'user._id': user._id,  
+      'user.userId': user.userId,
+      'final userId': userId,
+      'user object': user
+    });
+    
+    return userId;
+  };
+
+  // 🔧 Enhanced useEffect with better user checking
+  useEffect(() => {
+    console.log('🔍 useEffect triggered:', { isLoggedIn: isLoggedIn(), user, checkoutStep });
+    
+    if (isLoggedIn() && user && checkoutStep === 'address') {
+      const userId = getUserId();
+      
+      if (userId) {
+        console.log('✅ Valid user ID found, loading profiles:', userId);
+        loadAddressProfiles(userId);
+      } else {
+        console.log('⚠️ No valid user ID, using manual address form');
+        setUseManualAddress(true);
+      }
+    }
+  }, [isLoggedIn, user, checkoutStep]);
+
+  // 🔧 Enhanced loadAddressProfiles with userId parameter
+  const loadAddressProfiles = async (userId) => {
+    if (!userId) {
+      console.error('❌ loadAddressProfiles: No userId provided');
+      setUseManualAddress(true);
+      return;
+    }
+
+    setLoadingProfiles(true);
+    console.log('📍 Loading address profiles for userId:', userId);
+    
+    try {
+      const response = await authAPI.addressProfiles.getAll(userId);
+      console.log('📍 Address profiles response:', response);
+      
+      if (response.data.success) {
+        setAddressProfiles(response.data.addressProfiles);
+        
+        // Auto-select default profile
+        const defaultProfile = response.data.addressProfiles.find(p => p.isDefault);
+        if (defaultProfile) {
+          setSelectedProfileId(defaultProfile.profileId);
+          setUseManualAddress(false);
+          console.log('✅ Auto-selected default profile:', defaultProfile.profileName);
+        } else if (response.data.addressProfiles.length === 0) {
+          // No profiles exist, show manual form
+          setUseManualAddress(true);
+          console.log('ℹ️ No profiles found, using manual form');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Load address profiles error:', error);
+      setUseManualAddress(true); // Fallback to manual
+    } finally {
+      setLoadingProfiles(false);
+    }
+  };
+
+  // 🔧 Enhanced createAddressProfile with better user ID handling
+  const createAddressProfile = async () => {
+    const userId = getUserId();
+    
+    if (!userId) {
+      alert('❌ ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่');
+      console.error('❌ createAddressProfile: No valid user ID');
+      return;
+    }
+
+    console.log('📤 Creating address profile for userId:', userId);
+
+    try {
+      // Validation
+      if (!newProfileData.profileName.trim()) {
+        alert('กรุณาใส่ชื่อโปรไฟล์');
+        return;
+      }
+
+      if (!newProfileData.firstName.trim() || !newProfileData.lastName.trim()) {
+        alert('กรุณาใส่ชื่อและนามสกุล');
+        return;
+      }
+
+      if (!/^[0-9]{10}$/.test(newProfileData.phone)) {
+        alert('เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก');
+        return;
+      }
+
+      if (!newProfileData.address.street.trim() || !newProfileData.address.district.trim() || 
+          !newProfileData.address.province.trim() || !newProfileData.address.postalCode.trim()) {
+        alert('กรุณากรอกที่อยู่ให้ครบถ้วน');
+        return;
+      }
+
+      if (!/^[0-9]{5}$/.test(newProfileData.address.postalCode)) {
+        alert('รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก');
+        return;
+      }
+
+      const response = await authAPI.addressProfiles.create(userId, newProfileData);
+      console.log('📤 Create profile response:', response);
+      
+      if (response.data.success) {
+        alert('✅ สร้างโปรไฟล์ที่อยู่สำเร็จ!');
+        
+        // Reload profiles
+        await loadAddressProfiles(userId);
+        
+        // Select the new profile
+        setSelectedProfileId(response.data.profile.profileId);
+        setUseManualAddress(false);
+        
+        // Reset form and close modal
+        setNewProfileData({
+          profileName: '',
+          firstName: '',
+          lastName: '',
+          phone: '',
+          address: { street: '', district: '', province: '', postalCode: '', notes: '' },
+          isDefault: false
+        });
+        setShowCreateProfile(false);
+      }
+    } catch (error) {
+      console.error('❌ Create profile error:', error);
+      alert(`❌ ${error.response?.data?.message || 'ไม่สามารถสร้างโปรไฟล์ได้'}`);
+    }
+  };
+
+  // 🔧 Enhanced deleteAddressProfile with better user ID handling
+  const deleteAddressProfile = async (profileId, profileName) => {
+    const userId = getUserId();
+    
+    if (!userId) {
+      alert('❌ ไม่พบข้อมูลผู้ใช้');
+      return;
+    }
+
+    if (!window.confirm(`ต้องการลบโปรไฟล์ "${profileName}" ใช่หรือไม่?`)) {
+      return;
+    }
+
+    try {
+      console.log('🗑️ Deleting profile for userId:', userId, 'profileId:', profileId);
+      const response = await authAPI.addressProfiles.delete(userId, profileId);
+      
+      if (response.data.success) {
+        alert('✅ ลบโปรไฟล์สำเร็จ');
+        await loadAddressProfiles(userId);
+        
+        // Reset selection if deleted profile was selected
+        if (selectedProfileId === profileId) {
+          setSelectedProfileId('');
+          setUseManualAddress(true);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Delete profile error:', error);
+      alert(`❌ ${error.response?.data?.message || 'ไม่สามารถลบโปรไฟล์ได้'}`);
+    }
+  };
+
+  // 🔧 Enhanced setDefaultProfile with better user ID handling
+  const setDefaultProfile = async (profileId) => {
+    const userId = getUserId();
+    
+    if (!userId) {
+      alert('❌ ไม่พบข้อมูลผู้ใช้');
+      return;
+    }
+
+    try {
+      console.log('⭐ Setting default profile for userId:', userId, 'profileId:', profileId);
+      const response = await authAPI.addressProfiles.setDefault(userId, profileId);
+      
+      if (response.data.success) {
+        await loadAddressProfiles(userId); // Reload to update default status
+        alert('✅ ตั้งเป็นที่อยู่หลักสำเร็จ');
+      }
+    } catch (error) {
+      console.error('❌ Set default error:', error);
+      alert(`❌ ${error.response?.data?.message || 'ไม่สามารถตั้งเป็นที่อยู่หลักได้'}`);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -48,7 +273,7 @@ const CartModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // 🆕 แก้ไข handleCheckout ให้ไปหน้า Address Form
+  // Enhanced handleCheckout
   const handleCheckout = () => {
     if (!isLoggedIn()) {
       alert('กรุณาเข้าสู่ระบบก่อนทำการสั่งซื้อ');
@@ -60,31 +285,26 @@ const CartModal = ({ isOpen, onClose }) => {
       return;
     }
 
-    // ไปยังขั้นตอนกรอกที่อยู่
     setCheckoutStep('address');
   };
 
-  //handle Address Submit 
-const handleAddressSubmit = async (e) => {
-  e.preventDefault();
-  
-  // Validate required fields
-  const requiredFields = ['firstName', 'lastName', 'phone', 'address', 'district', 'province', 'postalCode'];
-  const missingFields = requiredFields.filter(field => !shippingAddress[field].trim());
-  
-  if (missingFields.length > 0) {
-    alert('กรุณากรอกข้อมูลให้ครบถ้วน');
-    return;
-  }
+  // Enhanced handleAddressSubmit
+  const handleAddressSubmit = async (e) => {
+    e.preventDefault();
+    
+    let finalAddressData;
+    
+    if (useManualAddress) {
+      // Validate manual address
+      const requiredFields = ['firstName', 'lastName', 'phone', 'address', 'district', 'province', 'postalCode'];
+      const missingFields = requiredFields.filter(field => !shippingAddress[field].trim());
+      
+      if (missingFields.length > 0) {
+        alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+        return;
+      }
 
-  setIsCheckingOut(true);
-  setCheckoutStep('processing');
-
-  try {
-    // เตรียมข้อมูล Order
-    const orderData = {
-      userId: user?.id || user?._id || null,
-      customerInfo: {
+      finalAddressData = {
         firstName: shippingAddress.firstName,
         lastName: shippingAddress.lastName,
         email: user?.email || '',
@@ -97,58 +317,76 @@ const handleAddressSubmit = async (e) => {
           country: 'Thailand',
           notes: shippingAddress.notes
         }
-      },
-      items: cartItems.map(item => ({
-        productId: item.id,
-        productName: item.name,
-        quantity: item.quantity,
-        price: item.price
-      })),
-      pricing: {
-        subtotal: totalAmount,
-        shipping: shippingCost,
-        total: finalTotal
-      }
-    };
-
-    // สร้าง Order ผ่าน API
-    const response = await ordersAPI.create(orderData);
-    
-    if (response.data.success) {
-      console.log('✅ Order created successfully:', response.data.order);
-      
-      // Success
-      setCheckoutStep('success');
-      clearCart();
-      
-      setTimeout(() => {
-        setCheckoutStep('cart');
-        setIsCheckingOut(false);
-        setShippingAddress({
-          firstName: '',
-          lastName: '',
-          phone: '',
-          address: '',
-          district: '',
-          province: '',
-          postalCode: '',
-          notes: ''
-        });
-        onClose();
-      }, 4000);
+      };
     } else {
-      throw new Error(response.data.message || 'Failed to create order');
-    }
-    
-  } catch (error) {
-    console.error('Checkout error:', error);
-    setIsCheckingOut(false);
-    setCheckoutStep('address');
-    alert(`เกิดข้อผิดพลาดในการสั่งซื้อ: ${error.message || 'กรุณาลองใหม่อีกครั้ง'}`);
-  }
-};
+      // Use selected profile
+      const selectedProfile = addressProfiles.find(p => p.profileId === selectedProfileId);
+      
+      if (!selectedProfile) {
+        alert('กรุณาเลือกที่อยู่จัดส่ง');
+        return;
+      }
 
-  // 🆕 Handle Input Change
+      finalAddressData = {
+        firstName: selectedProfile.firstName,
+        lastName: selectedProfile.lastName,
+        email: user?.email || '',
+        phone: selectedProfile.phone,
+        address: selectedProfile.address
+      };
+    }
+
+    setIsCheckingOut(true);
+    setCheckoutStep('processing');
+
+    try {
+      // เตรียมข้อมูล Order with enhanced user ID handling
+      const userId = getUserId();
+      
+      const orderData = {
+        userId: userId,
+        customerInfo: finalAddressData,
+        items: cartItems.map(item => ({
+          productId: item.id,
+          productName: item.name,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        pricing: {
+          subtotal: totalAmount,
+          shipping: shippingCost,
+          total: finalTotal
+        }
+      };
+
+      console.log('📦 Creating order:', orderData);
+      const response = await ordersAPI.create(orderData);
+      
+      if (response.data.success) {
+        console.log('✅ Order created successfully:', response.data.order);
+        
+        setCheckoutStep('success');
+        clearCart();
+        
+        setTimeout(() => {
+          setCheckoutStep('cart');
+          setIsCheckingOut(false);
+          resetStates();
+          onClose();
+        }, 4000);
+      } else {
+        throw new Error(response.data.message || 'Failed to create order');
+      }
+      
+    } catch (error) {
+      console.error('❌ Checkout error:', error);
+      setIsCheckingOut(false);
+      setCheckoutStep('address');
+      alert(`เกิดข้อผิดพลาดในการสั่งซื้อ: ${error.message || 'กรุณาลองใหม่อีกครั้ง'}`);
+    }
+  };
+
+  // Handle Input Changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setShippingAddress(prev => ({
@@ -157,10 +395,35 @@ const handleAddressSubmit = async (e) => {
     }));
   };
 
-  // 🆕 Reset Modal State
-  const handleClose = () => {
+  const handleNewProfileInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    
+    if (name.startsWith('address.')) {
+      const addressField = name.split('.')[1];
+      setNewProfileData(prev => ({
+        ...prev,
+        address: {
+          ...prev.address,
+          [addressField]: value
+        }
+      }));
+    } else {
+      setNewProfileData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      }));
+    }
+  };
+
+  // Reset States
+  const resetStates = () => {
     setCheckoutStep('cart');
     setIsCheckingOut(false);
+    setSelectedProfileId('');
+    setUseManualAddress(false);
+    setShowCreateProfile(false);
+    setShowManageProfiles(false);
+    setAddressProfiles([]);
     setShippingAddress({
       firstName: '',
       lastName: '',
@@ -171,9 +434,22 @@ const handleAddressSubmit = async (e) => {
       postalCode: '',
       notes: ''
     });
+    setNewProfileData({
+      profileName: '',
+      firstName: '',
+      lastName: '',
+      phone: '',
+      address: { street: '', district: '', province: '', postalCode: '', notes: '' },
+      isDefault: false
+    });
+  };
+
+  const handleClose = () => {
+    resetStates();
     onClose();
   };
 
+  // Render Components (keeping all existing render functions unchanged)
   const renderCartItems = () => (
     <div className="cart-items">
       {cartItems.map(item => (
@@ -259,7 +535,334 @@ const handleAddressSubmit = async (e) => {
     </div>
   );
 
-  // 🆕 Address Form Component
+  // Address Profile Selector
+  const renderAddressSelector = () => (
+    <div className="address-selector">
+      <div className="address-options">
+        <div className="option-header">
+          <h4>📍 เลือกที่อยู่จัดส่ง</h4>
+          <div className="address-actions">
+            <button 
+              className="btn-secondary"
+              onClick={() => setShowCreateProfile(true)}
+              disabled={addressProfiles.length >= 5}
+            >
+              ➕ เพิ่มที่อยู่ใหม่ ({addressProfiles.length}/5)
+            </button>
+            {addressProfiles.length > 0 && (
+              <button 
+                className="btn-secondary"
+                onClick={() => setShowManageProfiles(true)}
+              >
+                ⚙️ จัดการ
+              </button>
+            )}
+          </div>
+        </div>
+
+        {loadingProfiles && (
+          <div className="loading-profiles">
+            <div className="spinner"></div>
+            <span>กำลังโหลดที่อยู่...</span>
+          </div>
+        )}
+
+        {!loadingProfiles && addressProfiles.length > 0 && (
+          <div className="profile-list">
+            {addressProfiles.map(profile => (
+              <div 
+                key={profile.profileId}
+                className={`profile-item ${selectedProfileId === profile.profileId ? 'selected' : ''}`}
+                onClick={() => {
+                  setSelectedProfileId(profile.profileId);
+                  setUseManualAddress(false);
+                }}
+              >
+                <div className="profile-header">
+                  <div className="profile-name">
+                    📍 {profile.profileName}
+                    {profile.isDefault && <span className="default-badge">หลัก</span>}
+                  </div>
+                  <input
+                    type="radio"
+                    name="addressProfile"
+                    checked={selectedProfileId === profile.profileId}
+                    onChange={() => {}}
+                  />
+                </div>
+                <div className="profile-details">
+                  <div>{profile.firstName} {profile.lastName}</div>
+                  <div>{profile.phone}</div>
+                  <div>{profile.address.street}, {profile.address.district}</div>
+                  <div>{profile.address.province} {profile.address.postalCode}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div 
+          className={`manual-address-option ${useManualAddress ? 'selected' : ''}`}
+          onClick={() => {
+            setUseManualAddress(true);
+            setSelectedProfileId('');
+          }}
+        >
+          <div className="option-header">
+            <span>✏️ กรอกที่อยู่ใหม่</span>
+            <input
+              type="radio"
+              name="addressProfile"
+              checked={useManualAddress}
+              onChange={() => {}}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Create Profile Modal
+  const renderCreateProfileModal = () => {
+    if (!showCreateProfile) return null;
+
+    return (
+      <div className="modal-overlay">
+        <div className="modal-content create-profile-modal">
+          <div className="modal-header">
+            <h3>➕ เพิ่มที่อยู่ใหม่</h3>
+            <button 
+              className="close-btn"
+              onClick={() => setShowCreateProfile(false)}
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="modal-body">
+            <div className="form-group">
+              <label>ชื่อโปรไฟล์ *</label>
+              <input
+                type="text"
+                name="profileName"
+                value={newProfileData.profileName}
+                onChange={handleNewProfileInputChange}
+                placeholder="เช่น บ้าน, ที่ทำงาน, หอพัก"
+                className="form-input"
+                maxLength="30"
+              />
+              <small>ชื่อโปรไฟล์เพื่อให้ง่ายต่อการจำ</small>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>ชื่อ *</label>
+                <input
+                  type="text"
+                  name="firstName"
+                  value={newProfileData.firstName}
+                  onChange={handleNewProfileInputChange}
+                  placeholder="ชื่อ"
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label>นามสกุล *</label>
+                <input
+                  type="text"
+                  name="lastName"
+                  value={newProfileData.lastName}
+                  onChange={handleNewProfileInputChange}
+                  placeholder="นามสกุล"
+                  className="form-input"
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>เบอร์โทรศัพท์ *</label>
+              <input
+                type="tel"
+                name="phone"
+                value={newProfileData.phone}
+                onChange={handleNewProfileInputChange}
+                placeholder="0812345678"
+                className="form-input"
+                maxLength="10"
+                pattern="[0-9]*"
+                onInput={(e) => e.target.value = e.target.value.replace(/[^0-9]/g, '')}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>ที่อยู่ *</label>
+              <textarea
+                name="address.street"
+                value={newProfileData.address.street}
+                onChange={handleNewProfileInputChange}
+                placeholder="บ้านเลขที่, หมู่บ้าน, ซอย, ถนน"
+                className="form-textarea"
+                rows="3"
+              />
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label>เขต/อำเภอ *</label>
+                <input
+                  type="text"
+                  name="address.district"
+                  value={newProfileData.address.district}
+                  onChange={handleNewProfileInputChange}
+                  placeholder="เขต/อำเภอ"
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label>จังหวัด *</label>
+                <input
+                  type="text"
+                  name="address.province"
+                  value={newProfileData.address.province}
+                  onChange={handleNewProfileInputChange}
+                  placeholder="จังหวัด"
+                  className="form-input"
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>รหัสไปรษณีย์ *</label>
+              <input
+                type="text"
+                name="address.postalCode"
+                value={newProfileData.address.postalCode}
+                onChange={handleNewProfileInputChange}
+                placeholder="12345"
+                className="form-input"
+                maxLength="5"
+                pattern="[0-9]*"
+                onInput={(e) => e.target.value = e.target.value.replace(/[^0-9]/g, '')}
+              />
+            </div>
+
+            <div className="form-group">
+              <label>หมายเหตุเพิ่มเติม</label>
+              <textarea
+                name="address.notes"
+                value={newProfileData.address.notes}
+                onChange={handleNewProfileInputChange}
+                placeholder="หมายเหตุสำหรับการจัดส่ง (ไม่บังคับ)"
+                className="form-textarea"
+                rows="2"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  name="isDefault"
+                  checked={newProfileData.isDefault}
+                  onChange={handleNewProfileInputChange}
+                />
+                ตั้งเป็นที่อยู่หลัก
+              </label>
+            </div>
+          </div>
+
+          <div className="modal-footer">
+            <button 
+              className="btn-secondary"
+              onClick={() => setShowCreateProfile(false)}
+            >
+              ยกเลิก
+            </button>
+            <button 
+              className="btn-primary"
+              onClick={createAddressProfile}
+            >
+              ✅ บันทึกที่อยู่
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Manage Profiles Modal
+  const renderManageProfilesModal = () => {
+    if (!showManageProfiles) return null;
+
+    return (
+      <div className="modal-overlay">
+        <div className="modal-content manage-profiles-modal">
+          <div className="modal-header">
+            <h3>⚙️ จัดการที่อยู่</h3>
+            <button 
+              className="close-btn"
+              onClick={() => setShowManageProfiles(false)}
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="modal-body">
+            <div className="profiles-management">
+              {addressProfiles.map(profile => (
+                <div key={profile.profileId} className="manage-profile-item">
+                  <div className="profile-info">
+                    <div className="profile-title">
+                      📍 {profile.profileName}
+                      {profile.isDefault && <span className="default-badge">หลัก</span>}
+                    </div>
+                    <div className="profile-details">
+                      <div>{profile.firstName} {profile.lastName}</div>
+                      <div>{profile.phone}</div>
+                      <div>{profile.address.street}</div>
+                      <div>{profile.address.district}, {profile.address.province} {profile.address.postalCode}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="profile-actions">
+                    {!profile.isDefault && (
+                      <button
+                        className="btn-action set-default"
+                        onClick={() => setDefaultProfile(profile.profileId)}
+                        title="ตั้งเป็นที่อยู่หลัก"
+                      >
+                        ⭐
+                      </button>
+                    )}
+                    
+                    <button
+                      className="btn-action delete"
+                      onClick={() => deleteAddressProfile(profile.profileId, profile.profileName)}
+                      disabled={addressProfiles.length <= 1}
+                      title="ลบที่อยู่"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="modal-footer">
+            <button 
+              className="btn-primary"
+              onClick={() => setShowManageProfiles(false)}
+            >
+              เสร็จสิ้น
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // 🆕 Enhanced Address Form with Profile Integration
   const renderAddressForm = () => (
     <div className="address-form-container">
       <div className="checkout-header">
@@ -270,43 +873,49 @@ const handleAddressSubmit = async (e) => {
         </div>
       </div>
 
-      <form onSubmit={handleAddressSubmit} className="address-form">
-        <div className="form-row">
-          <div className="form-group">
-            <label>ชื่อ *</label>
-            <input
-              type="text"
-              name="firstName"
-              value={shippingAddress.firstName}
-              onChange={handleInputChange}
-              placeholder="Name"
-              className="form-input"
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>นามสกุล *</label>
-            <input
-              type="text"
-              name="lastName"
-              value={shippingAddress.lastName}
-              onChange={handleInputChange}
-              placeholder="Surname"
-              className = "form-input"
-              required
-              
-            />
-          </div>
-        </div>
+      {/* 🆕 Address Profile Selector */}
+      {renderAddressSelector()}
 
-        <div className="form-group">
-            <label>เบอร์โทรศัพท์ - Phone Number *</label>
+      {/* Manual Address Form - Show only when useManualAddress is true */}
+      {useManualAddress && (
+        <form onSubmit={handleAddressSubmit} className="address-form manual-form">
+          <h4>✏️ กรอกที่อยู่ใหม่</h4>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label>ชื่อ *</label>
+              <input
+                type="text"
+                name="firstName"
+                value={shippingAddress.firstName}
+                onChange={handleInputChange}
+                placeholder="ชื่อ"
+                className="form-input"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>นามสกุล *</label>
+              <input
+                type="text"
+                name="lastName"
+                value={shippingAddress.lastName}
+                onChange={handleInputChange}
+                placeholder="นามสกุล"
+                className="form-input"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>เบอร์โทรศัพท์ *</label>
             <input
               type="tel"
               name="phone"
               value={shippingAddress.phone}
               onChange={handleInputChange}
-              placeholder="+66 Phoene number"
+              placeholder="0812345678"
               className="form-input"
               maxLength="10"
               pattern="[0-9]*" 
@@ -315,91 +924,93 @@ const handleAddressSubmit = async (e) => {
             />
           </div>
 
-        <div className="form-group">
-          <label>ที่อยู่ - Address *</label>
-          <textarea
-            name="address"
-            value={shippingAddress.address}
-            onChange={handleInputChange}
-            placeholder="ที่อยู่, หมู่บ้าน, ซอย, ถนน (ไม่ต้องใส่จังหวัด)"
-            className="form-textarea"
-            rows="3"
-            required
-          />
-        </div>
-
-        <div className="form-row">
           <div className="form-group">
-            <label>เขต/อำเภอ - District *</label>
-            <input
-              type="text"
-              name="district"
-              value={shippingAddress.district}
+            <label>ที่อยู่ *</label>
+            <textarea
+              name="address"
+              value={shippingAddress.address}
               onChange={handleInputChange}
-              placeholder="เขต/อำเภอ"
-              className="form-input"
+              placeholder="ที่อยู่, หมู่บ้าน, ซอย, ถนน"
+              className="form-textarea"
+              rows="3"
               required
             />
           </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label>เขต/อำเภอ *</label>
+              <input
+                type="text"
+                name="district"
+                value={shippingAddress.district}
+                onChange={handleInputChange}
+                placeholder="เขต/อำเภอ"
+                className="form-input"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>จังหวัด *</label>
+              <input
+                type="text"
+                name="province"
+                value={shippingAddress.province}
+                onChange={handleInputChange}
+                placeholder="จังหวัด"
+                className="form-input"
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label>รหัสไปรษณีย์ *</label>
+              <input
+                type="text"
+                name="postalCode"
+                value={shippingAddress.postalCode}
+                onChange={handleInputChange}
+                placeholder="12345"
+                maxLength="5"
+                className="form-input"
+                required
+              />
+            </div>
+          </div>
+
           <div className="form-group">
-            <label>จังหวัด -iProvince *</label>
-            <input
-              type="text"
-              name="province"
-              value={shippingAddress.province}
+            <label>หมายเหตุเพิ่มเติม</label>
+            <textarea
+              name="notes"
+              value={shippingAddress.notes}
               onChange={handleInputChange}
-              placeholder="จังหวัด"
-              className="form-input"
-              required
+              placeholder="หมายเหตุสำหรับการจัดส่ง (ไม่บังคับ)"
+              className="form-textarea"
+              rows="2"
             />
           </div>
-          <div className="form-group">
-            <label>รหัสไปรษณีย์ - Post code *</label>
-            <input
-              type="text"
-              name="postalCode"
-              value={shippingAddress.postalCode}
-              onChange={handleInputChange}
-              placeholder="xxxxx"
-              maxLength="5"
-              className="form-input"
-              required
-            />
-          </div>
-        </div>
+        </form>
+      )}
 
-        <div className="form-group">
-          <label>หมายเหตุเพิ่มเติม - Additional Notes</label>
-          <textarea
-            name="notes"
-            value={shippingAddress.notes}
-            onChange={handleInputChange}
-            placeholder="หมายเหตุสำหรับการจัดส่ง (ไม่บังคับ - Optional field)"
-            className="form-textarea"
-            rows="2"
-          />
+      {/* Order Summary */}
+      <div className="order-summary">
+        <h4>📋 สรุปคำสั่งซื้อ</h4>
+        <div className="summary-row">
+          <span>สินค้า ({totalItems} ชิ้น)</span>
+          <span>{formatCurrency(totalAmount)}</span>
         </div>
-
-        <div className="order-summary">
-          <h4>📋 สรุปคำสั่งซื้อ</h4>
-          <div className="summary-row">
-            <span>สินค้า ({totalItems} ชิ้น)</span>
-            <span>{formatCurrency(totalAmount)}</span>
-          </div>
-          <div className="summary-row">
-            <span>ค่าจัดส่ง</span>
-            <span>{shippingCost === 0 ? 'ฟรี!' : formatCurrency(shippingCost)}</span>
-          </div>
-          <div className="summary-total">
-            <span>ยอดรวมทั้งสิ้น</span>
-            <span>{formatCurrency(finalTotal)}</span>
-          </div>
+        <div className="summary-row">
+          <span>ค่าจัดส่ง</span>
+          <span>{shippingCost === 0 ? 'ฟรี!' : formatCurrency(shippingCost)}</span>
         </div>
-      </form>
+        <div className="summary-total">
+          <span>ยอดรวมทั้งสิ้น</span>
+          <span>{formatCurrency(finalTotal)}</span>
+        </div>
+      </div>
     </div>
   );
 
-  // 🆕 Processing Component
+  // Processing Component (existing)
   const renderProcessing = () => (
     <div className="processing-container">
       <div className="processing-animation">
@@ -410,6 +1021,7 @@ const handleAddressSubmit = async (e) => {
     </div>
   );
 
+  // Success Component (existing)
   const renderSuccess = () => (
     <div className="checkout-success">
       <div className="success-icon">🎉</div>
@@ -424,7 +1036,7 @@ const handleAddressSubmit = async (e) => {
     </div>
   );
 
-  // 🆕 Dynamic Header Title
+  // Dynamic Header Title
   const getHeaderTitle = () => {
     switch (checkoutStep) {
       case 'address': return '🛒 ตะกร้าสินค้า - ข้อมูลจัดส่ง';
@@ -510,12 +1122,16 @@ const handleAddressSubmit = async (e) => {
             <button 
               className="confirm-order-btn"
               onClick={handleAddressSubmit}
-              disabled={isCheckingOut}
+              disabled={isCheckingOut || (!useManualAddress && !selectedProfileId)}
             >
               ✅ ยืนยันการสั่งซื้อ
             </button>
           </div>
         )}
+
+        {/* 🆕 Modals */}
+        {renderCreateProfileModal()}
+        {renderManageProfilesModal()}
       </div>
     </div>
   );

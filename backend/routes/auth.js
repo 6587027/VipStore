@@ -1313,4 +1313,408 @@ router.get('/user-password-requests/:userId', async (req, res) => {
   }
 });
 
+
+
+// 🆕 GET /api/auth/address-profiles/:userId - Get user's address profiles
+router.get('/address-profiles/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    console.log('📋 Get address profiles for user:', userId);
+
+    try {
+      const user = await User.findById(userId);
+      
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'ไม่พบผู้ใช้'
+        });
+      }
+
+      res.json({
+        success: true,
+        addressProfiles: user.addressProfiles,
+        total: user.addressProfiles.length,
+        maxAllowed: 5
+      });
+
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      return res.status(500).json({
+        success: false,
+        message: 'ไม่สามารถดึงข้อมูลที่อยู่ได้'
+      });
+    }
+
+  } catch (error) {
+    console.error('Get address profiles error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในระบบ'
+    });
+  }
+});
+
+// 🆕 POST /api/auth/address-profiles/:userId - Add new address profile
+router.post('/address-profiles/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { profileName, firstName, lastName, phone, address, isDefault } = req.body;
+
+    console.log('➕ Add address profile for user:', userId, { profileName });
+
+    // Validation
+    if (!profileName || !firstName || !lastName || !phone || !address) {
+      return res.status(400).json({
+        success: false,
+        message: 'กรุณากรอกข้อมูลให้ครบถ้วน'
+      });
+    }
+
+    // Validate phone number
+    if (!/^[0-9]{10}$/.test(phone)) {
+      return res.status(400).json({
+        success: false,
+        message: 'เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก'
+      });
+    }
+
+    // Validate postal code
+    if (!/^[0-9]{5}$/.test(address.postalCode)) {
+      return res.status(400).json({
+        success: false,
+        message: 'รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก'
+      });
+    }
+
+    try {
+      const user = await User.findById(userId);
+      
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'ไม่พบผู้ใช้'
+        });
+      }
+
+      // Check if already have 5 profiles
+      if (user.addressProfiles.length >= 5) {
+        return res.status(400).json({
+          success: false,
+          message: 'สามารถสร้างที่อยู่ได้สูงสุด 5 รายการเท่านั้น'
+        });
+      }
+
+      // Check if profile name already exists
+      const existingProfile = user.addressProfiles.find(
+        profile => profile.profileName.toLowerCase() === profileName.toLowerCase()
+      );
+
+      if (existingProfile) {
+        return res.status(400).json({
+          success: false,
+          message: 'ชื่อโปรไฟล์นี้มีอยู่แล้ว กรุณาใช้ชื่ออื่น'
+        });
+      }
+
+      // Add new profile
+      const newProfile = user.addAddressProfile({
+        profileName: profileName.trim(),
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phone: phone.trim(),
+        address: {
+          street: address.street.trim(),
+          district: address.district.trim(),
+          province: address.province.trim(),
+          postalCode: address.postalCode.trim(),
+          country: address.country || 'Thailand',
+          notes: address.notes?.trim() || ''
+        },
+        isDefault: isDefault || false
+      });
+
+      await user.save();
+
+      console.log('✅ Address profile added successfully:', newProfile.profileId);
+
+      res.status(201).json({
+        success: true,
+        message: 'เพิ่มที่อยู่สำเร็จ',
+        profile: newProfile,
+        total: user.addressProfiles.length
+      });
+
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      
+      if (dbError.message.includes('Maximum 5 address profiles')) {
+        return res.status(400).json({
+          success: false,
+          message: 'สามารถสร้างที่อยู่ได้สูงสุด 5 รายการเท่านั้น'
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: 'ไม่สามารถเพิ่มที่อยู่ได้'
+      });
+    }
+
+  } catch (error) {
+    console.error('Add address profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในระบบ'
+    });
+  }
+});
+
+// 🆕 PUT /api/auth/address-profiles/:userId/:profileId - Update address profile
+router.put('/address-profiles/:userId/:profileId', async (req, res) => {
+  try {
+    const { userId, profileId } = req.params;
+    const updateData = req.body;
+
+    console.log('✏️ Update address profile:', { userId, profileId });
+
+    try {
+      const user = await User.findById(userId);
+      
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'ไม่พบผู้ใช้'
+        });
+      }
+
+      // Validate phone number if provided
+      if (updateData.phone && !/^[0-9]{10}$/.test(updateData.phone)) {
+        return res.status(400).json({
+          success: false,
+          message: 'เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก'
+        });
+      }
+
+      // Validate postal code if provided
+      if (updateData.address?.postalCode && !/^[0-9]{5}$/.test(updateData.address.postalCode)) {
+        return res.status(400).json({
+          success: false,
+          message: 'รหัสไปรษณีย์ต้องเป็นตัวเลข 5 หลัก'
+        });
+      }
+
+      // Check if new profile name conflicts (if changing name)
+      if (updateData.profileName) {
+        const existingProfile = user.addressProfiles.find(
+          profile => profile.profileId !== profileId && 
+                    profile.profileName.toLowerCase() === updateData.profileName.toLowerCase()
+        );
+
+        if (existingProfile) {
+          return res.status(400).json({
+            success: false,
+            message: 'ชื่อโปรไฟล์นี้มีอยู่แล้ว กรุณาใช้ชื่ออื่น'
+          });
+        }
+      }
+
+      const updatedProfile = user.updateAddressProfile(profileId, updateData);
+      await user.save();
+
+      console.log('✅ Address profile updated successfully:', profileId);
+
+      res.json({
+        success: true,
+        message: 'อัปเดตที่อยู่สำเร็จ',
+        profile: updatedProfile
+      });
+
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      
+      if (dbError.message.includes('not found')) {
+        return res.status(404).json({
+          success: false,
+          message: 'ไม่พบที่อยู่ที่ต้องการแก้ไข'
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: 'ไม่สามารถอัปเดตที่อยู่ได้'
+      });
+    }
+
+  } catch (error) {
+    console.error('Update address profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในระบบ'
+    });
+  }
+});
+
+// 🆕 DELETE /api/auth/address-profiles/:userId/:profileId - Delete address profile
+router.delete('/address-profiles/:userId/:profileId', async (req, res) => {
+  try {
+    const { userId, profileId } = req.params;
+
+    console.log('🗑️ Delete address profile:', { userId, profileId });
+
+    try {
+      const user = await User.findById(userId);
+      
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'ไม่พบผู้ใช้'
+        });
+      }
+
+      // Don't allow deleting if only one profile left
+      if (user.addressProfiles.length <= 1) {
+        return res.status(400).json({
+          success: false,
+          message: 'ต้องมีที่อยู่อย่างน้อย 1 รายการ'
+        });
+      }
+
+      user.deleteAddressProfile(profileId);
+      await user.save();
+
+      console.log('✅ Address profile deleted successfully:', profileId);
+
+      res.json({
+        success: true,
+        message: 'ลบที่อยู่สำเร็จ',
+        total: user.addressProfiles.length
+      });
+
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      
+      if (dbError.message.includes('not found')) {
+        return res.status(404).json({
+          success: false,
+          message: 'ไม่พบที่อยู่ที่ต้องการลบ'
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: 'ไม่สามารถลบที่อยู่ได้'
+      });
+    }
+
+  } catch (error) {
+    console.error('Delete address profile error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในระบบ'
+    });
+  }
+});
+
+// 🆕 PUT /api/auth/address-profiles/:userId/:profileId/set-default - Set default address
+router.put('/address-profiles/:userId/:profileId/set-default', async (req, res) => {
+  try {
+    const { userId, profileId } = req.params;
+
+    console.log('⭐ Set default address profile:', { userId, profileId });
+
+    try {
+      const user = await User.findById(userId);
+      
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'ไม่พบผู้ใช้'
+        });
+      }
+
+      // Set all profiles to non-default first
+      user.addressProfiles.forEach(profile => {
+        profile.isDefault = false;
+      });
+
+      // Find and set the target profile as default
+      const targetProfile = user.addressProfiles.find(p => p.profileId === profileId);
+      
+      if (!targetProfile) {
+        return res.status(404).json({
+          success: false,
+          message: 'ไม่พบที่อยู่ที่ต้องการ'
+        });
+      }
+
+      targetProfile.isDefault = true;
+      await user.save();
+
+      console.log('✅ Default address profile set successfully:', profileId);
+
+      res.json({
+        success: true,
+        message: 'ตั้งเป็นที่อยู่หลักสำเร็จ',
+        profile: targetProfile
+      });
+
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      return res.status(500).json({
+        success: false,
+        message: 'ไม่สามารถตั้งเป็นที่อยู่หลักได้'
+      });
+    }
+
+  } catch (error) {
+    console.error('Set default address error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในระบบ'
+    });
+  }
+});
+
+// 🆕 GET /api/auth/address-profiles/:userId/default - Get default address profile
+router.get('/address-profiles/:userId/default', async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    try {
+      const user = await User.findById(userId);
+      
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'ไม่พบผู้ใช้'
+        });
+      }
+
+      const defaultProfile = user.getDefaultAddressProfile();
+
+      res.json({
+        success: true,
+        defaultProfile,
+        hasDefault: !!defaultProfile
+      });
+
+    } catch (dbError) {
+      console.error('Database error:', dbError);
+      return res.status(500).json({
+        success: false,
+        message: 'ไม่สามารถดึงข้อมูลที่อยู่หลักได้'
+      });
+    }
+
+  } catch (error) {
+    console.error('Get default address error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในระบบ'
+    });
+  }
+});
+
 module.exports = router;
