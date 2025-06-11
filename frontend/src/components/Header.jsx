@@ -2,6 +2,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import PasswordRequestDashboard from './user/PasswordRequestDashboard';
 
 const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, currentView }) => {
   const { user, logout, isAdmin, isLoggedIn } = useAuth();

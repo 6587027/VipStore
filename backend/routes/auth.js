@@ -1182,17 +1182,50 @@ router.put('/reject-password-request/:id', async (req, res) => {
   }
 });
 
-// 4. แทนที่ router.get('/user-password-requests/:userId') เดิม (บรรทัดสุดท้าย)
+// ✅ แทนที่ฟังก์ชัน GET /user-password-requests/:userId เดิมใน backend/routes/auth.js
+
 router.get('/user-password-requests/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     
-    console.log('🔍 Fetching password requests for user:', userId);
+    console.log('🔍 === PASSWORD REQUEST DEBUG START ===');
+    console.log('🔍 User ID received:', userId);
+    console.log('🔍 User ID type:', typeof userId);
+    
+    // ✅ Convert userId to string for comparison
+    const userIdString = userId.toString();
+    
+    // Debug global variables
+    console.log('📋 Global adminNotifications exists:', !!global.adminNotifications);
+    console.log('📋 adminNotifications length:', global.adminNotifications?.length || 0);
+    console.log('📋 Global passwordRequestHistory exists:', !!global.passwordRequestHistory);
+    console.log('📋 passwordRequestHistory length:', global.passwordRequestHistory?.length || 0);
+    
+    // แสดงข้อมูลใน global variables
+    if (global.adminNotifications && global.adminNotifications.length > 0) {
+      console.log('📋 All notifications:');
+      global.adminNotifications.forEach((notif, index) => {
+        console.log(`  ${index}: Type=${notif.type}, UserId=${notif.details?.userId}, UserIdType=${typeof notif.details?.userId}`);
+      });
+    }
+    
+    if (global.passwordRequestHistory && global.passwordRequestHistory.length > 0) {
+      console.log('📜 All history records:');
+      global.passwordRequestHistory.forEach((record, index) => {
+        console.log(`  ${index}: UserId=${record.userId}, UserIdType=${typeof record.userId}, Status=${record.status}`);
+      });
+    }
     
     // 1. ดึงคำขอที่รอดำเนินการ (จาก notifications)
     const notifications = global.adminNotifications || [];
     const pendingRequests = notifications
-      .filter(n => n.type === 'password_change_request' && n.details.userId === userId)
+      .filter(n => {
+        const isPasswordRequest = n.type === 'password_change_request';
+        // ✅ เปรียบเทียบแบบ string กับ string
+        const userIdMatch = n.details?.userId?.toString() === userIdString;
+        console.log(`📋 Checking notification: type=${n.type}, userId=${n.details?.userId}, targetUserId=${userIdString}, match=${isPasswordRequest && userIdMatch}`);
+        return isPasswordRequest && userIdMatch;
+      })
       .map(n => ({
         id: n.id,
         reason: n.details.reason,
@@ -1203,10 +1236,17 @@ router.get('/user-password-requests/:userId', async (req, res) => {
         userEmail: n.details.email
       }));
 
+    console.log('📋 Pending requests found:', pendingRequests.length);
+
     // 2. ดึงประวัติที่ดำเนินการแล้ว (จาก history)
     const history = global.passwordRequestHistory || [];
     const completedRequests = history
-      .filter(record => record.userId === userId)
+      .filter(record => {
+        // ✅ เปรียบเทียบแบบ string กับ string
+        const userIdMatch = record.userId?.toString() === userIdString;
+        console.log(`📜 Checking history: recordUserId=${record.userId}, targetUserId=${userIdString}, match=${userIdMatch}`);
+        return userIdMatch;
+      })
       .map(record => ({
         id: record.id,
         reason: record.reason,
@@ -1220,14 +1260,29 @@ router.get('/user-password-requests/:userId', async (req, res) => {
         userEmail: record.userEmail
       }));
 
+    console.log('📜 Completed requests found:', completedRequests.length);
+
     // 3. รวมกันและเรียงตามวันที่
     const allRequests = [
       ...pendingRequests,
       ...completedRequests
     ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    console.log(`✅ Found ${allRequests.length} password requests for user ${userId}`);
-    console.log(`📋 Breakdown: ${pendingRequests.length} pending, ${completedRequests.length} completed`);
+    console.log('📊 Total requests for user:', allRequests.length);
+    console.log('📊 Summary:');
+    console.log(`  - Pending: ${pendingRequests.length}`);
+    console.log(`  - Completed: ${completedRequests.length}`);
+    console.log(`  - Total: ${allRequests.length}`);
+    
+    // ✅ Debug: แสดงผลลัพธ์ที่ส่งกลับ
+    if (allRequests.length > 0) {
+      console.log('📋 Requests to return:');
+      allRequests.forEach((req, index) => {
+        console.log(`  ${index}: ID=${req.id}, Status=${req.status}, Reason="${req.reason}"`);
+      });
+    }
+    
+    console.log('🔍 === PASSWORD REQUEST DEBUG END ===');
     
     res.json({
       success: true,
@@ -1238,6 +1293,13 @@ router.get('/user-password-requests/:userId', async (req, res) => {
         pending: pendingRequests.length,
         approved: completedRequests.filter(r => r.status === 'approved').length,
         rejected: completedRequests.filter(r => r.status === 'rejected').length
+      },
+      debug: {
+        userId: userIdString,
+        notificationsCount: notifications.length,
+        historyCount: history.length,
+        pendingFound: pendingRequests.length,
+        completedFound: completedRequests.length
       }
     });
     
@@ -1250,7 +1312,5 @@ router.get('/user-password-requests/:userId', async (req, res) => {
     });
   }
 });
-Improve
-Explain
 
 module.exports = router;
