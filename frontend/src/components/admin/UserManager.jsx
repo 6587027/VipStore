@@ -44,6 +44,26 @@ const UserManager = () => {
 
   const { user: currentUser } = useAuth();
 
+  // 🔧 เพิ่มฟังก์ชันนี้
+const canDeleteUser = (user) => {
+  if (!currentUser) {
+    console.log('🔍 No currentUser, allowing delete');
+    return true;
+  }
+
+  const userId = user.id || user._id;
+  const currentUserId = currentUser.id || currentUser._id || currentUser.userId;
+  
+  console.log('🔍 Delete check:', {
+    userId,
+    currentUserId,
+    userName: user.username,
+    canDelete: userId !== currentUserId
+  });
+
+  return userId !== currentUserId;
+};
+
   // Fetch users on component mount
   useEffect(() => {
     fetchUsers();
@@ -364,44 +384,62 @@ const rejectPasswordRequest = async (requestId) => {
     }
   };
 
-  // Delete user (simulate)
-  const handleDeleteUser = async (user) => {
-    if (user.id === currentUser?.id || user._id === currentUser?.id) {
-      setError('ไม่สามารถลบบัญชีตัวเองได้');
-      return;
+  // 🔧 Enhanced Delete user function with better error handling
+const handleDeleteUser = async (user) => {
+  const userId = user.id || user._id;
+  const currentUserId = currentUser?.id || currentUser?._id || currentUser?.userId;
+  
+  // Double check to prevent self-deletion
+  if (userId === currentUserId) {
+    alert('❌ ไม่สามารถลบบัญชีตัวเองได้');
+    return;
+  }
+
+  const userName = user.firstName && user.lastName 
+    ? `${user.firstName} ${user.lastName}` 
+    : user.username;
+
+  const confirmMessage = `⚠️ ต้องการลบผู้ใช้ "${userName}" ใช่หรือไม่?\n\n` +
+                        `📧 อีเมล: ${user.email}\n` +
+                        `👤 ชื่อผู้ใช้: ${user.username}\n` +
+                        `🔰 สิทธิ์: ${user.role === 'admin' ? 'ผู้ดูแลระบบ' : 'ลูกค้า'}\n\n` +
+                        `⚠️ การลบจะไม่สามารถยกเลิกได้!`;
+
+  if (!window.confirm(confirmMessage)) {
+    return;
+  }
+
+  setOperationLoading(true);
+  setError('');
+  
+  try {
+    console.log('🗑️ Deleting user:', { userId, userName });
+    
+    const response = await fetch(`${API_BASE_URL}/auth/users/${userId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      console.log('✅ User deleted successfully:', data.deletedUser);
+      alert(`✅ ลบผู้ใช้ "${userName}" เรียบร้อยแล้ว`);
+      fetchUsers(); // Refresh user list
+      fetchStats(); // Refresh stats
+    } else {
+      console.error('❌ Delete failed:', data.message);
+      alert(`❌ ไม่สามารถลบผู้ใช้ได้: ${data.message}`);
     }
-
-    if (window.confirm(`ต้องการลบผู้ใช้ ${user.username} ใช่หรือไม่?`)) {
-      setOperationLoading(true);
-      setError('');
-      
-      try {
-        // 🆕 ใช้ DELETE endpoint สำหรับลบ user
-        const userId = user.id || user._id;
-        const response = await fetch(`${API_BASE_URL}/auth/users/${userId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          console.log('✅ User deleted successfully:', data.deletedUser);
-          fetchUsers(); // Refresh user list
-          fetchStats(); // Refresh stats
-        } else {
-          setError(data.message || 'Failed to delete user');
-        }
-      } catch (error) {
-        setError('Error deleting user');
-        console.error('Delete user error:', error);
-      } finally {
-        setOperationLoading(false);
-      }
-    }
-  };
+  } catch (error) {
+    console.error('❌ Delete user error:', error);
+    alert('❌ เกิดข้อผิดพลาดในการลบผู้ใช้ กรุณาลองใหม่อีกครั้ง');
+  } finally {
+    setOperationLoading(false);
+  }
+};
 
   if (loading) {
     return (
@@ -771,7 +809,7 @@ const rejectPasswordRequest = async (requestId) => {
                       {formatDate(user.lastLogin)}
                     </td>
                     <td style={{ padding: '16px', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
                         <button
                           onClick={() => showUserDetailsModal(user)}
                           style={{
@@ -802,42 +840,66 @@ const rejectPasswordRequest = async (requestId) => {
                           }}
                         >
                           ✏️ แก้ไข
-                        </button>
-                        
-<button
-  onClick={() => requestPasswordChange(user.id || user._id, user.username)}
-  style={{
-    padding: '6px 10px',
-    background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '6px',
-    fontSize: '0.8rem',
-    fontWeight: '600',
-    cursor: 'pointer'
-  }}
->
-  🔐 รหัส
-</button>
+                        </button>               
+                              <button
+                                onClick={() => requestPasswordChange(user.id || user._id, user.username)}
+                                style={{
+                                  padding: '6px 10px',
+                                  background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: '600',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                🔐 รหัส
+                              </button>
 
-                        {/* Delete button - not for current user */}
-                        {(user.id !== currentUser?.id && user._id !== currentUser?.id) && (
-                          <button
-                            onClick={() => handleDeleteUser(user)}
-                            style={{
-                              padding: '6px 12px',
-                              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '6px',
-                              fontSize: '0.85rem',
-                              fontWeight: '600',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            🗑️ ลบ
-                          </button>
-                        )}
+                                                      {/* 🔥 ปุ่มลบ - แก้ไขเงื่อนไขให้แสดงผลเสมอ ยกเว้นตัวเอง */}
+                              {canDeleteUser(user) && (
+                                <button
+                                  onClick={() => handleDeleteUser(user)}
+                                  disabled={operationLoading}
+                                  style={{
+                                    padding: '6px 12px',
+                                    background: operationLoading 
+                                      ? '#9ca3af' 
+                                      : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: '600',
+                                    cursor: operationLoading ? 'not-allowed' : 'pointer',
+                                    minWidth: '60px',
+                                    opacity: operationLoading ? 0.6 : 1
+                                  }}
+                                  title={`ลบผู้ใช้ ${user.username}`}
+                                >
+                                  🗑️ ลบ
+                                </button>
+                              )}
+
+                              {/* 🔒 แสดงข้อความถ้าไม่สามารถลบได้ (ตัวเอง) */}
+                              {!canDeleteUser(user) && (
+                                <span 
+                                  style={{
+                                    padding: '6px 12px',
+                                    background: '#e5e7eb',
+                                    color: '#6b7280',
+                                    borderRadius: '6px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: '600',
+                                    minWidth: '60px',
+                                    textAlign: 'center'
+                                  }}
+                                  title="ไม่สามารถลบตัวเองได้"
+                                >
+                                  🔒 ตัวเอง
+                                </span>
+                              )}
                       </div>
                     </td>
                   </tr>
