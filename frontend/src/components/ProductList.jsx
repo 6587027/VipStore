@@ -1,6 +1,3 @@
-// src/components/ProductList.jsx
-
-
 import React, { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import { productsAPI } from '../services/api';
@@ -11,6 +8,9 @@ const ProductList = () => {
   const [error, setError] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [retryCount, setRetryCount] = useState(0);
+
+  // 🛠️ Maintenance Mode Toggle (เปิด comment เมื่อต้องการ maintenance)
+  // const MAINTENANCE_MODE = true; // ⚠️ เปิด comment นี้เมื่อต้องการโหมดปรับปรุงระบบ
 
   // ดึงข้อมูลสินค้าจาก API
   useEffect(() => {
@@ -37,6 +37,551 @@ const ProductList = () => {
   };
 
   const categories = ['Electronics', 'Clothing', 'Books', 'Home', 'Sports', 'Beauty', 'Other'];
+
+  // 🛠️ Enhanced Maintenance Mode Display
+  if (typeof MAINTENANCE_MODE !== 'undefined' && MAINTENANCE_MODE) {
+    return (
+      <div className="container">
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '600px',
+          padding: '40px 20px',
+          background: 'linear-gradient(135deg, #fff7ed 0%, #fed7aa 30%, #fb923c 70%, #ea580c 100%)',
+          borderRadius: '25px',
+          boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)',
+          position: 'relative',
+          overflow: 'hidden',
+          border: '1px solid rgba(251, 146, 60, 0.2)'
+        }}>
+          {/* Enhanced Background Animation */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            opacity: 0.1,
+            backgroundImage: `
+              radial-gradient(circle at 20% 30%, rgba(255,255,255,0.4) 3px, transparent 3px),
+              radial-gradient(circle at 70% 70%, rgba(255,255,255,0.3) 2px, transparent 2px),
+              radial-gradient(circle at 40% 80%, rgba(255,255,255,0.2) 4px, transparent 4px),
+              linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%)
+            `,
+            backgroundSize: '80px 80px, 60px 60px, 100px 100px, 200px 200px',
+            animation: 'floatingPattern 15s ease-in-out infinite'
+          }} />
+
+          {/* Decorative Corner Elements */}
+          <div style={{
+            position: 'absolute',
+            top: '20px',
+            left: '20px',
+            fontSize: '2rem',
+            opacity: 0.3,
+            animation: 'gentleRotate 8s ease-in-out infinite'
+          }}>⚙️</div>
+          
+          <div style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            fontSize: '2rem',
+            opacity: 0.3,
+            animation: 'gentleRotate 8s ease-in-out infinite reverse'
+          }}>🔧</div>
+
+          <div style={{
+            position: 'absolute',
+            bottom: '20px',
+            left: '20px',
+            fontSize: '1.5rem',
+            opacity: 0.3,
+            animation: 'float 6s ease-in-out infinite'
+          }}>✨</div>
+
+          <div style={{
+            position: 'absolute',
+            bottom: '20px',
+            right: '20px',
+            fontSize: '1.5rem',
+            opacity: 0.3,
+            animation: 'float 6s ease-in-out infinite 3s'
+          }}>🌟</div>
+
+          {/* Main Icon Group with Enhanced Animation */}
+          <div style={{
+            fontSize: '4.5rem',
+            marginBottom: '32px',
+            animation: 'maintenanceBounce 2.5s ease-in-out infinite',
+            filter: 'drop-shadow(0 8px 16px rgba(0, 0, 0, 0.1))'
+          }}>
+            <span style={{ 
+              display: 'inline-block',
+              animation: 'wiggle 3s ease-in-out infinite',
+              marginRight: '10px'
+            }}>🛠️</span>
+            <span style={{ 
+              display: 'inline-block',
+              animation: 'spin 4s linear infinite',
+              margin: '0 10px'
+            }}>⚙️</span>
+            <span style={{ 
+              display: 'inline-block',
+              animation: 'wiggle 3s ease-in-out infinite 1s'
+            }}>🔧</span>
+          </div>
+
+          {/* Enhanced Main Title */}
+          <h1 style={{
+            color: '#c2410c',
+            fontSize: '2.8rem',
+            fontWeight: '800',
+            marginBottom: '20px',
+            textAlign: 'center',
+            animation: 'titleSlideIn 1s ease-out',
+            textShadow: '0 4px 8px rgba(194, 65, 12, 0.2)',
+            letterSpacing: '0.5px'
+          }}>
+            🔄 กำลังปรับปรุงระบบ
+          </h1>
+
+          {/* Subtitle */}
+          <p style={{
+            color: '#9a3412',
+            fontSize: '1.3rem',
+            fontWeight: '500',
+            marginBottom: '32px',
+            textAlign: 'center',
+            animation: 'fadeInUp 1.2s ease-out',
+            opacity: 0.9
+          }}>
+            เพื่อประสบการณ์ที่ดีกว่าเดิม ✨
+          </p>
+
+          {/* Enhanced Message Card */}
+          <div style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            padding: '32px',
+            borderRadius: '20px',
+            border: '2px solid rgba(251, 146, 60, 0.3)',
+            marginBottom: '32px',
+            maxWidth: '650px',
+            textAlign: 'center',
+            animation: 'cardSlideUp 1.4s ease-out',
+            boxShadow: '0 15px 35px rgba(0, 0, 0, 0.1)',
+            backdropFilter: 'blur(10px)'
+          }}>
+            <div style={{
+              fontSize: '3rem',
+              marginBottom: '16px',
+              animation: 'heartbeat 2s ease-in-out infinite'
+            }}>
+              💝
+            </div>
+            
+            <h3 style={{ 
+              color: '#c2410c', 
+              margin: '0 0 20px',
+              fontSize: '1.4rem',
+              fontWeight: '700'
+            }}>
+              🎯 เรากำลังอัพเกรดระบบให้คุณ!
+            </h3>
+            
+            <p style={{ 
+              color: '#9a3412', 
+              margin: '0 0 20px',
+              fontSize: '1.1rem',
+              lineHeight: '1.7',
+              fontWeight: '500'
+            }}>
+              นักพัฒนากำลังทำงานหนักเพื่อปรับปรุงระบบให้มีประสิทธิภาพดีขึ้น<br/>
+              <strong>ขอบคุณที่รอคอยและให้ความเชื่อมั่นกับระบบของเรานะ</strong> 🙏
+            </p>
+
+            {/* Enhanced Progress Section */}
+            <div style={{
+              background: 'linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%)',
+              padding: '20px',
+              borderRadius: '15px',
+              border: '1px solid rgba(251, 146, 60, 0.2)',
+              marginBottom: '20px'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '12px',
+                marginBottom: '12px'
+              }}>
+                <span style={{ fontSize: '1.5rem' }}>⏱️</span>
+                <span style={{ 
+                  color: '#92400e', 
+                  fontSize: '1rem',
+                  fontWeight: '600'
+                }}>
+                  เวลาที่คาดการณ์: 1 ชั่วโมง หรือ มากว่า
+
+                </span>
+              </div>
+
+              {/* Enhanced Progress Bar */}
+              <div style={{
+                width: '100%',
+                height: '12px',
+                backgroundColor: 'rgba(194, 65, 12, 0.1)',
+                borderRadius: '10px',
+                overflow: 'hidden',
+                border: '1px solid rgba(194, 65, 12, 0.2)'
+              }}>
+                <div style={{
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #fb923c, #ea580c, #fb923c)',
+                  borderRadius: '10px',
+                  animation: 'progressGlow 2.5s ease-in-out infinite',
+                  boxShadow: '0 0 10px rgba(251, 146, 60, 0.4)'
+                }} />
+              </div>
+            </div>
+
+            {/* Status Updates */}
+            <div style={{
+              background: 'rgba(251, 146, 60, 0.1)',
+              padding: '16px',
+              borderRadius: '12px',
+              border: '1px solid rgba(251, 146, 60, 0.2)'
+            }}>
+              <p style={{ 
+                color: '#9a3412', 
+                margin: 0,
+                fontSize: '0.95rem',
+                fontWeight: '500'
+              }}>
+                📋 <strong>กำลังดำเนินการ:</strong> อัพเดทฐานข้อมูล, ปรับปรุง UI, เพิ่มฟีเจอร์ใหม่
+              </p>
+            </div>
+          </div>
+
+          {/* Enhanced Action Buttons */}
+          <div style={{
+            display: 'flex',
+            gap: '20px',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            marginBottom: '32px',
+            zIndex: 10,
+            position: 'relative'
+          }}>
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🔄 Refresh button clicked!');
+                window.location.reload();
+              }}
+              style={{
+                background: 'linear-gradient(135deg, #fb923c 0%, #ea580c 100%)',
+                border: 'none',
+                padding: '16px 32px',
+                fontSize: '1.2rem',
+                fontWeight: '700',
+                borderRadius: '15px',
+                color: 'white',
+                boxShadow: '0 8px 25px rgba(251, 146, 60, 0.4)',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                zIndex: 100,
+                position: 'relative',
+                userSelect: 'none',
+                outline: 'none',
+                animation: 'buttonPulse 3s ease-in-out infinite'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'translateY(-4px) scale(1.05)';
+                e.target.style.boxShadow = '0 12px 35px rgba(251, 146, 60, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0) scale(1)';
+                e.target.style.boxShadow = '0 8px 25px rgba(251, 146, 60, 0.4)';
+              }}
+              onMouseDown={(e) => {
+                e.target.style.transform = 'translateY(-1px) scale(0.98)';
+              }}
+              onMouseUp={(e) => {
+                e.target.style.transform = 'translateY(-4px) scale(1.05)';
+              }}
+            >
+              🔄 ตรวจสอบสถานะใหม่
+            </button>
+
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('📞 Contact button clicked!');
+                window.open('https://vippersonalwebsite.vercel.app/contact', '_blank');
+              }}
+              style={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                border: '3px solid #fb923c',
+                padding: '16px 32px',
+                fontSize: '1.2rem',
+                fontWeight: '700',
+                borderRadius: '15px',
+                color: '#c2410c',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                zIndex: 100,
+                position: 'relative',
+                userSelect: 'none',
+                outline: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#fff7ed';
+                e.target.style.transform = 'translateY(-4px) scale(1.05)';
+                e.target.style.borderColor = '#ea580c';
+                e.target.style.boxShadow = '0 12px 35px rgba(251, 146, 60, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+                e.target.style.transform = 'translateY(0) scale(1)';
+                e.target.style.borderColor = '#fb923c';
+                e.target.style.boxShadow = 'none';
+              }}
+              onMouseDown={(e) => {
+                e.target.style.transform = 'translateY(-1px) scale(0.98)';
+              }}
+              onMouseUp={(e) => {
+                e.target.style.transform = 'translateY(-4px) scale(1.05)';
+              }}
+            >
+              📞 ติดต่อผู้ดูแลระบบ
+            </button>
+          </div>
+
+          {/* Enhanced Status Indicator */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            padding: '16px 24px',
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            borderRadius: '30px',
+            border: '2px solid rgba(251, 146, 60, 0.3)',
+            boxShadow: '0 8px 20px rgba(0, 0, 0, 0.1)',
+            marginBottom: '24px'
+          }}>
+            <div style={{
+              width: '16px',
+              height: '16px',
+              background: 'linear-gradient(45deg, #fb923c, #ea580c)',
+              borderRadius: '50%',
+              animation: 'statusGlow 2s infinite',
+              boxShadow: '0 0 10px rgba(251, 146, 60, 0.6)'
+            }}></div>
+            <span style={{ 
+              color: '#c2410c', 
+              fontSize: '1rem',
+              fontWeight: '600'
+            }}>
+              🔧 สถานะ: กำลังปรับปรุงระบบ
+            </span>
+            <div style={{
+              fontSize: '1.2rem',
+              animation: 'bounce 2s infinite'
+            }}>⚡</div>
+          </div>
+
+          {/* Enhanced Contact Information */}
+          <div style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            padding: '20px',
+            borderRadius: '16px',
+            border: '2px solid rgba(251, 146, 60, 0.2)',
+            maxWidth: '450px',
+            animation: 'contactSlideIn 1.8s ease-out',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
+          }}>
+            <h4 style={{ 
+              color: '#c2410c', 
+              margin: '0 0 12px',
+              fontSize: '1.1rem',
+              fontWeight: '700',
+              textAlign: 'center'
+            }}>
+              💬 ต้องการสอบถามข้อมูลเพิ่มเติม? กับนักพัฒนาระบบนี้
+            </h4>
+            <div style={{ 
+              color: '#9a3412', 
+              fontSize: '0.9rem',
+              lineHeight: '1.8',
+              textAlign: 'center'
+            }}>
+              <div style={{ marginBottom: '8px', fontWeight: '600' }}>
+                👨‍💻 <strong>วิป (Phatra Wongsapsakul)</strong>
+              </div>
+              <div style={{ marginBottom: '8px' }}>
+  🌐 Website: <a 
+    href="https://vippersonalwebsite.vercel.app/contact" 
+    target="_blank" 
+    rel="noopener noreferrer"
+    onClick={(e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log('🌐 Website link clicked!');
+      window.open('https://vippersonalwebsite.vercel.app/contact', '_blank');
+    }}
+    style={{ 
+      color: '#ea580c', 
+      textDecoration: 'underline',
+      fontWeight: '600',
+      cursor: 'pointer',
+      zIndex: 1000,
+      position: 'relative',
+      padding: '2px 4px',
+      borderRadius: '4px',
+      transition: 'all 0.2s ease'
+    }}
+    onMouseEnter={(e) => {
+      e.target.style.backgroundColor = 'rgba(234, 88, 12, 0.1)';
+      e.target.style.color = '#c2410c';
+    }}
+    onMouseLeave={(e) => {
+      e.target.style.backgroundColor = 'transparent';
+      e.target.style.color = '#ea580c';
+    }}
+  >
+    Vip Personal Website
+  </a>
+</div>
+              <div style={{ fontSize: '0.8rem', color: '#92400e', fontStyle: 'italic' }}>
+                🎓 นักศึกษา ICT มหาวิทยาลัยมหิดล
+              </div>
+            </div>
+          </div>
+
+          {/* CSS Animations for Enhanced Maintenance */}
+          <style jsx>{`
+            @keyframes floatingPattern {
+              0%, 100% { transform: translateY(0px) rotate(0deg); }
+              25% { transform: translateY(-10px) rotate(1deg); }
+              50% { transform: translateY(-5px) rotate(0deg); }
+              75% { transform: translateY(-8px) rotate(-1deg); }
+            }
+            
+            @keyframes maintenanceBounce {
+              0%, 100% { transform: translateY(0px) scale(1); }
+              50% { transform: translateY(-15px) scale(1.05); }
+            }
+            
+            @keyframes gentleRotate {
+              0%, 100% { transform: rotate(0deg) scale(1); }
+              50% { transform: rotate(180deg) scale(1.1); }
+            }
+            
+            @keyframes wiggle {
+              0%, 100% { transform: rotate(0deg); }
+              25% { transform: rotate(-5deg); }
+              75% { transform: rotate(5deg); }
+            }
+            
+            @keyframes spin {
+              from { transform: rotate(0deg); }
+              to { transform: rotate(360deg); }
+            }
+            
+            @keyframes progressGlow {
+              0% { transform: translateX(-100%); }
+              100% { transform: translateX(400px); }
+            }
+            
+            @keyframes statusGlow {
+              0%, 100% { 
+                opacity: 1; 
+                box-shadow: 0 0 10px rgba(251, 146, 60, 0.6);
+              }
+              50% { 
+                opacity: 0.6; 
+                box-shadow: 0 0 20px rgba(251, 146, 60, 0.8);
+              }
+            }
+            
+            @keyframes buttonPulse {
+              0%, 100% {
+                box-shadow: 0 8px 25px rgba(251, 146, 60, 0.4);
+              }
+              50% {
+                box-shadow: 0 8px 35px rgba(251, 146, 60, 0.6);
+              }
+            }
+            
+            @keyframes heartbeat {
+              0%, 100% { transform: scale(1); }
+              50% { transform: scale(1.1); }
+            }
+            
+            @keyframes titleSlideIn {
+              from {
+                opacity: 0;
+                transform: translateY(-30px);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+            
+            @keyframes fadeInUp {
+              from {
+                opacity: 0;
+                transform: translateY(20px);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0);
+              }
+            }
+            
+            @keyframes cardSlideUp {
+              from {
+                opacity: 0;
+                transform: translateY(40px) scale(0.95);
+              }
+              to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+              }
+            }
+            
+            @keyframes contactSlideIn {
+              from {
+                opacity: 0;
+                transform: translateX(-30px);
+              }
+              to {
+                opacity: 1;
+                transform: translateX(0);
+              }
+            }
+            
+            @keyframes float {
+              0%, 100% { transform: translateY(0px); }
+              50% { transform: translateY(-10px); }
+            }
+            
+            @keyframes bounce {
+              0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+              40% { transform: translateY(-10px); }
+              60% { transform: translateY(-5px); }
+            }
+          `}</style>
+        </div>
+      </div>
+    );
+  }
 
   // 🎨 Enhanced Loading Component with Animation
   if (loading) {
@@ -116,7 +661,7 @@ const ProductList = () => {
     );
   }
 
-  // 🚨 Enhanced Error Component with Server Down Animation
+  // 🌟 User-Friendly Error Component (ไม่แก้ไข - ตามที่วิปขอ)
   if (error) {
     return (
       <div className="container">
@@ -126,203 +671,323 @@ const ProductList = () => {
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: '500px',
-          padding: '40px',
-          background: 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)',
+          padding: '40px 20px',
+          background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%)',
           borderRadius: '20px',
-          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)'
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+          position: 'relative',
+          overflow: 'hidden'
         }}>
-          {/* Animated Server Icon */}
+          {/* Gentle Background Animation */}
           <div style={{
-            fontSize: '4rem',
-            marginBottom: '20px',
-            animation: 'serverShake 2s infinite'
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            opacity: 0.1,
+            backgroundImage: `
+              radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.3) 15%, transparent 15%),
+              radial-gradient(circle at 80% 20%, rgba(147, 197, 253, 0.3) 15%, transparent 15%),
+              radial-gradient(circle at 40% 40%, rgba(191, 219, 254, 0.3) 15%, transparent 15%)
+            `,
+            backgroundSize: '60px 60px',
+            animation: 'gentleFloat 12s ease-in-out infinite'
+          }} />
+
+          {/* Friendly Icon Animation */}
+          <div style={{
+            fontSize: '3.5rem',
+            marginBottom: '24px',
+            animation: 'gentleBounce 3s ease-in-out infinite'
           }}>
-            💻 📡 ❌
+            😅 📡 💤
           </div>
 
-          {/* Error Title with Typing Effect */}
+          {/* Friendly Title */}
           <h2 style={{
-            color: '#dc2626',
+            color: '#1e40af',
             fontSize: '2rem',
-            fontWeight: '700',
+            fontWeight: '600',
             marginBottom: '16px',
             textAlign: 'center',
             animation: 'fadeInUp 0.6s ease-out'
           }}>
-            🚨 Server Shutdown
+            อุ๊ปส์! เซิร์ฟเวอร์หลับไปแล้ว 💤
           </h2>
 
-          {/* Error Description */}
+          {/* Friendly Description */}
           <div style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '12px',
-            border: '2px solid #fca5a5',
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            padding: '24px',
+            borderRadius: '16px',
+            border: '2px solid #93c5fd',
             marginBottom: '24px',
             maxWidth: '500px',
             textAlign: 'center',
-            animation: 'slideIn 0.8s ease-out'
+            animation: 'slideIn 0.8s ease-out',
+            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)'
           }}>
             <p style={{ 
-              color: '#7f1d1d', 
-              margin: '0 0 12px',
+              color: '#1e40af', 
+              margin: '0 0 16px',
               fontSize: '1.1rem',
-              fontWeight: '600'
+              fontWeight: '500'
             }}>
-              {error}
+              🎯 ไม่ต้องกังวลนะครับ!
             </p>
             <p style={{ 
-              color: '#991b1b', 
-              margin: 0,
-              fontSize: '0.9rem'
+              color: '#1d4ed8', 
+              margin: '0 0 16px',
+              fontSize: '1rem',
+              lineHeight: '1.6'
             }}>
-              📡 ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ในขณะนี้
+              เซิร์ฟเวอร์อาจจะพักผ่อนอยู่ หรือกำลังอัพเดทข้อมูลใหม่<br/>
+              ลองกดปุ่มด้านล่างเพื่อปลุกให้ตื่นดูนะครับ 😊
             </p>
             
-            {/* {retryCount > 0 && (
+            {/* Fun Message */}
+            <div style={{
+              padding: '12px 16px',
+              backgroundColor: '#dbeafe',
+              borderRadius: '10px',
+              border: '1px solid #93c5fd',
+              marginBottom: '16px'
+            }}>
+              <span style={{ 
+                color: '#1e3a8a', 
+                fontSize: '0.9rem',
+                fontWeight: '500'
+              }}>
+                💡 เทคนิค: ลองรอ 10 วินาที แล้วกดลองใหม่
+              </span>
+            </div>
+
+            {/* Retry Count Display
+            {retryCount > 0 && (
               <div style={{
-                marginTop: '12px',
                 padding: '8px 12px',
                 backgroundColor: '#fef3c7',
                 borderRadius: '8px',
                 border: '1px solid #f59e0b'
               }}>
                 <span style={{ color: '#92400e', fontSize: '0.85rem' }}>
-                  🔄 ความพยายามครั้งที่: {retryCount}
+                  🔄 ความพยายามครั้งที่: {retryCount} (ขอบคุณที่อดทนครับ!)
                 </span>
               </div>
             )} */}
+
           </div>
 
-          {/* Animated Retry Button */}
-          {/* <button 
-            className="btn-primary" 
-            onClick={fetchProducts}
-            style={{
-              background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
-              border: 'none',
-              padding: '12px 32px',
-              fontSize: '1.1rem',
-              fontWeight: '600',
-              borderRadius: '12px',
-              boxShadow: '0 4px 15px rgba(220, 38, 38, 0.3)',
-              animation: 'buttonPulse 2s infinite',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 6px 20px rgba(220, 38, 38, 0.4)';
-            }}
-            onMouseOut={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 4px 15px rgba(220, 38, 38, 0.3)';
-            }}
-          >
-            🔄 ลองเชื่อมต่อใหม่
-          </button> */}
+          {/* Gentle Action Buttons */}
+          <div style={{
+            display: 'flex',
+            gap: '16px',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
+            marginBottom: '24px',
+            zIndex: 10,
+            position: 'relative'
+          }}>
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('☕ Wake server button clicked!');
+                fetchProducts();
+              }}
+              style={{
+                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                border: 'none',
+                padding: '16px 32px',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                borderRadius: '12px',
+                color: 'white',
+                boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                animation: 'gentlePulse 3s infinite',
+                zIndex: 100,
+                position: 'relative',
+                userSelect: 'none',
+                outline: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'translateY(-3px) scale(1.05)';
+                e.target.style.boxShadow = '0 8px 25px rgba(59, 130, 246, 0.4)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0) scale(1)';
+                e.target.style.boxShadow = '0 4px 15px rgba(59, 130, 246, 0.3)';
+              }}
+              onMouseDown={(e) => {
+                e.target.style.transform = 'translateY(1px) scale(0.95)';
+              }}
+              onMouseUp={(e) => {
+                e.target.style.transform = 'translateY(-3px) scale(1.05)';
+              }}
+            >
+              ☕ ปลุกเซิร์ฟเวอร์ให้ตื่น
+            </button>
+
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🔄 Refresh page button clicked!');
+                window.location.reload();
+              }}
+              style={{
+                background: 'rgba(255, 255, 255, 0.9)',
+                border: '2px solid #93c5fd',
+                padding: '16px 32px',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                borderRadius: '12px',
+                color: '#1e40af',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                zIndex: 100,
+                position: 'relative',
+                userSelect: 'none',
+                outline: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#dbeafe';
+                e.target.style.transform = 'translateY(-3px) scale(1.05)';
+                e.target.style.borderColor = '#3b82f6';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
+                e.target.style.transform = 'translateY(0) scale(1)';
+                e.target.style.borderColor = '#93c5fd';
+              }}
+              onMouseDown={(e) => {
+                e.target.style.transform = 'translateY(1px) scale(0.95)';
+              }}
+              onMouseUp={(e) => {
+                e.target.style.transform = 'translateY(-3px) scale(1.05)';
+              }}
+            >
+              🔄 รีเฟรชหน้า
+            </button>
+          </div>
 
           {/* Network Status Indicator */}
           <div style={{
-            marginTop: '24px',
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
             padding: '12px 20px',
             backgroundColor: 'rgba(255, 255, 255, 0.8)',
             borderRadius: '25px',
-            border: '1px solid #fca5a5'
+            border: '1px solid #93c5fd',
+            marginBottom: '20px'
           }}>
             <div style={{
               width: '12px',
               height: '12px',
-              backgroundColor: '#dc2626',
+              backgroundColor: '#f59e0b',
               borderRadius: '50%',
-              animation: 'blink 1s infinite'
+              animation: 'gentleBlink 2s infinite'
             }}></div>
             <span style={{ 
-              color: '#7f1d1d', 
+              color: '#1e40af', 
               fontSize: '0.9rem',
               fontWeight: '500'
             }}>
-              สถานะ: ออฟไลน์
+              สถานะ: กำลังพยายามเชื่อมต่อ...
             </span>
           </div>
 
           {/* Contact Information */}
-<div style={{
-  marginTop: '20px',
-  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-  padding: '16px',
-  borderRadius: '12px',
-  border: '1px solid #fca5a5',
-  maxWidth: '400px',
-  animation: 'fadeIn 1.2s ease-out'
-}}>
-  <h4 style={{ 
-    color: '#7f1d1d', 
-    margin: '0 0 8px',
-    fontSize: '0.9rem',
-    fontWeight: '600'
-  }}>
-    💡 ต้องการติดต่อผู้ดูแล Website:
-  </h4>
-  <ul style={{ 
-    color: '#991b1b', 
-    margin: 0,
-    paddingLeft: '16px',
-    fontSize: '0.8rem',
-    lineHeight: '1.6',
-    listStyle: 'none'
-  }}>
-    <li style={{ marginBottom: '6px' }}>
-      👨‍💻 <strong>ภัทร วงศ์ทรัพย์สกุล (Phatra Wongsapsakul)</strong>
-    </li>
-    {/* <li style={{ marginBottom: '6px' }}>
-      📧 Email: <a 
-        href="mailto:vip@example.com" 
-        style={{ 
-          color: '#dc2626', 
-          textDecoration: 'underline',
-          fontWeight: '500'
-        }}
-      >
-        vip@example.com
-      </a>
-    </li> */}
-    <li style={{ marginBottom: '6px' }}>
-      🌐 Website Contact : <a 
-        href="https://vippersonalwebsite.vercel.app/contact" 
-        target="_blank" 
-        rel="noopener noreferrer"
-        style={{ 
-          color: '#dc2626', 
-          textDecoration: 'underline',
-          fontWeight: '500'
-        }}
-      >
-        Vip Personal Website Contact
-      </a>
-    </li>
-    <li>
-      🎓 <span style={{ fontSize: '0.75rem', color: '#7f1d1d' }}>
-        นักศึกษา ICT ปี 3 มหาวิทยาลัยมหิดล
-      </span>
-    </li>
-  </ul>
-</div>
+          <div style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            padding: '16px',
+            borderRadius: '12px',
+            border: '1px solid #93c5fd',
+            maxWidth: '400px',
+            animation: 'fadeIn 1.2s ease-out'
+          }}>
+            <h4 style={{ 
+              color: '#1e40af', 
+              margin: '0 0 8px',
+              fontSize: '0.9rem',
+              fontWeight: '600'
+            }}>
+              💬 ต้องการความช่วยเหลือ? นักพัฒนาระบบ
+            </h4>
+            <ul style={{ 
+              color: '#1d4ed8', 
+              margin: 0,
+              paddingLeft: '16px',
+              fontSize: '0.8rem',
+              lineHeight: '1.6',
+              listStyle: 'none'
+            }}>
+              <li style={{ marginBottom: '6px' }}>
+                👨‍💻 <strong>วิป (Phatra Wongsapsakul)</strong>
+              </li>
+              <li style={{ marginBottom: '6px' }}>
+                🌐 Website: <a 
+                  href="https://vippersonalwebsite.vercel.app/contact" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🌐 Website link clicked!');
+                    window.open('https://vippersonalwebsite.vercel.app/contact', '_blank');
+                  }}
+                  style={{ 
+                    color: '#2563eb', 
+                    textDecoration: 'underline',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    zIndex: 1000,
+                    position: 'relative',
+                    padding: '2px 4px',
+                    borderRadius: '4px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = 'rgba(37, 99, 235, 0.1)';
+                    e.target.style.color = '#1d4ed8';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = 'transparent';
+                    e.target.style.color = '#2563eb';
+                  }}
+                >
+                  Vip Personal Website
+                </a>
+              </li>
+              <li>
+                🎓 <span style={{ fontSize: '0.75rem', color: '#1e40af' }}>
+                  นักศึกษา ICT มหาวิทยาลัยมหิดล
+                </span>
+              </li>
+            </ul>
+          </div>
 
           {/* CSS Animations for Error State */}
           <style jsx>{`
-            @keyframes serverShake {
-              0%, 100% { transform: translateX(0); }
-              10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-              20%, 40%, 60%, 80% { transform: translateX(5px); }
+            @keyframes gentleFloat {
+              0%, 100% { transform: translateY(0px) rotate(0deg); }
+              33% { transform: translateY(-10px) rotate(1deg); }
+              66% { transform: translateY(-5px) rotate(-1deg); }
+            }
+            
+            @keyframes gentleBounce {
+              0%, 100% { transform: translateY(0px); }
+              50% { transform: translateY(-10px); }
             }
             
             @keyframes fadeInUp {
               from {
                 opacity: 0;
-                transform: translateY(30px);
+                transform: translateY(20px);
               }
               to {
                 opacity: 1;
@@ -333,7 +998,7 @@ const ProductList = () => {
             @keyframes slideIn {
               from {
                 opacity: 0;
-                transform: translateX(-30px);
+                transform: translateX(-20px);
               }
               to {
                 opacity: 1;
@@ -341,21 +1006,21 @@ const ProductList = () => {
               }
             }
             
-            @keyframes buttonPulse {
+            @keyframes gentlePulse {
               0% {
-                box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+                box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
               }
               50% {
-                box-shadow: 0 4px 25px rgba(220, 38, 38, 0.5);
+                box-shadow: 0 4px 25px rgba(59, 130, 246, 0.4);
               }
               100% {
-                box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+                box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
               }
             }
             
-            @keyframes blink {
+            @keyframes gentleBlink {
               0%, 50% { opacity: 1; }
-              51%, 100% { opacity: 0.3; }
+              51%, 100% { opacity: 0.4; }
             }
             
             @keyframes fadeIn {

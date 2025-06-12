@@ -109,7 +109,7 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
       lineHeight: '1.1',
       marginTop: '2px'
     }}>
-      * จำลองระบบจัดการร้านค้า (DEMO)
+      * จำลองระบบจัดการร้านค้า (DEMO) | เวอร์ชันมือถือกำลังพัฒนา *
     </p>
   </div>
   

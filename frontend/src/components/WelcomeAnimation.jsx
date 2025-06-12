@@ -2,15 +2,36 @@ import React, { useState, useEffect } from 'react';
 
 const WelcomeAnimation = ({ onAnimationComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
-  const [showWelcome, setShowWelcome] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
 
+  // 🔑 ตรวจสอบว่าเคยเล่น animation แล้วหรือยัง
   useEffect(() => {
+    const hasSeenWelcome = localStorage.getItem('vipstore_welcome_seen');
+    const sessionWelcome = sessionStorage.getItem('vipstore_session_welcome');
+    
+    // เงื่อนไขการแสดง Welcome:
+    // 1. ยังไม่เคยเห็น Welcome เลย (ผู้ใช้ใหม่)
+    // 2. หรือเป็น session ใหม่และผ่านไป 2 นาทีแล้ว
+    const twoMinutesAgo = Date.now() - (2 * 60 * 1000); // 🕐 เปลี่ยนเป็น 2 นาที
+    const lastSeen = parseInt(hasSeenWelcome) || 0;
+    
+    if (!hasSeenWelcome || (!sessionWelcome && lastSeen < twoMinutesAgo)) {
+      setShowWelcome(true);
+      // บันทึกว่าได้เห็น welcome แล้วในครั้งนี้
+      sessionStorage.setItem('vipstore_session_welcome', 'true');
+    } else {
+      // ข้ามการเกิด Welcome Animation
+      onAnimationComplete && onAnimationComplete();
+      return;
+    }
+
+    // Timeline ของ animation
     const timeline = [
-      { step: 1, delay: 500 },   // Logo bounce in
+      { step: 1, delay: 500 },   // Logo bounce in (เร็วขึ้น)
       { step: 2, delay: 1500 },  // Welcome text
-      { step: 3, delay: 2500 },  // Tagline
-      { step: 4, delay: 3500 },  // Loading dots
-      { step: 5, delay: 4500 }   // Fade out
+      { step: 3, delay: 2300 },  // Tagline
+      { step: 4, delay: 2900 },  // Loading dots
+      { step: 5, delay: 3800 }   // Fade out (เร็วขึ้น)
     ];
 
     timeline.forEach(({ step, delay }) => {
@@ -19,12 +40,21 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
         if (step === 5) {
           setTimeout(() => {
             setShowWelcome(false);
+            // บันทึกว่าได้ดู welcome ครบแล้ว
+            localStorage.setItem('vipstore_welcome_seen', Date.now().toString());
             onAnimationComplete && onAnimationComplete();
-          }, 1000);
+          }, 800);
         }
       }, delay);
     });
   }, [onAnimationComplete]);
+
+  // // 🔄 ฟังก์ชันสำหรับ Reset (ถ้าต้องการทดสอบ)
+  // const resetWelcomeAnimation = () => {
+  //   localStorage.removeItem('vipstore_welcome_seen');
+  //   sessionStorage.removeItem('vipstore_session_welcome');
+  //   window.location.reload();
+  // };
 
   if (!showWelcome) return null;
 
@@ -41,7 +71,7 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 9999,
-      animation: currentStep >= 5 ? 'fadeOut 1s ease-out forwards' : 'none'
+      animation: currentStep >= 5 ? 'fadeOut 0.8s ease-out forwards' : 'none'
     }}>
       {/* Background Pattern */}
       <div style={{
@@ -69,12 +99,12 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
       }}>
         {/* Enhanced Large Glass Logo */}
         <div style={{
-          animation: currentStep >= 1 ? 'bounceIn 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55)' : 'none',
+          animation: currentStep >= 1 ? 'bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55)' : 'none',
           opacity: currentStep >= 1 ? 1 : 0
         }}>
           <div style={{
-            width: '180px',
-            height: '180px',
+            width: '160px',
+            height: '160px',
             background: 'rgba(255, 255, 255, 0.15)',
             backdropFilter: 'blur(20px)',
             border: '3px solid rgba(255, 255, 255, 0.3)',
@@ -82,7 +112,7 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 30px 60px rgba(0, 0, 0, 0.3), 0 0 40px rgba(255, 255, 255, 0.1)',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.2), 0 0 30px rgba(255, 255, 255, 0.1)',
             position: 'relative',
             overflow: 'hidden'
           }}>
@@ -91,8 +121,8 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
               src="/VipStoreLogo.png" 
               alt="Vip Store Logo"
               style={{
-                width: '120px',
-                height: '120px',
+                width: '100px',
+                height: '100px',
                 objectFit: 'contain',
                 filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3))'
               }}
@@ -101,10 +131,10 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
                 e.target.nextSibling.style.display = 'flex';
               }}
             />
-            {/* Fallback emoji - Enhanced */}
+            {/* Fallback emoji */}
             <div style={{
               display: 'none',
-              fontSize: '5rem',
+              fontSize: '4rem',
               alignItems: 'center',
               justifyContent: 'center',
               filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3))'
@@ -112,43 +142,31 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
               🛍️
             </div>
             
-            {/* Enhanced Shine effect */}
+            {/* Shine effect */}
             <div style={{
               position: 'absolute',
               top: '-50%',
               left: '-50%',
               width: '200%',
               height: '200%',
-              background: 'linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.4), transparent)',
+              background: 'linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.3), transparent)',
               animation: currentStep >= 1 ? 'shine 2s ease-in-out infinite' : 'none'
-            }} />
-            
-            {/* Additional Glow Ring */}
-            <div style={{
-              position: 'absolute',
-              top: '-10px',
-              left: '-10px',
-              right: '-10px',
-              bottom: '-10px',
-              border: '2px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '50%',
-              animation: currentStep >= 1 ? 'pulse 3s ease-in-out infinite' : 'none'
             }} />
           </div>
         </div>
 
         {/* Welcome Text */}
         <div style={{
-          animation: currentStep >= 2 ? 'slideUp 0.8s ease-out' : 'none',
+          animation: currentStep >= 2 ? 'slideUp 0.6s ease-out' : 'none',
           opacity: currentStep >= 2 ? 1 : 0
         }}>
           <h1 style={{
             color: 'white',
-            fontSize: '3rem',
+            fontSize: '2.5rem',
             fontWeight: '700',
             margin: 0,
             textShadow: '0 4px 8px rgba(0, 0, 0, 0.3)',
-            letterSpacing: '2px'
+            letterSpacing: '1px'
           }}>
             Vip Store
           </h1>
@@ -156,12 +174,12 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
 
         {/* Tagline */}
         <div style={{
-          animation: currentStep >= 3 ? 'slideUp 0.8s ease-out 0.2s both' : 'none',
+          animation: currentStep >= 3 ? 'slideUp 0.6s ease-out 0.1s both' : 'none',
           opacity: currentStep >= 3 ? 1 : 0
         }}>
           <p style={{
             color: 'rgba(255, 255, 255, 0.9)',
-            fontSize: '1.2rem',
+            fontSize: '1.1rem',
             margin: 0,
             fontWeight: '300',
             textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
@@ -170,30 +188,30 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
           </p>
           <p style={{
             color: 'rgba(255, 255, 255, 0.7)',
-            fontSize: '0.9rem',
-            margin: '8px 0 0',
+            fontSize: '0.85rem',
+            margin: '6px 0 0',
             fontStyle: 'italic',
             textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
           }}>
-            * Project จำลองระบบจัดการร้านค้า
+            Project จำลองระบบจัดการร้านค้า
           </p>
         </div>
 
         {/* Loading Animation */}
         <div style={{
-          animation: currentStep >= 4 ? 'fadeIn 0.5s ease-out' : 'none',
+          animation: currentStep >= 4 ? 'fadeIn 0.4s ease-out' : 'none',
           opacity: currentStep >= 4 ? 1 : 0,
-          marginTop: '40px'
+          marginTop: '30px'
         }}>
           <div style={{
             display: 'flex',
-            gap: '12px',
+            gap: '10px',
             alignItems: 'center'
           }}>
             <span style={{
               color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '1rem',
-              marginRight: '16px'
+              fontSize: '0.9rem',
+              marginRight: '12px'
             }}>
               กำลังเตรียมข้อมูล
             </span>
@@ -201,12 +219,12 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
               <div
                 key={dot}
                 style={{
-                  width: '12px',
-                  height: '12px',
+                  width: '10px',
+                  height: '10px',
                   backgroundColor: 'white',
                   borderRadius: '50%',
-                  animation: `bounce 1.4s infinite ease-in-out both`,
-                  animationDelay: `${dot * 0.16}s`
+                  animation: `bounce 1.2s infinite ease-in-out both`,
+                  animationDelay: `${dot * 0.15}s`
                 }}
               />
             ))}
@@ -214,25 +232,27 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
         </div>
       </div>
 
-      {/* Floating Elements */}
+      {/* Floating Elements - ลดขนาดลง */}
       <div style={{
         position: 'absolute',
-        top: '20%',
+        top: '15%',
         left: '10%',
         animation: 'float 4s ease-in-out infinite',
-        opacity: 0.3
+        opacity: 0.25,
+        fontSize: '1.5rem'
       }}>
-        <div style={{ fontSize: '2rem' }}>🛒</div>
+        🛒
       </div>
       
       <div style={{
         position: 'absolute',
-        top: '30%',
+        top: '25%',
         right: '15%',
         animation: 'float 4s ease-in-out infinite 1s',
-        opacity: 0.3
+        opacity: 0.25,
+        fontSize: '1.5rem'
       }}>
-        <div style={{ fontSize: '2rem' }}>💳</div>
+        💳
       </div>
       
       <div style={{
@@ -240,34 +260,57 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
         bottom: '25%',
         left: '15%',
         animation: 'float 4s ease-in-out infinite 2s',
-        opacity: 0.3
+        opacity: 0.25,
+        fontSize: '1.5rem'
       }}>
-        <div style={{ fontSize: '2rem' }}>🎁</div>
+        🎁
       </div>
       
       <div style={{
         position: 'absolute',
-        bottom: '20%',
+        bottom: '15%',
         right: '10%',
         animation: 'float 4s ease-in-out infinite 0.5s',
-        opacity: 0.3
+        opacity: 0.25,
+        fontSize: '1.5rem'
       }}>
-        <div style={{ fontSize: '2rem' }}>⭐</div>
+        ⭐
       </div>
+
+      {/* Dev Reset Button - เฉพาะเมื่อ development
+      {process.env.NODE_ENV === 'development' && (
+        <button
+          onClick={resetWelcomeAnimation}
+          style={{
+            position: 'absolute',
+            bottom: '20px',
+            left: '20px',
+            background: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
+            borderRadius: '15px',
+            padding: '6px 12px',
+            color: 'rgba(255, 255, 255, 0.7)',
+            fontSize: '0.7rem',
+            cursor: 'pointer'
+          }}
+        >
+          🔄 Reset Welcome
+        </button>
+      )} */}
 
       {/* CSS Animations */}
       <style jsx>{`
         @keyframes bounceIn {
           0% {
             opacity: 0;
-            transform: scale(0.3) translateY(-100px);
+            transform: scale(0.3) translateY(-50px);
           }
           50% {
             opacity: 1;
             transform: scale(1.05) translateY(0);
           }
           70% {
-            transform: scale(0.9);
+            transform: scale(0.95);
           }
           100% {
             opacity: 1;
@@ -278,7 +321,7 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
         @keyframes slideUp {
           from {
             opacity: 0;
-            transform: translateY(30px);
+            transform: translateY(20px);
           }
           to {
             opacity: 1;
@@ -287,62 +330,29 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
         }
 
         @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
 
         @keyframes fadeOut {
-          from {
-            opacity: 1;
-          }
-          to {
-            opacity: 0;
-          }
+          from { opacity: 1; }
+          to { opacity: 0; }
         }
 
         @keyframes bounce {
-          0%, 80%, 100% {
-            transform: scale(0);
-          }
-          40% {
-            transform: scale(1);
-          }
+          0%, 80%, 100% { transform: scale(0); }
+          40% { transform: scale(1); }
         }
 
         @keyframes float {
-          0%, 100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-20px);
-          }
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-15px); }
         }
 
         @keyframes shine {
-          0% {
-            transform: translateX(-100%) translateY(-100%) rotate(45deg);
-          }
-          50% {
-            transform: translateX(100%) translateY(100%) rotate(45deg);
-          }
-          100% {
-            transform: translateX(-100%) translateY(-100%) rotate(45deg);
-          }
-        }
-
-        @keyframes pulse {
-          0%, 100% {
-            transform: scale(1);
-            opacity: 0.8;
-          }
-          50% {
-            transform: scale(1.05);
-            opacity: 0.4;
-          }
+          0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+          50% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+          100% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
         }
       `}</style>
     </div>
