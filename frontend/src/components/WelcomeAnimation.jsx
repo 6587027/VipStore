@@ -4,34 +4,85 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [showWelcome, setShowWelcome] = useState(false);
 
-  // 🔑 ตรวจสอบว่าเคยเล่น animation แล้วหรือยัง
+  // 🔑 ตรวจสอบการแสดง Welcome Animation ตาม Session และ User Login Status
   useEffect(() => {
-    const hasSeenWelcome = localStorage.getItem('vipstore_welcome_seen');
     const sessionWelcome = sessionStorage.getItem('vipstore_session_welcome');
     
-    // เงื่อนไขการแสดง Welcome:
-    // 1. ยังไม่เคยเห็น Welcome เลย (ผู้ใช้ใหม่)
-    // 2. หรือเป็น session ใหม่และผ่านไป 2 นาทีแล้ว
-    const twoMinutesAgo = Date.now() - (2 * 60 * 1000); // 🕐 เปลี่ยนเป็น 2 นาที
-    const lastSeen = parseInt(hasSeenWelcome) || 0;
+    // 🆕 ตรวจสอบสถานะการ Login
+    const currentUser = localStorage.getItem('currentUser');
+    const isLoggedIn = currentUser !== null;
     
-    if (!hasSeenWelcome || (!sessionWelcome && lastSeen < twoMinutesAgo)) {
+    // 📝 เงื่อนไขการแสดง Welcome Animation (Simplified Logic):
+    const oneMinuteAgo = Date.now() - (1 * 60 * 1000); // 🕐 1 นาที
+    let shouldShowWelcome = false;
+    
+    if (sessionWelcome) {
+      // 🚫 ถ้าเคยเห็นใน session นี้แล้ว -> ไม่แสดง
+      shouldShowWelcome = false;
+    } else {
+      // ✅ ยังไม่เคยเห็นใน session นี้ -> ตรวจสอบเงื่อนไขต่อ
+      
+      if (isLoggedIn) {
+        // 👤 กรณีที่ User Login อยู่
+        try {
+          const userData = JSON.parse(currentUser);
+          const userLastSeen = localStorage.getItem(`vipstore_welcome_${userData.username}`);
+          
+          if (!userLastSeen) {
+            // User นี้ยังไม่เคยเห็น Welcome เลย
+            shouldShowWelcome = true;
+          } else {
+            // ตรวจสอบว่าออกจาก website ไปเกิน 1 นาทีหรือยัง
+            const lastSeenTime = parseInt(userLastSeen) || 0;
+            if (lastSeenTime < oneMinuteAgo) {
+              shouldShowWelcome = true;
+            }
+          }
+        } catch (error) {
+          console.log('Error parsing user data:', error);
+          shouldShowWelcome = true; // แสดงถ้า error
+        }
+      } else {
+        // 👥 กรณีที่ไม่ได้ Login (Guest User)
+        const hasSeenWelcome = localStorage.getItem('vipstore_welcome_seen');
+        
+        if (!hasSeenWelcome) {
+          // Guest ยังไม่เคยเห็น
+          shouldShowWelcome = true;
+        } else {
+          // ตรวจสอบเวลาล่าสุด
+          const lastSeen = parseInt(hasSeenWelcome) || 0;
+          if (lastSeen < oneMinuteAgo) {
+            shouldShowWelcome = true;
+          }
+        }
+      }
+    }
+
+    console.log('🎯 Welcome Animation Logic:', {
+      isLoggedIn,
+      sessionWelcome: !!sessionWelcome,
+      shouldShowWelcome,
+      user: isLoggedIn ? JSON.parse(currentUser || '{}').username : 'guest'
+    });
+
+    if (shouldShowWelcome) {
       setShowWelcome(true);
-      // บันทึกว่าได้เห็น welcome แล้วในครั้งนี้
+      // 💾 บันทึกว่าได้เห็น welcome แล้วในครั้งนี้ (Session)
       sessionStorage.setItem('vipstore_session_welcome', 'true');
     } else {
-      // ข้ามการเกิด Welcome Animation
+      // ข้ามการแสดง Welcome Animation
       onAnimationComplete && onAnimationComplete();
       return;
     }
 
-    // Timeline ของ animation
+    // Timeline ของ animation (เหมือนเดิม)
     const timeline = [
-      { step: 1, delay: 500 },   // Logo bounce in (เร็วขึ้น)
+      { step: 1, delay: 800 },   // Logo bounce in
       { step: 2, delay: 1500 },  // Welcome text
       { step: 3, delay: 2300 },  // Tagline
       { step: 4, delay: 2900 },  // Loading dots
-      { step: 5, delay: 3800 }   // Fade out (เร็วขึ้น)
+      { step: 5, delay: 3800 }   // Fade out
     ];
 
     timeline.forEach(({ step, delay }) => {
@@ -40,8 +91,21 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
         if (step === 5) {
           setTimeout(() => {
             setShowWelcome(false);
-            // บันทึกว่าได้ดู welcome ครบแล้ว
-            localStorage.setItem('vipstore_welcome_seen', Date.now().toString());
+            
+            // 💾 บันทึกการดู Welcome Animation
+            if (isLoggedIn) {
+              // บันทึกแยกตาม User
+              try {
+                const userData = JSON.parse(currentUser);
+                localStorage.setItem(`vipstore_welcome_${userData.username}`, Date.now().toString());
+              } catch (error) {
+                console.log('Error saving user-specific welcome:', error);
+              }
+            } else {
+              // บันทึกสำหรับ Guest User
+              localStorage.setItem('vipstore_welcome_seen', Date.now().toString());
+            }
+            
             onAnimationComplete && onAnimationComplete();
           }, 800);
         }
@@ -49,12 +113,25 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
     });
   }, [onAnimationComplete]);
 
-  // // 🔄 ฟังก์ชันสำหรับ Reset (ถ้าต้องการทดสอบ)
-  // const resetWelcomeAnimation = () => {
-  //   localStorage.removeItem('vipstore_welcome_seen');
-  //   sessionStorage.removeItem('vipstore_session_welcome');
-  //   window.location.reload();
-  // };
+  // 🔄 ฟังก์ชันสำหรับ Reset (ถ้าต้องการทดสอบ)
+  const resetWelcomeAnimation = () => {
+    // Clear general welcome
+    localStorage.removeItem('vipstore_welcome_seen');
+    sessionStorage.removeItem('vipstore_session_welcome');
+    
+    // Clear user-specific welcome
+    const currentUser = localStorage.getItem('currentUser');
+    if (currentUser) {
+      try {
+        const userData = JSON.parse(currentUser);
+        localStorage.removeItem(`vipstore_welcome_${userData.username}`);
+      } catch (error) {
+        console.log('Error clearing user-specific welcome:', error);
+      }
+    }
+    
+    window.location.reload();
+  };
 
   if (!showWelcome) return null;
 
@@ -193,7 +270,7 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
             fontStyle: 'italic',
             textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
           }}>
-            Project จำลองระบบจัดการร้านค้า
+            ระบบจำลองร้านค้า Online 
           </p>
         </div>
 
@@ -232,7 +309,7 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
         </div>
       </div>
 
-      {/* Floating Elements - ลดขนาดลง */}
+      {/* Floating Elements */}
       <div style={{
         position: 'absolute',
         top: '15%',
@@ -277,8 +354,8 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
         ⭐
       </div>
 
-      {/* Dev Reset Button - เฉพาะเมื่อ development
-      {process.env.NODE_ENV === 'development' && (
+      {/* Dev Reset Button - สำหรับ Development Testing */}
+      {/* {process.env.NODE_ENV === 'development' && (
         <button
           onClick={resetWelcomeAnimation}
           style={{
@@ -291,7 +368,8 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
             padding: '6px 12px',
             color: 'rgba(255, 255, 255, 0.7)',
             fontSize: '0.7rem',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            backdropFilter: 'blur(10px)'
           }}
         >
           🔄 Reset Welcome

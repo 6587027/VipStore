@@ -1,4 +1,8 @@
 
+/* src/styles/index.css */
+
+
+/* ===== MOBILE-FIRST RESET ===== */
 * {
   margin: 0;
   padding: 0;
@@ -10,247 +14,170 @@ body {
   background-color: #f8f9fa;
   color: #333;
   line-height: 1.6;
+  font-size: 16px; /* Base font size */
 }
 
-/* Container */
+/* ===== CONTAINER - MOBILE FIRST ===== */
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 16px; /* 📱 Mobile: เริ่มที่ 16px */
 }
 
-/* Header */
+/* ===== HEADER - MOBILE OPTIMIZED ===== */
 .header {
   background: white;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  padding: 16px 0;
-  margin-bottom: 32px;
+  padding: 8px 0; /* 📱 Mobile: ลดความสูง */
+  margin-bottom: 16px; /* 📱 Mobile: ลด margin */
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .header h1 {
   color: #3b82f6;
-  font-size: 24px;
+  font-size: 1.1rem; /* 📱 Mobile: ขนาดเล็กลง */
   font-weight: bold;
+  margin: 0;
+  line-height: 1.2;
 }
 
-/* Buttons */
+/* 📱 MOBILE HEADER IMPROVEMENTS */
+.header .container > div {
+  flex-direction: column; /* 📱 Mobile: Stack layout */
+  gap: 8px;
+  align-items: stretch;
+}
+
+.header .container > div > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header .container > div > div:last-child {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ===== BUTTONS - MOBILE FIRST ===== */
 .btn-primary {
-  background-color: #3b82f6;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 12px 24px;
+  padding: 8px 12px; /* 📱 Mobile: ขนาดเล็กลง */
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: background-color 0.2s;
+  font-size: 0.75rem; /* 📱 Mobile: ขนาดเล็กลง */
+  font-weight: 600;
+  transition: all 0.3s ease;
+  min-height: 36px; /* 📱 Touch-friendly */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-primary:hover {
-  background-color: #2563eb;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .btn-secondary {
-  background-color: #e5e7eb;
-  color: #374151;
-  padding: 12px 24px;
-  border: none;
-  border-radius: 8px;
+  background: #f8f9fa;
+  color: #495057;
+  padding: 8px 12px; /* 📱 Mobile: ขนาดเล็กลง */
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: background-color 0.2s;
+  font-size: 0.75rem; /* 📱 Mobile: ขนาดเล็กลง */
+  font-weight: 600;
+  transition: all 0.3s ease;
+  min-height: 36px; /* 📱 Touch-friendly */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-secondary:hover {
-  background-color: #d1d5db;
+  background: #e9ecef;
+  border-color: #dee2e6;
+  transform: translateY(-1px);
 }
 
-/* Cards */
+/* ===== CARDS - MOBILE FIRST ===== */
 .card {
   background: white;
   border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  padding: 24px;
-  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 14px; /* 📱 Mobile: ลด padding */
+  margin-bottom: 14px; /* 📱 Mobile: ลด margin */
   transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid #e5e7eb;
 }
 
 .card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
 }
 
-/* Product Grid */
+.card h2 {
+  font-size: 1rem; /* 📱 Mobile: ขนาดเล็กลง */
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 10px 0;
+}
+
+/* ===== PRODUCT GRID - MOBILE FIRST ===== */
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 24px;
-  padding: 20px 0;
+  grid-template-columns: repeat(2, 1fr); /* 📱 Mobile: 2 คอลัมน์ */
+  gap: 14px; /* 📱 Mobile: เพิ่ม gap เล็กน้อยให้มีพื้นที่หายใจ */
+  padding: 12px 0;
 }
 
+/* ===== PRODUCT CARD - MOBILE FIRST ===== */
 .product-card {
   background: white;
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.product-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 20px rgba(0,0,0,0.15);
-}
-
-.product-image {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-  background-color: #f3f4f6;
-}
-
-.product-info {
-  padding: 20px;
-}
-
-.product-name {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: #1f2937;
-}
-
-.product-description {
-  font-size: 14px;
-  color: #6b7280;
-  margin-bottom: 16px;
-  line-height: 1.5;
-}
-
-.product-price {
-  font-size: 20px;
-  font-weight: bold;
-  color: #3b82f6;
-  margin-bottom: 16px;
-}
-
-.product-category {
-  display: inline-block;
-  background-color: #e0e7ff;
-  color: #3730a3;
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 12px;
-  font-weight: 500;
-  margin-bottom: 12px;
-}
-
-/* Loading และ Error States */
-.loading {
-  text-align: center;
-  padding: 40px;
-  font-size: 16px;
-  color: #6b7280;
-}
-
-.error {
-  text-align: center;
-  padding: 40px;
-  color: #dc2626;
-  background-color: #fef2f2;
-  border-radius: 8px;
-  margin: 20px 0;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .container {
-    padding: 0 16px;
-  }
-  
-  .product-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-  
-  .header h1 {
-    font-size: 20px;
-  }
-}
-
-
-/* Cart Button Enhancements */
-.cart-button {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  min-width: 120px;
-}
-
-.cart-badge {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  background: #e53e3e;
-  color: white;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  font-weight: 600;
-  animation: pulse 0.3s ease;
-}
-
-.cart-amount {
-  font-size: 0.7rem;
-  color: #666;
-  font-weight: 500;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
-}
-
-/* Product Card Enhancements */
-.product-card {
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
   transition: all 0.3s ease;
   height: 100%;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .product-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  border-color: #667eea;
 }
 
 .product-card.out-of-stock {
   opacity: 0.7;
-  filter: grayscale(30%);
+  background: #f9fafb;
 }
 
+/* ===== PRODUCT IMAGE - MOBILE FIRST ===== */
 .product-image-container {
   position: relative;
   width: 100%;
-  height: 200px;
+  height: 140px; /* 📱 Mobile: ลดความสูงรูปลงเล็กน้อยเพื่อให้ที่กับข้อความ */
   overflow: hidden;
+  background: #f8f9fa;
 }
 
 .product-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   transition: transform 0.3s ease;
 }
 
@@ -258,154 +185,229 @@ body {
   transform: scale(1.05);
 }
 
+/* ===== STOCK BADGES - MOBILE FIRST ===== */
 .stock-badge {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: white;
+  top: 4px;
+  right: 4px;
+  padding: 2px 5px; /* 📱 Mobile: ขนาดเล็ก */
+  border-radius: 6px;
+  font-size: 0.6rem; /* 📱 Mobile: ขนาดเล็ก */
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .out-of-stock-badge {
-  background: #e53e3e;
+  background: #ef4444;
+  color: white;
 }
 
 .low-stock-badge {
-  background: #ff9500;
+  background: #f59e0b;
+  color: white;
 }
 
+/* ===== PRODUCT INFO - MOBILE FIRST ===== */
 .product-info {
-  padding: 16px;
+  padding: 12px; /* 📱 Mobile: เพิ่ม padding ให้ดูสบายตาขึ้น */
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  flex: 1;
+  flex-grow: 1;
+  gap: 6px; /* 📱 Mobile: เพิ่ม gap เล็กน้อย */
 }
 
 .product-name {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #333;
+  font-size: 0.9rem; /* 📱 Mobile: เพิ่มขนาดให้อ่านง่ายขึ้น */
+  font-weight: 700;
+  color: #1f2937;
   margin: 0;
   line-height: 1.3;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  min-height: 2.3rem; /* เพิ่มความสูงให้เหมาะสม */
 }
 
 .product-description {
-  font-size: 0.85rem;
-  color: #666;
+  font-size: 0.75rem; /* 📱 Mobile: เพิ่มขนาดให้อ่านง่ายขึ้น */
+  color: #6b7280;
   line-height: 1.4;
   margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  /* 📱 เอา text clamp ออกเพื่อแสดงข้อความเต็ม */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
+/* ===== PRODUCT META - MOBILE FIRST ===== */
 .product-meta {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin: 8px 0;
+  flex-direction: column;
+  gap: 4px; /* เพิ่ม gap เล็กน้อย */
+  margin: 6px 0; /* เพิ่ม margin */
 }
 
 .product-price {
-  font-size: 1.3rem;
-  font-weight: 700;
-  color: #667eea;
+  font-size: 1.05rem; /* 📱 Mobile: เพิ่มขนาดราคาให้เด่นขึ้น */
+  font-weight: 800;
+  color: #059669;
+  margin: 0;
 }
 
 .product-category {
-  font-size: 0.75rem;
-  color: #666;
-  background: #f8f9fa;
-  padding: 4px 8px;
-  border-radius: 12px;
-}
-
-.stock-info {
-  margin: 8px 0;
-}
-
-.stock-text {
-  font-size: 0.8rem;
+  font-size: 0.7rem; /* 📱 Mobile: เพิ่มขนาดเล็กน้อย */
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 2px 6px; /* เพิ่ม padding */
+  border-radius: 6px;
+  align-self: flex-start;
   font-weight: 500;
 }
 
+/* ===== STOCK INFO - MOBILE FIRST ===== */
+.stock-info {
+  margin: 4px 0;
+}
+
+.stock-text {
+  font-size: 0.7rem; /* 📱 Mobile: เพิ่มขนาดให้อ่านง่ายขึ้น */
+  font-weight: 600;
+  padding: 2px 6px; /* เพิ่ม padding */
+  border-radius: 5px;
+  display: inline-block;
+}
+
 .stock-text.in-stock {
-  color: #38a169;
+  color: #059669;
+  background: #ecfdf5;
 }
 
 .stock-text.low-stock {
-  color: #ff9500;
+  color: #d97706;
+  background: #fffbeb;
 }
 
 .stock-text.out-of-stock {
-  color: #e53e3e;
+  color: #dc2626;
+  background: #fef2f2;
 }
 
+/* ===== PRODUCT ACTIONS - MOBILE FIRST ===== */
 .product-actions {
   margin-top: auto;
-  padding-top: 12px;
+  padding-top: 6px; /* เพิ่ม padding เล็กน้อย */
 }
 
-/* Product Grid Layout */
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
-  padding: 20px;
+/* ===== FILTER BUTTONS - MOBILE FIRST ===== */
+.filter-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px; /* 📱 Mobile: gap เล็ก */
 }
 
-/* Responsive Product Cards */
-@media (max-width: 768px) {
-  .products-grid {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 16px;
-    padding: 16px;
-  }
-  
-  .product-image-container {
-    height: 180px;
-  }
-  
-  .product-info {
-    padding: 12px;
-  }
-  
-  .product-name {
-    font-size: 1rem;
-  }
-  
-  .product-price {
-    font-size: 1.2rem;
-  }
+/* ===== PRODUCTS COUNT - MOBILE FIRST ===== */
+.products-count {
+  margin: 10px 0;
 }
 
-@media (max-width: 480px) {
-  .products-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-    padding: 12px;
-  }
-  
-  .cart-button {
-    min-width: 100px;
-    font-size: 0.8rem;
-  }
-  
-  .cart-amount {
-    font-size: 0.65rem;
-  }
+.products-count h2 {
+  font-size: 0.9rem; /* 📱 Mobile: ขนาดเล็กลง */
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
 }
 
-/* Loading States */
+/* ===== EMPTY STATE - MOBILE FIRST ===== */
+.empty-state {
+  text-align: center;
+  padding: 24px 12px; /* 📱 Mobile: padding เล็ก */
+  background: #f9fafb;
+  border-radius: 10px;
+  border: 2px dashed #d1d5db;
+}
+
+.empty-state h3 {
+  color: #6b7280;
+  font-size: 0.9rem; /* 📱 Mobile: ขนาดเล็กลง */
+  margin: 0 0 4px 0;
+}
+
+.empty-state p {
+  color: #9ca3af;
+  font-size: 0.8rem; /* 📱 Mobile: ขนาดเล็กลง */
+  margin: 0;
+}
+
+/* ===== CART FEATURES - MOBILE FIRST ===== */
+.cart-button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 70px; /* 📱 Mobile: ขนาดเล็กลง */
+}
+
+.cart-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #e53e3e;
+  color: white;
+  border-radius: 50%;
+  width: 16px; /* 📱 Mobile: ขนาดเล็กลง */
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem; /* 📱 Mobile: ขนาดเล็กลง */
+  font-weight: 600;
+  animation: pulse 0.3s ease;
+}
+
+.cart-amount {
+  font-size: 0.6rem; /* 📱 Mobile: ขนาดเล็กลง */
+  color: #666;
+  font-weight: 500;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes addToCartSuccess {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.product-card.cart-success {
+  animation: addToCartSuccess 0.6s ease;
+}
+
+/* ===== LOADING STATES ===== */
+.loading {
+  text-align: center;
+  padding: 24px; /* 📱 Mobile: padding เล็กลง */
+  font-size: 0.85rem; /* 📱 Mobile: ขนาดเล็กลง */
+  color: #6b7280;
+}
+
+.error {
+  text-align: center;
+  padding: 24px; /* 📱 Mobile: padding เล็กลง */
+  color: #dc2626;
+  background-color: #fef2f2;
+  border-radius: 8px;
+  margin: 12px 0; /* 📱 Mobile: margin เล็กลง */
+}
+
 .product-card.loading {
   opacity: 0.6;
   pointer-events: none;
@@ -415,13 +417,321 @@ body {
   filter: blur(2px);
 }
 
-/* Success Animation */
-@keyframes addToCartSuccess {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
+/* ===== BUTTON ENHANCEMENTS ===== */
+.btn-outline {
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem; /* 📱 Mobile: ขนาดเล็กลง */
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid;
+  background: transparent;
+  min-height: 36px; /* 📱 Touch-friendly */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.product-card.cart-success {
-  animation: addToCartSuccess 0.6s ease;
+.btn-outline:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== USER INFO - MOBILE FIRST ===== */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 4px; /* 📱 Mobile: gap เล็กลง */
+  background: #f0f8ff;
+  padding: 4px 8px; /* 📱 Mobile: padding เล็กลง */
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+}
+
+.user-avatar {
+  font-size: 0.9rem; /* 📱 Mobile: ขนาดเล็กลง */
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.user-name {
+  font-size: 0.7rem; /* 📱 Mobile: ขนาดเล็กลง */
+  font-weight: 600;
+  color: #333;
+}
+
+.user-role {
+  font-size: 0.65rem; /* 📱 Mobile: ขนาดเล็กลง */
+  color: #666;
+  text-transform: capitalize;
+}
+
+/* ===== TABLET RESPONSIVE (768px+) - DESKTOP UNCHANGED ===== */
+@media (min-width: 768px) {
+  .container {
+    padding: 0 20px; /* เดิม */
+  }
+  
+  .header {
+    padding: 16px 0; /* เดิม */
+    margin-bottom: 32px; /* เดิม */
+  }
+  
+  .header h1 {
+    font-size: 24px; /* เดิม */
+  }
+  
+  /* 🚫 ยกเลิก mobile header modifications สำหรับ tablet+ */
+  .header .container > div {
+    flex-direction: row !important;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0;
+  }
+  
+  .header .container > div > div:first-child,
+  .header .container > div > div:last-child {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* เดิม */
+    gap: 24px; /* เดิม */
+    padding: 20px 0; /* เดิม */
+  }
+  
+  .product-card {
+    border-radius: 12px; /* เดิม */
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* เดิม */
+  }
+  
+  .product-card:hover {
+    transform: translateY(-4px); /* เดิม */
+    box-shadow: 0 12px 20px rgba(0,0,0,0.15); /* เดิม */
+  }
+  
+  .product-image-container {
+    height: 200px; /* เดิม */
+  }
+  
+  .product-info {
+    padding: 20px; /* เดิม */
+    gap: 8px; /* เดิม */
+  }
+  
+  .product-name {
+    font-size: 18px; /* เดิม */
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  
+  .product-description {
+    font-size: 14px; /* เดิม */
+    color: #6b7280;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+  
+  .product-price {
+    font-size: 20px; /* เดิม */
+    font-weight: bold;
+    color: #3b82f6;
+    margin-bottom: 16px;
+  }
+  
+  .product-category {
+    display: inline-block;
+    background-color: #e0e7ff;
+    color: #3730a3;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 12px;
+  }
+  
+  .stock-badge {
+    padding: 4px 8px;
+    font-size: 0.7rem;
+    top: 8px;
+    right: 8px;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    padding: 12px 24px; /* เดิม */
+    font-size: 14px; /* เดิม */
+    font-weight: 500;
+  }
+  
+  .card {
+    padding: 24px; /* เดิม */
+    margin-bottom: 20px; /* เดิม */
+  }
+  
+  .cart-button {
+    min-width: 120px; /* เดิม */
+  }
+  
+  .cart-badge {
+    width: 20px; /* เดิม */
+    height: 20px;
+    font-size: 0.7rem;
+  }
+  
+  .cart-amount {
+    font-size: 0.7rem; /* เดิม */
+  }
+  
+  .user-info {
+    gap: 8px; /* เดิม */
+    padding: 8px 12px; /* เดิม */
+  }
+  
+  .user-avatar {
+    font-size: 1.2rem; /* เดิม */
+  }
+  
+  .user-name {
+    font-size: 0.9rem; /* เดิม */
+  }
+  
+  .user-role {
+    font-size: 0.75rem; /* เดิม */
+  }
+  
+  .loading {
+    padding: 40px; /* เดิม */
+    font-size: 16px; /* เดิม */
+  }
+  
+  .error {
+    padding: 40px; /* เดิม */
+    margin: 20px 0; /* เดิม */
+  }
+}
+
+/* ===== SMALL SCREEN OPTIMIZATION (max-width: 480px) ===== */
+@media (max-width: 480px) {
+  .container {
+    padding: 0 12px;
+  }
+  
+  .header {
+    padding: 6px 0;
+    margin-bottom: 12px;
+  }
+  
+  .header h1 {
+    font-size: 1rem;
+  }
+  
+  .product-grid {
+    gap: 8px;
+    padding: 8px 0;
+  }
+  
+  .product-image-container {
+    height: 100px;
+  }
+  
+  .product-info {
+    padding: 6px;
+    gap: 3px;
+  }
+  
+  .product-name {
+    font-size: 0.75rem;
+    min-height: 1.7rem;
+  }
+  
+  .product-description {
+    font-size: 0.65rem;
+    min-height: 1.6rem;
+  }
+  
+  .product-price {
+    font-size: 0.85rem;
+  }
+  
+  .product-category {
+    font-size: 0.6rem;
+    padding: 1px 3px;
+  }
+  
+  .stock-text {
+    font-size: 0.6rem;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    padding: 6px 10px;
+    font-size: 0.7rem;
+    min-height: 32px;
+  }
+  
+  .card {
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+  
+  .card h2 {
+    font-size: 0.9rem;
+  }
+  
+  .cart-button {
+    min-width: 60px;
+  }
+  
+  .cart-badge {
+    width: 14px;
+    height: 14px;
+    font-size: 0.55rem;
+  }
+  
+  .cart-amount {
+    font-size: 0.55rem;
+  }
+  
+  .user-name {
+    font-size: 0.65rem;
+  }
+  
+  .user-role {
+    font-size: 0.6rem;
+  }
+}
+
+/* ===== TOUCH OPTIMIZATIONS ===== */
+@media (hover: none) and (pointer: coarse) {
+  .product-card:hover {
+    transform: none;
+  }
+  
+  .product-card:active {
+    transform: scale(0.98);
+  }
+  
+  .btn-primary:hover,
+  .btn-secondary:hover {
+    transform: none;
+  }
+  
+  .btn-primary:active,
+  .btn-secondary:active {
+    transform: scale(0.98);
+  }
+}
+
+/* ===== ACCESSIBILITY ===== */
+.product-card:focus-within {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
 }

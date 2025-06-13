@@ -868,8 +868,12 @@ const CartModal = ({ isOpen, onClose }) => {
       <div className="checkout-header">
         <h3>🚚 ข้อมูลการจัดส่ง</h3>
         <div className="user-info">
-          <p>👤 สั่งโดย: {user?.firstName || user?.username}</p>
-          <p>📧 อีเมล: {user?.email}</p>
+         <p style={{ color: '#1f2937', fontWeight: '700', fontSize: '0.9rem' }}>
+            👤 สั่งโดย: {user?.firstName || user?.username}
+          </p>
+          <p style={{ color: '#1f2937', fontWeight: '700', fontSize: '0.9rem' }}>
+            📧 อีเมล: {user?.email}
+          </p>
         </div>
       </div>
 
