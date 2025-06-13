@@ -4,85 +4,57 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [showWelcome, setShowWelcome] = useState(false);
 
-  // 🔑 ตรวจสอบการแสดง Welcome Animation ตาม Session และ User Login Status
+  // 🎯 Simple Logic: แสดง Animation เฉพาะเมื่อไม่มี User Login
   useEffect(() => {
-    const sessionWelcome = sessionStorage.getItem('vipstore_session_welcome');
+    console.log('🎬 Welcome Animation: Checking login status...');
     
-    // 🆕 ตรวจสอบสถานะการ Login
-    const currentUser = localStorage.getItem('currentUser');
-    const isLoggedIn = currentUser !== null;
+    // 🔍 ตรวจสอบสถานะ User Login - ลองหลาย key ที่เป็นไปได้
+    const possibleUserKeys = ['currentUser', 'user', 'loggedInUser', 'authUser'];
+    let currentUser = null;
+    let userKey = null;
     
-    // 📝 เงื่อนไขการแสดง Welcome Animation (Simplified Logic):
-    const oneMinuteAgo = Date.now() - (1 * 60 * 1000); // 🕐 1 นาที
-    let shouldShowWelcome = false;
-    
-    if (sessionWelcome) {
-      // 🚫 ถ้าเคยเห็นใน session นี้แล้ว -> ไม่แสดง
-      shouldShowWelcome = false;
-    } else {
-      // ✅ ยังไม่เคยเห็นใน session นี้ -> ตรวจสอบเงื่อนไขต่อ
-      
-      if (isLoggedIn) {
-        // 👤 กรณีที่ User Login อยู่
-        try {
-          const userData = JSON.parse(currentUser);
-          const userLastSeen = localStorage.getItem(`vipstore_welcome_${userData.username}`);
-          
-          if (!userLastSeen) {
-            // User นี้ยังไม่เคยเห็น Welcome เลย
-            shouldShowWelcome = true;
-          } else {
-            // ตรวจสอบว่าออกจาก website ไปเกิน 1 นาทีหรือยัง
-            const lastSeenTime = parseInt(userLastSeen) || 0;
-            if (lastSeenTime < oneMinuteAgo) {
-              shouldShowWelcome = true;
-            }
-          }
-        } catch (error) {
-          console.log('Error parsing user data:', error);
-          shouldShowWelcome = true; // แสดงถ้า error
-        }
-      } else {
-        // 👥 กรณีที่ไม่ได้ Login (Guest User)
-        const hasSeenWelcome = localStorage.getItem('vipstore_welcome_seen');
-        
-        if (!hasSeenWelcome) {
-          // Guest ยังไม่เคยเห็น
-          shouldShowWelcome = true;
-        } else {
-          // ตรวจสอบเวลาล่าสุด
-          const lastSeen = parseInt(hasSeenWelcome) || 0;
-          if (lastSeen < oneMinuteAgo) {
-            shouldShowWelcome = true;
-          }
-        }
+    for (const key of possibleUserKeys) {
+      const userData = localStorage.getItem(key);
+      if (userData && userData !== 'null' && userData !== 'undefined') {
+        currentUser = userData;
+        userKey = key;
+        break;
       }
     }
-
-    console.log('🎯 Welcome Animation Logic:', {
+    
+    const isLoggedIn = currentUser !== null;
+    
+    console.log('🔍 Login Check:', {
       isLoggedIn,
-      sessionWelcome: !!sessionWelcome,
-      shouldShowWelcome,
-      user: isLoggedIn ? JSON.parse(currentUser || '{}').username : 'guest'
+      userKey,
+      user: isLoggedIn ? (function() {
+        try {
+          return JSON.parse(currentUser).username || JSON.parse(currentUser).name || 'unknown';
+        } catch (e) {
+          return currentUser.slice(0, 20) + '...';
+        }
+      })() : 'no user'
     });
 
-    if (shouldShowWelcome) {
+    // 🎯 Simple Logic: แสดง Animation เฉพาะเมื่อไม่มี User Login
+    if (!isLoggedIn) {
+      // ✅ ไม่มี User Login → แสดง Animation
+      console.log('✅ No user logged in → Show Welcome Animation');
       setShowWelcome(true);
-      // 💾 บันทึกว่าได้เห็น welcome แล้วในครั้งนี้ (Session)
-      sessionStorage.setItem('vipstore_session_welcome', 'true');
     } else {
-      // ข้ามการแสดง Welcome Animation
+      // 🚫 มี User Login → ข้าม Animation
+      console.log('🚫 User logged in → Skip Animation');
       onAnimationComplete && onAnimationComplete();
       return;
     }
 
-    // Timeline ของ animation (เหมือนเดิม)
+    // Timeline ของ animation
     const timeline = [
-      { step: 1, delay: 800 },   // Logo bounce in
-      { step: 2, delay: 1500 },  // Welcome text
-      { step: 3, delay: 2300 },  // Tagline
-      { step: 4, delay: 2900 },  // Loading dots
-      { step: 5, delay: 3800 }   // Fade out
+      { step: 1, delay: 300 },   // Logo bounce in
+      { step: 2, delay: 800 },  // Welcome text
+      { step: 3, delay: 1200 },  // Tagline
+      { step: 4, delay: 1600 },  // Loading dots
+      { step: 5, delay: 2400 }   // Fade out
     ];
 
     timeline.forEach(({ step, delay }) => {
@@ -91,21 +63,7 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
         if (step === 5) {
           setTimeout(() => {
             setShowWelcome(false);
-            
-            // 💾 บันทึกการดู Welcome Animation
-            if (isLoggedIn) {
-              // บันทึกแยกตาม User
-              try {
-                const userData = JSON.parse(currentUser);
-                localStorage.setItem(`vipstore_welcome_${userData.username}`, Date.now().toString());
-              } catch (error) {
-                console.log('Error saving user-specific welcome:', error);
-              }
-            } else {
-              // บันทึกสำหรับ Guest User
-              localStorage.setItem('vipstore_welcome_seen', Date.now().toString());
-            }
-            
+            console.log('🎬 Welcome Animation: Completed successfully');
             onAnimationComplete && onAnimationComplete();
           }, 800);
         }
@@ -113,27 +71,21 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
     });
   }, [onAnimationComplete]);
 
-  // 🔄 ฟังก์ชันสำหรับ Reset (ถ้าต้องการทดสอบ)
-  const resetWelcomeAnimation = () => {
-    // Clear general welcome
-    localStorage.removeItem('vipstore_welcome_seen');
-    sessionStorage.removeItem('vipstore_session_welcome');
+  // 🔄 ฟังก์ชันสำหรับ Reset (สำหรับทดสอบ)
+  const resetAndReload = () => {
+    console.log('🔄 Manual logout and reload');
     
-    // Clear user-specific welcome
-    const currentUser = localStorage.getItem('currentUser');
-    if (currentUser) {
-      try {
-        const userData = JSON.parse(currentUser);
-        localStorage.removeItem(`vipstore_welcome_${userData.username}`);
-      } catch (error) {
-        console.log('Error clearing user-specific welcome:', error);
-      }
-    }
+    // เคลียร์ทุก possible user keys
+    const possibleUserKeys = ['currentUser', 'user', 'loggedInUser', 'authUser'];
+    possibleUserKeys.forEach(key => {
+      localStorage.removeItem(key);
+    });
     
     window.location.reload();
   };
 
   if (!showWelcome) return null;
+
 
   return (
     <div style={{
@@ -270,7 +222,7 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
             fontStyle: 'italic',
             textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
           }}>
-            ระบบจำลองร้านค้า Online 
+            ระบบจำลองร้านค้าออนไลน์ ( DEMO )
           </p>
         </div>
 
@@ -357,7 +309,7 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
       {/* Dev Reset Button - สำหรับ Development Testing */}
       {/* {process.env.NODE_ENV === 'development' && (
         <button
-          onClick={resetWelcomeAnimation}
+          onClick={resetAndReload}
           style={{
             position: 'absolute',
             bottom: '20px',
@@ -372,7 +324,7 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
             backdropFilter: 'blur(10px)'
           }}
         >
-          🔄 Reset Welcome
+          🚪 Logout & Reload
         </button>
       )} */}
 
