@@ -174,13 +174,13 @@ const ProductList = () => {
             boxShadow: '0 15px 35px rgba(0, 0, 0, 0.1)',
             backdropFilter: 'blur(10px)'
           }}>
-            <div style={{
-              fontSize: '3rem',
-              marginBottom: '16px',
+            {/* <div style={{
+              fontSize: '2rem',
+              marginBottom: '1px',
               animation: 'heartbeat 2s ease-in-out infinite'
             }}>
               💝
-            </div>
+            </div> */}
             
             <h3 style={{ 
               color: '#c2410c', 
@@ -198,7 +198,7 @@ const ProductList = () => {
               lineHeight: '1.7',
               fontWeight: '500'
             }}>
-              นักพัฒนากำลังทำงานหนักเพื่อปรับปรุงระบบให้มีประสิทธิภาพดีขึ้น<br/>
+              นักพัฒนากำลังทำงานหนักเพื่อปรับปรุงระบบให้มีประสิทธิภาพดีขึ้น
               <strong>ขอบคุณที่รอคอยและให้ความเชื่อมั่นกับระบบของเรานะ</strong> 🙏
             </p>
 
@@ -210,6 +210,7 @@ const ProductList = () => {
               border: '1px solid rgba(251, 146, 60, 0.2)',
               marginBottom: '20px'
             }}>
+
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -223,7 +224,7 @@ const ProductList = () => {
                   fontSize: '1rem',
                   fontWeight: '600'
                 }}>
-                  เวลาที่คาดการณ์: 1 ชั่วโมง หรือ มากว่า
+                  เวลาที่คาดการณ์ : 1 ชั่วโมง หรือ มากว่า
 
                 </span>
               </div>
@@ -275,6 +276,7 @@ const ProductList = () => {
             zIndex: 10,
             position: 'relative'
           }}>
+
             <button 
               onClick={(e) => {
                 e.preventDefault();
@@ -661,7 +663,7 @@ const ProductList = () => {
     );
   }
 
-  // 🌟 User-Friendly Error Component (ไม่แก้ไข - ตามที่วิปขอ)
+  // 🌟 User-Friendly Error Component 
   if (error) {
     return (
       <div className="container">
@@ -789,7 +791,7 @@ const ProductList = () => {
             zIndex: 10,
             position: 'relative'
           }}>
-            <button 
+            {/* <button 
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -829,7 +831,7 @@ const ProductList = () => {
               }}
             >
               ☕ ปลุกเซิร์ฟเวอร์ให้ตื่น
-            </button>
+            </button> */}
 
             <button 
               onClick={(e) => {
@@ -1036,26 +1038,56 @@ const ProductList = () => {
   return (
     <div className="container">
       {/* Filter Section */}
-      <div className="card" style={{ marginBottom: '32px' }}>
-        <h2 style={{ marginBottom: '16px', color: '#1f2937' }}>กรองสินค้าตามหมวดหมู่</h2>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-          <button
-            className={selectedCategory === '' ? 'btn-primary' : 'btn-secondary'}
-            onClick={() => setSelectedCategory('')}
-          >
-            ทั้งหมด
-          </button>
-          {categories.map(category => (
-            <button
-              key={category}
-              className={selectedCategory === category ? 'btn-primary' : 'btn-secondary'}
-              onClick={() => setSelectedCategory(category)}
-            >
-              {category}
-            </button>
-          ))}
-        </div>
-      </div>
+<div className="card" style={{ marginBottom: '32px' }}>
+  <h2 style={{ marginBottom: '16px', color: '#1f2937' }}>กรองสินค้าตามหมวดหมู่</h2>
+  
+  {/* Desktop: Buttons (เหมือนเดิม) */}
+  <div className="filter-desktop" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+    <button
+      className={selectedCategory === '' ? 'btn-primary' : 'btn-secondary'}
+      onClick={() => setSelectedCategory('')}
+    >
+      ทั้งหมด
+    </button>
+    {categories.map(category => (
+      <button
+        key={category}
+        className={selectedCategory === category ? 'btn-primary' : 'btn-secondary'}
+        onClick={() => setSelectedCategory(category)}
+      >
+        {category}
+      </button>
+    ))}
+  </div>
+
+  {/* Mobile: Dropdown */}
+  <div className="filter-mobile">
+    <select
+      value={selectedCategory}
+      onChange={(e) => setSelectedCategory(e.target.value)}
+      style={{
+        width: '100%',
+        padding: '12px 16px',
+        fontSize: '1rem',
+        fontWeight: '600',
+        border: '2px solid #e5e7eb',
+        borderRadius: '12px',
+        backgroundColor: 'white',
+        color: '#374151',
+        cursor: 'pointer',
+        outline: 'none',
+        transition: 'all 0.2s ease'
+      }}
+    >
+      <option value="">ทั้งหมด ({products.length} รายการ)</option>
+      {categories.map(category => (
+        <option key={category} value={category}>
+          {category}
+        </option>
+      ))}
+    </select>
+  </div>
+</div>
 
       {/* Products Count */}
       <div style={{ marginBottom: '24px' }}>
@@ -1086,6 +1118,74 @@ const ProductList = () => {
           ))}
         </div>
       )}
+      {/* 📱 MOBILE FILTER CSS - ย้ายเข้ามาใน return */}
+      <style jsx>{`
+        /* ===== FILTER RESPONSIVE SYSTEM ===== */
+        
+        /* Desktop: แสดง buttons, ซ่อน dropdown */
+        .filter-desktop {
+          display: flex !important;
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+        
+        .filter-mobile {
+          display: none !important;
+        }
+
+        /* Mobile: ซ่อน buttons, แสดง dropdown */
+        @media (max-width: 768px) {
+          .filter-desktop {
+            display: none !important;
+          }
+          
+          .filter-mobile {
+            display: block !important;
+          }
+          
+          .filter-mobile select {
+            width: 100%;
+            padding: 12px 16px;
+            fontSize: 1rem;
+            fontWeight: 600;
+            border: 2px solid #e5e7eb;
+            borderRadius: 12px;
+            backgroundColor: white;
+            color: #374151;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s ease;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 20px;
+            padding-right: 40px;
+          }
+          
+          .filter-mobile select:focus {
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+          }
+          
+          .filter-mobile select:hover {
+            border-color: #9ca3af;
+          }
+        }
+
+        /* Extra Small Mobile */
+        @media (max-width: 480px) {
+          .filter-mobile select {
+            padding: 10px 14px;
+            fontSize: 0.9rem;
+            padding-right: 35px;
+            background-size: 18px;
+            background-position: right 10px center;
+          }
+        }
+      `}</style>
     </div>
   );
 };

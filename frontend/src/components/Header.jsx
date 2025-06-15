@@ -339,7 +339,7 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
   font-weight: 700;
   color: #1f2937;
   line-height: 1.1;
-  max-width: 150px; /* เพิ่มจาก 120px เป็น 150px */
+  max-width: 180px; 
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -554,7 +554,101 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
             gap: 3px;
           }
         }
-      `}</style>
+
+        /* ===== MOBILE RESPONSIVE ENHANCEMENTS ===== */
+
+/* User Info Compact */
+@media (max-width: 768px) {
+  .user-info {
+    padding: 4px 8px; /* ลดจาก 8px 16px */
+    gap: 6px; /* ลดจาก 10px */
+    max-width: 140px; /* จำกัดความกว้าง */
+  }
+
+  .user-avatar {
+    width: 20px; /* ลดจาก 24px */
+    height: 20px;
+    font-size: 0.7rem;
+  }
+
+  .user-name {
+    font-size: 0.75rem; /* ลดจาก 0.8rem */
+    max-width: 80px; /* จำกัดความกว้าง */
+  }
+
+  .user-role.mobile-hidden {
+    display: none; /* ซ่อนบน mobile */
+  }
+
+  /* Action Buttons Compact */
+  .action-buttons {
+    gap: 4px; /* ลดจาก 6px */
+  }
+
+  .btn-admin,
+  .btn-logout {
+    padding: 6px 8px; /* ลดจาก default */
+    font-size: 0.8rem;
+    min-width: 36px;
+    height: 32px;
+  }
+
+  /* Hide text, show only icons on mobile */
+  .btn-text {
+    display: none;
+  }
+
+  .btn-icon {
+    display: inline;
+    font-size: 1rem;
+  }
+
+  /* Header Layout Mobile Optimization */
+  .header-bottom {
+    gap: 6px; /* ลดจาก 8px */
+  }
+
+  .header-right {
+    gap: 6px; /* ลดจาก 8px */
+    flex-wrap: nowrap; /* ไม่ให้ wrap */
+  }
+}
+
+/* Desktop: Show text, hide separate icons */
+@media (min-width: 769px) {
+  .btn-text {
+    display: inline;
+  }
+
+  .btn-icon {
+    display: none;
+  }
+}
+
+/* Extra Small Mobile */
+@media (max-width: 480px) {
+  .user-info {
+    padding: 3px 6px;
+    gap: 4px;
+    max-width: 120px;
+  }
+
+  .user-name {
+    font-size: 0.7rem;
+    max-width: 70px;
+  }
+
+  .btn-admin,
+  .btn-logout {
+    padding: 5px 6px;
+    min-width: 32px;
+    height: 28px;
+  }
+
+  .btn-icon {
+    font-size: 0.9rem;
+  }
+}`}</style>
     </header>
   );
 };

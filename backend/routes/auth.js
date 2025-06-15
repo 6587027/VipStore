@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User'); // Import User model
 
-// Test users database (เก็บไว้เป็น fallback)
+// Test users database 
 const testUsers = [
   {
     id: 1,
@@ -1023,7 +1023,7 @@ router.post('/request-password-change', async (req, res) => {
     });
 
     console.log(`🔐 Password change request created for: ${user.username}`);
-
+ 
     res.json({
       success: true,
       message: 'ส่งคำขอเปลี่ยนรหัสผ่านสำเร็จ',
