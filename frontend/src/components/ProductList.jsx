@@ -9,32 +9,112 @@ const ProductList = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [retryCount, setRetryCount] = useState(0);
 
+  const [loadingPhase, setLoadingPhase] = useState('initializing');
+  const [serverWakeAttempts, setServerWakeAttempts] = useState(0);
+  const [showRealError, setShowRealError] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
   // 🛠️ Maintenance Mode Toggle (เปิด comment เมื่อต้องการ maintenance)
-  // const MAINTENANCE_MODE = true; // ⚠️ เปิด comment นี้เมื่อต้องการโหมดปรับปรุงระบบ
+// const MAINTENANCE_MODE = true; // ⚠️ เปิด comment นี้เมื่อต้องการโหมดปรับปรุงระบบ
 
   // ดึงข้อมูลสินค้าจาก API
   useEffect(() => {
     fetchProducts();
   }, [selectedCategory]);
 
-  const fetchProducts = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+const fetchProducts = async () => {
+  try {
+    setLoading(true);
+    setError(null);
+    setShowRealError(false);
+    
+    // 🆕 Enhanced Loading Phases - แค่ตอน initial load
+    if (isInitialLoad) {
+      setLoadingPhase('initializing');
+      await new Promise(resolve => setTimeout(resolve, 500)); // Show initializing
       
-      const params = selectedCategory ? { category: selectedCategory } : {};
-      const response = await productsAPI.getAll(params);
+      setLoadingPhase('connecting');
+      await new Promise(resolve => setTimeout(resolve, 800)); // Show connecting
       
-      setProducts(response.data.data || []);
-      setRetryCount(0); // Reset retry count on success
-    } catch (err) {
-      console.error('Error fetching products:', err);
-      setError('ไม่สามารถโหลดข้อมูลสินค้าได้ กรุณาลองใหม่');
-      setRetryCount(prev => prev + 1);
-    } finally {
-      setLoading(false);
+      setLoadingPhase('fetching');
     }
-  };
+    // ถ้าไม่ใช่ initial load (filter change) จะ skip animation
+    
+    const params = selectedCategory ? { category: selectedCategory } : {};
+    const response = await productsAPI.getAll(params);
+    
+    setProducts(response.data.data || []);
+    setRetryCount(0);
+    setServerWakeAttempts(0);
+    
+    // ✅ Mark ว่าไม่ใช่ initial load แล้ว
+    setIsInitialLoad(false);
+    setLoading(false);
+    
+  } catch (err) {
+    console.error('Error fetching products:', err);
+    
+    // 🔥 FIXED: ตรวจสอบก่อนว่าถึง 20 ครั้งหรือยัง
+    console.log(`🔄 Current retry attempts: ${serverWakeAttempts}`);
+    
+    // ✅ เช็คก่อนว่า retry ครบ 20 ครั้งหรือยัง
+    if (serverWakeAttempts >= 19) { // เปลี่ยนจาก 20 เป็น 19 (เพราะ count เริ่มจาก 0)
+      console.log('🛑 Reached maximum retry attempts (20), showing error');
+      setShowRealError(true);
+      setError('เซิร์ฟเวอร์ไม่สามารถเข้าถึงได้หลังจากพยายาม 20 ครั้ง');
+      setIsInitialLoad(false);
+      setLoading(false);
+      // ✅ ไม่ต้อง increment retry count อีก
+      return; // ✅ หยุดการทำงานที่นี่
+    }
+    
+    // 🆕 Smart Error Handling
+    const isServerSleeping = err.code === 'ECONNREFUSED' || 
+                            err.message?.includes('Network Error') ||
+                            err.response?.status === 502 ||
+                            err.response?.status === 503;
+
+    // ถ้ายังไม่ครบ 20 ครั้ง และเป็น server sleeping
+    if (isServerSleeping) {
+      console.log(`🔄 Server sleeping, retrying... (${serverWakeAttempts + 1}/20)`);
+      
+      // ✅ เพิ่ม retry count ก่อน
+      setServerWakeAttempts(prev => {
+        const newCount = prev + 1;
+        console.log(`📊 Updated serverWakeAttempts to: ${newCount}`);
+        return newCount;
+      });
+      
+      setRetryCount(prev => prev + 1);
+      
+      // แสดง retrying phase (แค่ตอน initial load)
+      if (isInitialLoad) {
+        setLoadingPhase('retrying');
+      }
+      
+      // รอแล้วลองใหม่ (delay เพิ่มขึ้นตาม attempt)
+      const delay = 3000 + (Math.min(serverWakeAttempts, 10) * 500);
+      console.log(`⏱️ Retrying in ${delay}ms...`);
+      
+      setTimeout(() => {
+        fetchProducts();
+      }, delay);
+      
+      // ✅ return เพื่อไม่ให้ไปทำส่วนอื่น
+      return;
+      
+    } else {
+      // Error อื่น ๆ ที่ไม่ใช่ server หลับ - แสดง error ทันที
+      console.log('🚨 Non-server error, showing error immediately');
+      setShowRealError(true);
+      setError('ไม่สามารถโหลดข้อมูลสินค้าได้ กรุณาลองใหม่');
+      setIsInitialLoad(false);
+      setLoading(false);
+      setRetryCount(prev => prev + 1);
+      return; // ✅ หยุดการทำงานที่นี่
+    }
+  }
+};
 
   const categories = ['Electronics', 'Clothing', 'Books', 'Home', 'Sports', 'Beauty', 'Other'];
 
@@ -585,8 +665,11 @@ const ProductList = () => {
     );
   }
 
-  // 🎨 Enhanced Loading Component with Animation
-  if (loading) {
+  
+// 🎨 Selective Loading Component - Enhanced vs Simple
+if (loading && !showRealError) {
+  // 🆕 Enhanced Loading แค่ตอน initial load
+  if (isInitialLoad) {
     return (
       <div className="container">
         <div style={{
@@ -594,35 +677,135 @@ const ProductList = () => {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          minHeight: '400px',
-          gap: '20px'
+          minHeight: '500px',
+          gap: '24px',
+          padding: '40px 20px'
         }}>
-          {/* Animated Loading Spinner */}
-          <div style={{
-            width: '60px',
-            height: '60px',
-            border: '4px solid #f3f4f6',
-            borderTop: '4px solid #667eea',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }}></div>
           
-          {/* Loading Text with Pulse */}
+          {/* 🔄 Dynamic Loading Icon based on Phase */}
           <div style={{
-            fontSize: '1.2rem',
-            color: '#6b7280',
-            fontWeight: '600',
-            animation: 'pulse 2s infinite'
+            width: '80px',
+            height: '80px',
+            position: 'relative',
+            marginBottom: '20px'
           }}>
-            🛍️ กำลังโหลดสินค้า...
+            {/* Outer Ring */}
+            <div style={{
+              width: '100%',
+              height: '100%',
+              border: '4px solid #f3f4f6',
+              borderTop: '4px solid #667eea',
+              borderRadius: '50%',
+              animation: 'spin 1.5s linear infinite'
+            }}></div>
+            
+            {/* Inner Ring */}
+            <div style={{
+              position: 'absolute',
+              top: '20px',
+              left: '20px',
+              width: '40px',
+              height: '40px',
+              border: '3px solid #e5e7eb',
+              borderRight: '3px solid #10b981',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite reverse'
+            }}></div>
+            
+            {/* Center Icon */}
+            <div style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              fontSize: '1.5rem',
+              animation: 'pulse 2s infinite'
+            }}>
+              {loadingPhase === 'initializing' && '🚀'}
+              {loadingPhase === 'connecting' && '🔗'}
+              {loadingPhase === 'fetching' && '📦'}
+              {loadingPhase === 'retrying' && '☕'}
+            </div>
           </div>
-          
-          {/* Loading Dots */}
+
+          {/* 📝 Dynamic Loading Messages */}
+          <div style={{ textAlign: 'center', maxWidth: '400px' }}>
+            <h2 style={{
+              color: '#374151',
+              fontSize: '1.5rem',
+              fontWeight: '600',
+              marginBottom: '12px',
+              animation: 'fadeInUp 0.6s ease-out'
+            }}>
+              {loadingPhase === 'initializing' && '🚀 เริ่มต้นระบบ...'}
+              {loadingPhase === 'connecting' && '🔗 เชื่อมต่อเซิร์ฟเวอร์...'}
+              {loadingPhase === 'fetching' && '📦 โหลดข้อมูลสินค้า...'}
+              {loadingPhase === 'retrying' && '☕ ปลุกเซิร์ฟเวอร์ให้ตื่น...'}
+            </h2>
+
+            <p style={{
+              color: '#6b7280',
+              fontSize: '1rem',
+              marginBottom: '20px',
+              lineHeight: '1.6'
+            }}>
+              {loadingPhase === 'initializing' && 'กำลังเตรียมความพร้อม'}
+              {loadingPhase === 'connecting' && 'กำลังสร้างการเชื่อมต่อ'}
+              {loadingPhase === 'fetching' && 'กำลังดึงข้อมูลจากฐานข้อมูล'}
+              {loadingPhase === 'retrying' && `ความพยายามครั้งที่ ${serverWakeAttempts} จาก 20 ครั้ง`}
+            </p>
+
+            {/* 📊 Progress Indicator */}
+            {loadingPhase === 'retrying' && (
+              <div style={{
+                background: '#f3f4f6',
+                borderRadius: '10px',
+                overflow: 'hidden',
+                height: '8px',
+                marginBottom: '16px'
+              }}>
+                <div style={{
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #667eea, #764ba2)',
+                  borderRadius: '10px',
+                  width: `${(serverWakeAttempts / 20) * 100}%`,
+                  transition: 'width 0.5s ease',
+                  animation: 'progressGlow 2s infinite'
+                }}></div>
+              </div>
+            )}
+
+            {/* 💡 Helpful Tips */}
+            <div style={{
+              background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+              padding: '16px',
+              borderRadius: '12px',
+              border: '1px solid #bae6fd',
+              marginTop: '20px'
+            }}>
+              <p style={{
+                color: '#0369a1',
+                fontSize: '0.9rem',
+                margin: 0,
+                fontWeight: '500'
+              }}>
+                  {loadingPhase === 'initializing' && '💡 เตรียมส่วนประกอบของเว็บไซต์'}
+                  {loadingPhase === 'connecting' && '💡 กำลังติดต่อกับเซิร์ฟเวอร์'}
+                  {loadingPhase === 'fetching' && '💡 กำลังโหลดสินค้าทั้งหมดให้คุณ'}
+                  {loadingPhase === 'retrying' && serverWakeAttempts <= 5 && '💡 เซิร์ฟเวอร์อาจกำลังหลับ กำลังปลุกให้ตื่น'}
+                  {loadingPhase === 'retrying' && serverWakeAttempts > 5 && serverWakeAttempts <= 15 && '💡 เซิร์ฟเวอร์กำลังอุ่นเครื่อง กรุณารอสักครู่'}
+                  {loadingPhase === 'retrying' && serverWakeAttempts > 15 && '💡 เซิร์ฟเวอร์ใช้เวลานานกว่าปกติ กำลังพยายามเชื่อมต่อ'}
+              </p>
+            </div>
+          </div>
+
+          {/* 🎭 Fun Loading Animation */}
           <div style={{
             display: 'flex',
-            gap: '8px'
+            gap: '8px',
+            marginTop: '20px'
           }}>
-            {[1, 2, 3].map(dot => (
+            {[1, 2, 3, 4, 5].map(dot => (
               <div
                 key={dot}
                 style={{
@@ -630,8 +813,8 @@ const ProductList = () => {
                   height: '12px',
                   backgroundColor: '#667eea',
                   borderRadius: '50%',
-                  animation: `bounce 1.4s infinite ease-in-out both`,
-                  animationDelay: `${dot * 0.16}s`
+                  animation: `bounce 1.8s infinite ease-in-out`,
+                  animationDelay: `${dot * 0.2}s`
                 }}
               ></div>
             ))}
@@ -645,345 +828,19 @@ const ProductList = () => {
             }
             
             @keyframes pulse {
-              0%, 100% { opacity: 1; }
-              50% { opacity: 0.5; }
+              0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+              50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.1); }
             }
             
             @keyframes bounce {
               0%, 80%, 100% {
                 transform: scale(0);
+                opacity: 0.5;
               }
               40% {
                 transform: scale(1);
+                opacity: 1;
               }
-            }
-          `}</style>
-        </div>
-      </div>
-    );
-  }
-
-  // 🌟 User-Friendly Error Component 
-  if (error) {
-    return (
-      <div className="container">
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '500px',
-          padding: '40px 20px',
-          background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%)',
-          borderRadius: '20px',
-          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
-          position: 'relative',
-          overflow: 'hidden'
-        }}>
-          {/* Gentle Background Animation */}
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            opacity: 0.1,
-            backgroundImage: `
-              radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.3) 15%, transparent 15%),
-              radial-gradient(circle at 80% 20%, rgba(147, 197, 253, 0.3) 15%, transparent 15%),
-              radial-gradient(circle at 40% 40%, rgba(191, 219, 254, 0.3) 15%, transparent 15%)
-            `,
-            backgroundSize: '60px 60px',
-            animation: 'gentleFloat 12s ease-in-out infinite'
-          }} />
-
-          {/* Friendly Icon Animation */}
-          <div style={{
-            fontSize: '3.5rem',
-            marginBottom: '24px',
-            animation: 'gentleBounce 3s ease-in-out infinite'
-          }}>
-            😅 📡 💤
-          </div>
-
-          {/* Friendly Title */}
-          <h2 style={{
-            color: '#1e40af',
-            fontSize: '2rem',
-            fontWeight: '600',
-            marginBottom: '16px',
-            textAlign: 'center',
-            animation: 'fadeInUp 0.6s ease-out'
-          }}>
-            อุ๊ปส์! เซิร์ฟเวอร์หลับไปแล้ว 💤
-          </h2>
-
-          {/* Friendly Description */}
-          <div style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-            padding: '24px',
-            borderRadius: '16px',
-            border: '2px solid #93c5fd',
-            marginBottom: '24px',
-            maxWidth: '500px',
-            textAlign: 'center',
-            animation: 'slideIn 0.8s ease-out',
-            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.1)'
-          }}>
-            <p style={{ 
-              color: '#1e40af', 
-              margin: '0 0 16px',
-              fontSize: '1.1rem',
-              fontWeight: '500'
-            }}>
-              🎯 ไม่ต้องกังวลนะครับ!
-            </p>
-            <p style={{ 
-              color: '#1d4ed8', 
-              margin: '0 0 16px',
-              fontSize: '1rem',
-              lineHeight: '1.6'
-            }}>
-              เซิร์ฟเวอร์อาจจะพักผ่อนอยู่ หรือกำลังอัพเดทข้อมูลใหม่<br/>
-              ลองกดปุ่มด้านล่างเพื่อปลุกให้ตื่นดูนะครับ 😊
-            </p>
-            
-            {/* Fun Message */}
-            <div style={{
-              padding: '12px 16px',
-              backgroundColor: '#dbeafe',
-              borderRadius: '10px',
-              border: '1px solid #93c5fd',
-              marginBottom: '16px'
-            }}>
-              <span style={{ 
-                color: '#1e3a8a', 
-                fontSize: '0.9rem',
-                fontWeight: '500'
-              }}>
-                💡 เทคนิค: ลองรอ 10 วินาที แล้วกดลองใหม่
-              </span>
-            </div>
-
-            {/* Retry Count Display
-            {retryCount > 0 && (
-              <div style={{
-                padding: '8px 12px',
-                backgroundColor: '#fef3c7',
-                borderRadius: '8px',
-                border: '1px solid #f59e0b'
-              }}>
-                <span style={{ color: '#92400e', fontSize: '0.85rem' }}>
-                  🔄 ความพยายามครั้งที่: {retryCount} (ขอบคุณที่อดทนครับ!)
-                </span>
-              </div>
-            )} */}
-
-          </div>
-
-          {/* Gentle Action Buttons */}
-          <div style={{
-            display: 'flex',
-            gap: '16px',
-            flexWrap: 'wrap',
-            justifyContent: 'center',
-            marginBottom: '24px',
-            zIndex: 10,
-            position: 'relative'
-          }}>
-            {/* <button 
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('☕ Wake server button clicked!');
-                fetchProducts();
-              }}
-              style={{
-                background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                border: 'none',
-                padding: '16px 32px',
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                borderRadius: '12px',
-                color: 'white',
-                boxShadow: '0 4px 15px rgba(59, 130, 246, 0.3)',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                animation: 'gentlePulse 3s infinite',
-                zIndex: 100,
-                position: 'relative',
-                userSelect: 'none',
-                outline: 'none'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.transform = 'translateY(-3px) scale(1.05)';
-                e.target.style.boxShadow = '0 8px 25px rgba(59, 130, 246, 0.4)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = 'translateY(0) scale(1)';
-                e.target.style.boxShadow = '0 4px 15px rgba(59, 130, 246, 0.3)';
-              }}
-              onMouseDown={(e) => {
-                e.target.style.transform = 'translateY(1px) scale(0.95)';
-              }}
-              onMouseUp={(e) => {
-                e.target.style.transform = 'translateY(-3px) scale(1.05)';
-              }}
-            >
-              ☕ ปลุกเซิร์ฟเวอร์ให้ตื่น
-            </button> */}
-
-            <button 
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('🔄 Refresh page button clicked!');
-                window.location.reload();
-              }}
-              style={{
-                background: 'rgba(255, 255, 255, 0.9)',
-                border: '2px solid #93c5fd',
-                padding: '16px 32px',
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                borderRadius: '12px',
-                color: '#1e40af',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                zIndex: 100,
-                position: 'relative',
-                userSelect: 'none',
-                outline: 'none'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#dbeafe';
-                e.target.style.transform = 'translateY(-3px) scale(1.05)';
-                e.target.style.borderColor = '#3b82f6';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
-                e.target.style.transform = 'translateY(0) scale(1)';
-                e.target.style.borderColor = '#93c5fd';
-              }}
-              onMouseDown={(e) => {
-                e.target.style.transform = 'translateY(1px) scale(0.95)';
-              }}
-              onMouseUp={(e) => {
-                e.target.style.transform = 'translateY(-3px) scale(1.05)';
-              }}
-            >
-              🔄 รีเฟรชหน้า
-            </button>
-          </div>
-
-          {/* Network Status Indicator */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            padding: '12px 20px',
-            backgroundColor: 'rgba(255, 255, 255, 0.8)',
-            borderRadius: '25px',
-            border: '1px solid #93c5fd',
-            marginBottom: '20px'
-          }}>
-            <div style={{
-              width: '12px',
-              height: '12px',
-              backgroundColor: '#f59e0b',
-              borderRadius: '50%',
-              animation: 'gentleBlink 2s infinite'
-            }}></div>
-            <span style={{ 
-              color: '#1e40af', 
-              fontSize: '0.9rem',
-              fontWeight: '500'
-            }}>
-              สถานะ: กำลังพยายามเชื่อมต่อ...
-            </span>
-          </div>
-
-          {/* Contact Information */}
-          <div style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
-            padding: '16px',
-            borderRadius: '12px',
-            border: '1px solid #93c5fd',
-            maxWidth: '400px',
-            animation: 'fadeIn 1.2s ease-out'
-          }}>
-            <h4 style={{ 
-              color: '#1e40af', 
-              margin: '0 0 8px',
-              fontSize: '0.9rem',
-              fontWeight: '600'
-            }}>
-              💬 ต้องการความช่วยเหลือ? นักพัฒนาระบบ
-            </h4>
-            <ul style={{ 
-              color: '#1d4ed8', 
-              margin: 0,
-              paddingLeft: '16px',
-              fontSize: '0.8rem',
-              lineHeight: '1.6',
-              listStyle: 'none'
-            }}>
-              <li style={{ marginBottom: '6px' }}>
-                👨‍💻 <strong>วิป (Phatra Wongsapsakul)</strong>
-              </li>
-              <li style={{ marginBottom: '6px' }}>
-                🌐 Website: <a 
-                  href="https://vippersonalwebsite.vercel.app/contact" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('🌐 Website link clicked!');
-                    window.open('https://vippersonalwebsite.vercel.app/contact', '_blank');
-                  }}
-                  style={{ 
-                    color: '#2563eb', 
-                    textDecoration: 'underline',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    zIndex: 1000,
-                    position: 'relative',
-                    padding: '2px 4px',
-                    borderRadius: '4px',
-                    transition: 'all 0.2s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = 'rgba(37, 99, 235, 0.1)';
-                    e.target.style.color = '#1d4ed8';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = 'transparent';
-                    e.target.style.color = '#2563eb';
-                  }}
-                >
-                  Vip Personal Website
-                </a>
-              </li>
-              <li>
-                🎓 <span style={{ fontSize: '0.75rem', color: '#1e40af' }}>
-                  นักศึกษา ICT มหาวิทยาลัยมหิดล
-                </span>
-              </li>
-            </ul>
-          </div>
-
-          {/* CSS Animations for Error State */}
-          <style jsx>{`
-            @keyframes gentleFloat {
-              0%, 100% { transform: translateY(0px) rotate(0deg); }
-              33% { transform: translateY(-10px) rotate(1deg); }
-              66% { transform: translateY(-5px) rotate(-1deg); }
-            }
-            
-            @keyframes gentleBounce {
-              0%, 100% { transform: translateY(0px); }
-              50% { transform: translateY(-10px); }
             }
             
             @keyframes fadeInUp {
@@ -997,43 +854,181 @@ const ProductList = () => {
               }
             }
             
-            @keyframes slideIn {
-              from {
-                opacity: 0;
-                transform: translateX(-20px);
-              }
-              to {
-                opacity: 1;
-                transform: translateX(0);
-              }
-            }
-            
-            @keyframes gentlePulse {
-              0% {
-                box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+            @keyframes progressGlow {
+              0%, 100% {
+                box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
               }
               50% {
-                box-shadow: 0 4px 25px rgba(59, 130, 246, 0.4);
-              }
-              100% {
-                box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+                box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
               }
             }
-            
-            @keyframes gentleBlink {
-              0%, 50% { opacity: 1; }
-              51%, 100% { opacity: 0.4; }
+          `}</style>
+        </div>
+      </div>
+    );
+  } else {
+    // 🆕 Simple Loading สำหรับ Filter Change
+    return (
+      <div className="container">
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '200px',
+          gap: '16px',
+          padding: '20px'
+        }}>
+          {/* Simple Spinner */}
+          <div style={{
+            width: '50px',
+            height: '50px',
+            border: '4px solid #f3f4f6',
+            borderTop: '4px solid #667eea',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }}></div>
+          
+          {/* Simple Text */}
+          <div style={{ textAlign: 'center' }}>
+            <h3 style={{
+              color: '#374151',
+              fontSize: '1.2rem',
+              fontWeight: '600',
+              margin: '0 0 8px 0'
+            }}>
+              🔄 อัปเดตรายการสินค้า
+            </h3>
+            <p style={{
+              color: '#6b7280',
+              fontSize: '0.95rem',
+              margin: 0
+            }}>
+              กำลังโหลดสินค้าในหมวดหมู่ที่เลือก...
+            </p>
+          </div>
+
+          {/* Simple Loading Dots */}
+          <div style={{
+            display: 'flex',
+            gap: '6px'
+          }}>
+            {[1, 2, 3].map(dot => (
+              <div
+                key={dot}
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  backgroundColor: '#667eea',
+                  borderRadius: '50%',
+                  animation: `bounce 1.4s infinite ease-in-out`,
+                  animationDelay: `${dot * 0.16}s`
+                }}
+              ></div>
+            ))}
+          </div>
+
+          <style jsx>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
             }
             
-            @keyframes fadeIn {
-              from { opacity: 0; }
-              to { opacity: 1; }
+            @keyframes bounce {
+              0%, 80%, 100% {
+                transform: scale(0);
+                opacity: 0.5;
+              }
+              40% {
+                transform: scale(1);
+                opacity: 1;
+              }
             }
           `}</style>
         </div>
       </div>
     );
   }
+}
+
+// 🌟 Only Show Error when REALLY needed
+  if (error && showRealError) {
+    return (
+      <div className="container">
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '400px',
+          padding: '40px 20px',
+          background: 'linear-gradient(135deg, #fef3c7 0%, #fbbf24 100%)',
+          borderRadius: '20px',
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+          margin: '20px 0'
+        }}>
+          {/* Server Really Down Icon */}
+          <div style={{
+            fontSize: '4rem',
+            marginBottom: '24px',
+            animation: 'gentleBounce 3s ease-in-out infinite'
+          }}>
+            🔌💥🖥️
+          </div>
+
+          <h2 style={{
+            color: '#92400e',
+            fontSize: '1.8rem',
+            fontWeight: '600',
+            marginBottom: '16px',
+            textAlign: 'center'
+          }}>
+            เซิร์ฟเวอร์ไม่สามารถเข้าถึงได้
+          </h2>
+
+          <p style={{
+            color: '#d97706',
+            fontSize: '1.1rem',
+            textAlign: 'center',
+            marginBottom: '24px',
+            lineHeight: '1.6'
+          }}>
+            ระบบได้พยายามเชื่อมต่อแล้ว {serverWakeAttempts} ครั้ง<br/>
+            เซิร์ฟเวอร์อาจปิดการให้บริการชั่วคราว หรือ กำลังปรับปรุงระบบ
+          </p>
+
+          <button
+            onClick={() => {
+              setServerWakeAttempts(0);
+              setShowRealError(false);
+              fetchProducts();
+            }}
+            style={{
+              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+              border: 'none',
+              padding: '12px 24px',
+              fontSize: '1rem',
+              fontWeight: '600',
+              borderRadius: '12px',
+              color: 'white',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease'
+            }}
+          >
+            🔄 ลองใหม่อีกครั้ง
+          </button>
+
+          <style jsx>{`
+            @keyframes gentleBounce {
+              0%, 100% { transform: translateY(0px); }
+              50% { transform: translateY(-10px); }
+            }
+          `}</style>
+        </div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="container">
