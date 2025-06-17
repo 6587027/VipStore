@@ -134,7 +134,7 @@ const CartModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // 🔧 Enhanced createAddressProfile with better user ID handling
+  // const addressProfileExists 
   const createAddressProfile = async () => {
     const userId = getUserId();
     
@@ -622,24 +622,28 @@ const CartModal = ({ isOpen, onClose }) => {
     </div>
   );
 
-  // Create Profile Modal
-  const renderCreateProfileModal = () => {
-    if (!showCreateProfile) return null;
+  
+// Create Profile Modal
+const renderCreateProfileModal = () => {
+  if (!showCreateProfile) return null;
 
-    return (
-      <div className="modal-overlay">
-        <div className="modal-content create-profile-modal">
-          <div className="modal-header">
-            <h3>➕ เพิ่มที่อยู่ใหม่</h3>
-            <button 
-              className="close-btn"
-              onClick={() => setShowCreateProfile(false)}
-            >
-              ✕
-            </button>
-          </div>
+  return (
+    <div className="modal-overlay">
+      <div className="modal-content create-profile-modal">
+        <div className="modal-header">
+          <h3>➕ เพิ่มที่อยู่ใหม่</h3>
+          <button 
+            className="close-btn"
+            onClick={() => setShowCreateProfile(false)}
+          >
+            ✕
+          </button>
+        </div>
 
-          <div className="modal-body">
+        <div className="modal-body">
+          {/* 🆕 Profile Name Section */}
+          <div className="form-section">
+            <h4 className="section-title">📝 ชื่อโปรไฟล์</h4>
             <div className="form-group">
               <label>ชื่อโปรไฟล์ *</label>
               <input
@@ -651,9 +655,13 @@ const CartModal = ({ isOpen, onClose }) => {
                 className="form-input"
                 maxLength="30"
               />
-              <small>ชื่อโปรไฟล์เพื่อให้ง่ายต่อการจำ</small>
+              <small className="form-hint">ชื่อโปรไฟล์เพื่อให้ง่ายต่อการจำ</small>
             </div>
+          </div>
 
+          {/* 🆕 Personal Info Section */}
+          <div className="form-section">
+            <h4 className="section-title">👤 ข้อมูลส่วนตัว</h4>
             <div className="form-row">
               <div className="form-group">
                 <label>ชื่อ *</label>
@@ -692,8 +700,13 @@ const CartModal = ({ isOpen, onClose }) => {
                 pattern="[0-9]*"
                 onInput={(e) => e.target.value = e.target.value.replace(/[^0-9]/g, '')}
               />
+              <small className="form-hint">กรอกเบอร์โทรศัพท์ 10 หลัก</small>
             </div>
+          </div>
 
+          {/* 🆕 Address Section */}
+          <div className="form-section">
+            <h4 className="section-title">📍 ที่อยู่จัดส่ง</h4>
             <div className="form-group">
               <label>ที่อยู่ *</label>
               <textarea
@@ -705,16 +718,15 @@ const CartModal = ({ isOpen, onClose }) => {
                 rows="3"
               />
             </div>
-
             <div className="form-row">
               <div className="form-group">
-                <label>เขต/อำเภอ *</label>
+                <label>แขวง/ตำบล, เขต/อำเภอ *</label>
                 <input
                   type="text"
                   name="address.district"
                   value={newProfileData.address.district}
                   onChange={handleNewProfileInputChange}
-                  placeholder="เขต/อำเภอ"
+                  placeholder="บางจาก, พระโขนง"
                   className="form-input"
                 />
               </div>
@@ -757,7 +769,11 @@ const CartModal = ({ isOpen, onClose }) => {
                 rows="2"
               />
             </div>
+          </div>
 
+          {/* 🆕 Settings Section */}
+          <div className="form-section">
+            <h4 className="section-title">⚙️ การตั้งค่า</h4>
             <div className="form-group">
               <label className="checkbox-label">
                 <input
@@ -766,29 +782,32 @@ const CartModal = ({ isOpen, onClose }) => {
                   checked={newProfileData.isDefault}
                   onChange={handleNewProfileInputChange}
                 />
+                <span className="checkmark"></span>
                 ตั้งเป็นที่อยู่หลัก
               </label>
+              <small className="form-hint">ที่อยู่หลักจะถูกเลือกโดยอัตโนมัติเมื่อสั่งซื้อ</small>
             </div>
           </div>
+        </div>
 
-          <div className="modal-footer">
-            <button 
-              className="btn-secondary"
-              onClick={() => setShowCreateProfile(false)}
-            >
-              ยกเลิก
-            </button>
-            <button 
-              className="btn-primary"
-              onClick={createAddressProfile}
-            >
-              ✅ บันทึกที่อยู่
-            </button>
-          </div>
+        <div className="modal-footer">
+          <button 
+            className="btn-secondary"
+            onClick={() => setShowCreateProfile(false)}
+          >
+            ❌ ยกเลิก
+          </button>
+          <button 
+            className="btn-primary"
+            onClick={createAddressProfile}
+          >
+            ✅ บันทึกที่อยู่
+          </button>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
   // Manage Profiles Modal
   const renderManageProfilesModal = () => {
@@ -862,157 +881,190 @@ const CartModal = ({ isOpen, onClose }) => {
     );
   };
 
-  // 🆕 Enhanced Address Form with Profile Integration
-  const renderAddressForm = () => (
-    <div className="address-form-container">
-      <div className="checkout-header">
+// 🔧 renderAddressForm 
+const renderAddressForm = () => (
+  <div className="address-form-container">
+    {/* 🆕 Enhanced Checkout Header */}
+    <div className="checkout-header">
+      <div className="checkout-title">
         <h3>🚚 ข้อมูลการจัดส่ง</h3>
-        <div className="user-info">
-         <p style={{ color: '#1f2937', fontWeight: '700', fontSize: '0.9rem' }}>
-            👤 สั่งโดย: {user?.firstName || user?.username}
-          </p>
-          <p style={{ color: '#1f2937', fontWeight: '700', fontSize: '0.9rem' }}>
-            📧 อีเมล: {user?.email}
-          </p>
-        </div>
       </div>
-
-      {/* 🆕 Address Profile Selector */}
-      {renderAddressSelector()}
-
-      {/* Manual Address Form - Show only when useManualAddress is true */}
-      {useManualAddress && (
-        <form onSubmit={handleAddressSubmit} className="address-form manual-form">
-          <h4>✏️ กรอกที่อยู่ใหม่</h4>
-          
-          <div className="form-row">
-            <div className="form-group">
-              <label>ชื่อ *</label>
-              <input
-                type="text"
-                name="firstName"
-                value={shippingAddress.firstName}
-                onChange={handleInputChange}
-                placeholder="ชื่อ"
-                className="form-input"
-                required
-              />
+      
+      {/* 🆕 Enhanced User Info Card */}
+      <div className="user-info-card">
+        <div className="user-card-header">
+          <div className="user-avatar-large">
+            👤
+          </div>
+          <div className="user-card-details">
+            <div className="user-card-name">
+              {user?.firstName || user?.username || 'ผู้ใช้'}
             </div>
-            <div className="form-group">
-              <label>นามสกุล *</label>
-              <input
-                type="text"
-                name="lastName"
-                value={shippingAddress.lastName}
-                onChange={handleInputChange}
-                placeholder="นามสกุล"
-                className="form-input"
-                required
-              />
+            <div className="user-card-role">
+              {user?.role === 'admin' ? 'ผู้ดูแลระบบ' : 'ลูกค้า'}
             </div>
           </div>
-
-          <div className="form-group">
-            <label>เบอร์โทรศัพท์ *</label>
-            <input
-              type="tel"
-              name="phone"
-              value={shippingAddress.phone}
-              onChange={handleInputChange}
-              placeholder="0812345678"
-              className="form-input"
-              maxLength="10"
-              pattern="[0-9]*" 
-              onInput={(e) => e.target.value = e.target.value.replace(/[^0-9]/g, '')}  
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>ที่อยู่ *</label>
-            <textarea
-              name="address"
-              value={shippingAddress.address}
-              onChange={handleInputChange}
-              placeholder="ที่อยู่, หมู่บ้าน, ซอย, ถนน"
-              className="form-textarea"
-              rows="3"
-              required
-            />
-          </div>
-
-          <div className="form-row">
-            <div className="form-group">
-              <label>เขต/อำเภอ *</label>
-              <input
-                type="text"
-                name="district"
-                value={shippingAddress.district}
-                onChange={handleInputChange}
-                placeholder="เขต/อำเภอ"
-                className="form-input"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>จังหวัด *</label>
-              <input
-                type="text"
-                name="province"
-                value={shippingAddress.province}
-                onChange={handleInputChange}
-                placeholder="จังหวัด"
-                className="form-input"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>รหัสไปรษณีย์ *</label>
-              <input
-                type="text"
-                name="postalCode"
-                value={shippingAddress.postalCode}
-                onChange={handleInputChange}
-                placeholder="12345"
-                maxLength="5"
-                className="form-input"
-                required
-              />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label>หมายเหตุเพิ่มเติม</label>
-            <textarea
-              name="notes"
-              value={shippingAddress.notes}
-              onChange={handleInputChange}
-              placeholder="หมายเหตุสำหรับการจัดส่ง (ไม่บังคับ)"
-              className="form-textarea"
-              rows="2"
-            />
-          </div>
-        </form>
-      )}
-
-      {/* Order Summary */}
-      <div className="order-summary">
-        <h4>📋 สรุปคำสั่งซื้อ</h4>
-        <div className="summary-row">
-          <span>สินค้า ({totalItems} ชิ้น)</span>
-          <span>{formatCurrency(totalAmount)}</span>
         </div>
-        <div className="summary-row">
-          <span>ค่าจัดส่ง</span>
-          <span>{shippingCost === 0 ? 'ฟรี!' : formatCurrency(shippingCost)}</span>
-        </div>
-        <div className="summary-total">
-          <span>ยอดรวมทั้งสิ้น</span>
-          <span>{formatCurrency(finalTotal)}</span>
+        
+        <div className="user-card-info">
+          <div className="info-item">
+            <span className="info-label">📧 อีเมล:</span>
+            <span className="info-value">{user?.email}</span>
+          </div>
+          <div className="info-item">
+            <span className="info-label">🆔 ชื่อผู้ใช้:</span>
+            <span className="info-value">{user?.username}</span>
+          </div>
         </div>
       </div>
     </div>
-  );
+
+    {/* 🆕 Address Profile Selector */}
+    {renderAddressSelector()}
+
+    {/* Manual Address Form - Show only when useManualAddress is true */}
+    {useManualAddress && (
+      <form onSubmit={handleAddressSubmit} className="address-form manual-form">
+        <h4>✏️ กรอกที่อยู่ใหม่</h4>
+        
+        {/* ✅ Name Fields */}
+        <div className="form-row">
+          <div className="form-group">
+            <label>ชื่อ *</label>
+            <input
+              type="text"
+              name="firstName"
+              value={shippingAddress.firstName}
+              onChange={handleInputChange}
+              placeholder="ชื่อ"
+              className="form-input"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>นามสกุล *</label>
+            <input
+              type="text"
+              name="lastName"
+              value={shippingAddress.lastName}
+              onChange={handleInputChange}
+              placeholder="นามสกุล"
+              className="form-input"
+              required
+            />
+          </div>
+        </div>
+
+        {/* ✅ Phone Field */}
+        <div className="form-group">
+          <label>เบอร์โทรศัพท์ *</label>
+          <input
+            type="tel"
+            name="phone"
+            value={shippingAddress.phone}
+            onChange={handleInputChange}
+            placeholder="0812345678"
+            className="form-input"
+            maxLength="10"
+            pattern="[0-9]*" 
+            onInput={(e) => e.target.value = e.target.value.replace(/[^0-9]/g, '')}  
+            required
+          />
+        </div>
+
+        {/* ✅ Address Field */}
+        <div className="form-group">
+          <label>ที่อยู่ *</label>
+          <textarea
+            name="address"
+            value={shippingAddress.address}
+            onChange={handleInputChange}
+            placeholder="ที่อยู่, หมู่บ้าน, ซอย, ถนน"
+            className="form-textarea"
+            rows="3"
+            required
+          />
+        </div>
+        {/* ✅ District Field */}
+        <div className="form-row">
+          <div className="form-group">
+            <label>แขวง/ตำบล, เขต/อำเภอ *</label>
+            <input
+              type="text"
+              name="district"
+              value={shippingAddress.district}
+              onChange={handleInputChange}
+              placeholder="บางจาก, พระโขนง"
+              className="form-input"
+              required
+            />
+          </div>
+        </div>
+
+        {/* ✅ Province and Postal Code */}
+        <div className="form-row">
+          <div className="form-group">
+            <label>จังหวัด *</label>
+            <input
+              type="text"
+              name="province"
+              value={shippingAddress.province}
+              onChange={handleInputChange}
+              placeholder="จังหวัด"
+              className="form-input"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label>รหัสไปรษณีย์ *</label>
+            <input
+              type="text"
+              name="postalCode"
+              value={shippingAddress.postalCode}
+              onChange={handleInputChange}
+              placeholder="12345"
+              maxLength="5"
+              pattern="[0-9]*"
+              onInput={(e) => e.target.value = e.target.value.replace(/[^0-9]/g, '')}
+              className="form-input"
+              required
+            />
+          </div>
+        </div>
+
+        {/* ✅ Notes Field */}
+        <div className="form-group">
+          <label>หมายเหตุเพิ่มเติม</label>
+          <textarea
+            name="notes"
+            value={shippingAddress.notes}
+            onChange={handleInputChange}
+            placeholder="หมายเหตุสำหรับการจัดส่ง (ไม่บังคับ)"
+            className="form-textarea"
+            rows="2"
+          />
+        </div>
+      </form>
+    )}
+
+    {/* ✅ Order Summary */}
+    <div className="order-summary">
+      <h4>📋 สรุปคำสั่งซื้อ</h4>
+      <div className="summary-row">
+        <span>สินค้า ({totalItems} ชิ้น)</span>
+        <span>{formatCurrency(totalAmount)}</span>
+      </div>
+      <div className="summary-row">
+        <span>ค่าจัดส่ง</span>
+        <span>{shippingCost === 0 ? 'ฟรี!' : formatCurrency(shippingCost)}</span>
+      </div>
+      <div className="summary-total">
+        <span>ยอดรวมทั้งสิ้น</span>
+        <span>{formatCurrency(finalTotal)}</span>
+      </div>
+    </div>
+  </div>
+);
 
   // Processing Component (existing)
   const renderProcessing = () => (

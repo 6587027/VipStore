@@ -3,8 +3,8 @@
 import axios from 'axios';
 
 // ✅ ใช้ Environment Variable จาก Vercel
-// const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com/api';
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://wrong-server-url.com/api'; // ใช้ URL ที่ไม่ถูกต้องเพื่อทดสอบการจัดการข้อผิดพลาด
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com/api';
+// const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://wrong-server-url.com/api'; // ใช้ URL ที่ไม่ถูกต้องเพื่อทดสอบการจัดการข้อผิดพลาด
 
 // ✅ Force ใช้ Environment Variable ถ้ามี
 if (import.meta.env.VITE_API_URL) {

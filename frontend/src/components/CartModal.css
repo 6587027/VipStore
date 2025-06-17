@@ -1304,3 +1304,750 @@
 .address-form-container::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
 }
+
+/* 🔧 เพิ่ม CSS นี้ลงใน CartModal.css (ท้ายไฟล์) */
+
+/* ===============================================
+   🆕 ENHANCED ADDRESS FORM STYLES - FIX
+   =============================================== */
+
+/* Create Profile Modal Enhancement */
+.create-profile-modal {
+  max-width: 500px;
+  max-height: 90vh;
+}
+
+.create-profile-modal .modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 16px 24px;
+}
+
+/* Form Sections */
+.form-section {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.form-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.section-title {
+  margin: 0 0 16px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-radius: 8px;
+  border-left: 4px solid #3b82f6;
+}
+
+/* Enhanced Form Groups */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.form-hint {
+  display: block;
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* Enhanced Input Styles */
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+  background: white;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background: #fafbff;
+}
+
+.form-input:hover,
+.form-textarea:hover {
+  border-color: #9ca3af;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.4;
+}
+
+/* Enhanced Checkbox */
+.checkbox-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  font-weight: 500;
+  color: #374151;
+  padding: 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+}
+
+.checkbox-label:hover {
+  background: #f1f5f9;
+  border-color: #3b82f6;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.checkmark {
+  flex: 1;
+}
+
+/* Enhanced Modal Footer */
+.create-profile-modal .modal-footer {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-top: 2px solid #e5e7eb;
+  padding: 20px 24px;
+}
+
+.create-profile-modal .btn-secondary {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #475569;
+  border: 2px solid #cbd5e1;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.create-profile-modal .btn-secondary:hover {
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+.create-profile-modal .btn-primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  padding: 12px 24px;
+  font-size: 0.95rem;
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.2);
+}
+
+.create-profile-modal .btn-primary:hover {
+  box-shadow: 0 6px 12px rgba(59, 130, 246, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Form Row Enhancement */
+.form-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-row .form-group {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .create-profile-modal {
+    max-width: 95%;
+    margin: 10px;
+  }
+  
+  .create-profile-modal .modal-body {
+    padding: 16px 20px;
+    max-height: 75vh;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .form-row .form-group {
+    margin-bottom: 16px;
+  }
+  
+  .section-title {
+    font-size: 0.9rem;
+    padding: 6px 10px;
+  }
+  
+  .create-profile-modal .modal-footer {
+    padding: 16px 20px;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .create-profile-modal .btn-secondary,
+  .create-profile-modal .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .create-profile-modal {
+    max-width: 98%;
+    margin: 5px;
+    max-height: 95vh;
+  }
+  
+  .create-profile-modal .modal-body {
+    padding: 12px 16px;
+    max-height: 80vh;
+  }
+  
+  .form-input,
+  .form-textarea {
+    padding: 10px;
+    font-size: 16px; /* ป้องกัน zoom บน iOS */
+  }
+  
+  .section-title {
+    font-size: 0.85rem;
+    padding: 6px 8px;
+  }
+  
+  .form-group label {
+    font-size: 0.85rem;
+  }
+  
+  .form-hint {
+    font-size: 0.75rem;
+  }
+  
+  .checkbox-label {
+    padding: 10px;
+    font-size: 0.9rem;
+  }
+  
+  .create-profile-modal .modal-footer {
+    padding: 12px 16px;
+  }
+}
+
+/* Scrollbar Styling */
+.create-profile-modal .modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.create-profile-modal .modal-body::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.create-profile-modal .modal-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.create-profile-modal .modal-body::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Enhanced Animation */
+.create-profile-modal {
+  animation: modalSlideUp 0.3s ease-out;
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Form Focus Enhancement */
+.form-group:focus-within label {
+  color: #3b82f6;
+  font-weight: 700;
+}
+
+.form-group:focus-within .form-hint {
+  color: #3b82f6;
+}
+
+/* Error State (Optional) */
+.form-input.error,
+.form-textarea.error {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.form-input.error:focus,
+.form-textarea.error:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* Success State (Optional) */
+.form-input.success,
+.form-textarea.success {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.form-input.success:focus,
+.form-textarea.success:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+/* Loading State (Optional) */
+.form-input:disabled,
+.form-textarea:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Enhanced Button States */
+.create-profile-modal .btn-primary:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.create-profile-modal .btn-secondary:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  border-color: #e5e7eb;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 🔧 เพิ่ม CSS นี้ลงใน CartModal.css (ท้ายไฟล์) */
+
+/* ===============================================
+   🆕 ENHANCED USER INFO CARD - MOBILE FIX
+   =============================================== */
+
+/* Enhanced Checkout Header */
+.checkout-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.checkout-title h3 {
+  margin: 0 0 16px 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* 🆕 Enhanced User Info Card */
+.user-info-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.user-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.user-avatar-large {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: white;
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+  flex-shrink: 0;
+}
+
+.user-card-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.user-card-name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 4px;
+  word-break: break-word;
+}
+
+.user-card-role {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* 🆕 User Card Info Section */
+.user-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.info-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+  opacity: 0.8;
+}
+
+.info-value {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1f2937;
+  word-break: break-all;
+  background: rgba(59, 130, 246, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* Mobile Responsive - User Info Card */
+@media (max-width: 768px) {
+  .checkout-header {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .checkout-title h3 {
+    font-size: 1.1rem;
+    margin-bottom: 12px;
+  }
+  
+  .user-info-card {
+    padding: 14px;
+  }
+  
+  .user-card-header {
+    gap: 10px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+  }
+  
+  .user-avatar-large {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+  }
+  
+  .user-card-name {
+    font-size: 1rem;
+  }
+  
+  .user-card-role {
+    font-size: 0.8rem;
+  }
+  
+  .info-item {
+    gap: 4px;
+  }
+  
+  .info-label {
+    font-size: 0.75rem;
+  }
+  
+  .info-value {
+    font-size: 0.85rem;
+    padding: 6px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .checkout-header {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  
+  .checkout-title h3 {
+    font-size: 1rem;
+    margin-bottom: 10px;
+  }
+  
+  .user-info-card {
+    padding: 12px;
+  }
+  
+  .user-card-header {
+    gap: 8px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+  }
+  
+  .user-avatar-large {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+  
+  .user-card-name {
+    font-size: 0.95rem;
+    line-height: 1.3;
+  }
+  
+  .user-card-role {
+    font-size: 0.75rem;
+  }
+  
+  .user-card-info {
+    gap: 6px;
+  }
+  
+  .info-label {
+    font-size: 0.7rem;
+  }
+  
+  .info-value {
+    font-size: 0.8rem;
+    padding: 4px 6px;
+    line-height: 1.4;
+  }
+}
+
+/* Extra Small Mobile (320px) */
+@media (max-width: 360px) {
+  .user-card-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+  }
+  
+  .user-card-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .info-item {
+    width: 100%;
+  }
+  
+  .info-value {
+    text-align: center;
+    font-size: 0.75rem;
+    padding: 6px 8px;
+  }
+}
+
+/* ===============================================
+   🆕 ENHANCED ADDRESS FORM RESPONSIVENESS
+   =============================================== */
+
+/* Address Form Container */
+.address-form-container {
+  padding: 16px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* Mobile Specific Enhancements */
+@media (max-width: 768px) {
+  .address-form-container {
+    padding: 12px;
+    max-height: 75vh;
+  }
+  
+  /* Enhanced Form Row for Mobile */
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .form-row .form-group {
+    margin-bottom: 16px;
+  }
+  
+  /* Manual Form Enhancement */
+  .manual-form {
+    margin-top: 12px;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+  }
+  
+  .manual-form h4 {
+    margin: 0 0 12px;
+    font-size: 1rem;
+    color: #374151;
+  }
+}
+
+@media (max-width: 480px) {
+  .address-form-container {
+    padding: 8px;
+    max-height: 80vh;
+  }
+  
+  .manual-form {
+    padding: 10px;
+    margin-top: 10px;
+  }
+  
+  .manual-form h4 {
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+  }
+}
+
+/* ===============================================
+   🆕 SCROLLBAR ENHANCEMENTS
+   =============================================== */
+
+.address-form-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.address-form-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.address-form-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
+  border-radius: 3px;
+}
+
+.address-form-container::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+}
+
+/* ===============================================
+   🆕 ANIMATION ENHANCEMENTS
+   =============================================== */
+
+.user-info-card {
+  animation: userCardSlideIn 0.4s ease-out;
+}
+
+@keyframes userCardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.info-item {
+  animation: infoItemFadeIn 0.3s ease-out;
+}
+
+@keyframes infoItemFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Hover Effects */
+.user-info-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+}
+
+.info-value:hover {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+  transition: all 0.2s ease;
+}
+
+/* ===============================================
+   🆕 DARK MODE SUPPORT (Optional)
+   =============================================== */
+
+/* @media (prefers-color-scheme: dark) {
+  .user-info-card {
+    background: rgba(31, 41, 55, 0.95);
+    border: 1px solid rgba(75, 85, 99, 0.3);
+  }
+  
+  .user-card-name {
+    color: #f9fafb;
+  }
+  
+  .user-card-role {
+    color: #d1d5db;
+  }
+  
+  .info-label {
+    color: #e5e7eb;
+  }
+  
+  .info-value {
+    color: #f3f4f6;
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+} */
