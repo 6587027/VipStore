@@ -1717,4 +1717,26 @@ router.get('/address-profiles/:userId/default', async (req, res) => {
   }
 });
 
+router.post('/change-password', async (req, res) => {
+  try {
+    const { userId, newPassword, requestId } = req.body;
+    
+    // Hash password ใหม่
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    
+    // Update user password
+    await User.findByIdAndUpdate(userId, { password: hashedPassword });
+    
+    // Mark request as completed
+    await PasswordRequest.findByIdAndUpdate(requestId, { 
+      status: 'completed',
+      passwordChanged: true 
+    });
+    
+    res.json({ success: true, message: 'Password changed successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 module.exports = router;

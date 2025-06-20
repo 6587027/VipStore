@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import { productsAPI } from '../services/api';
 
-const ProductList = () => {
+const ProductList = ({ onProductClick }) => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,6 +21,15 @@ const ProductList = () => {
   useEffect(() => {
     fetchProducts();
   }, [selectedCategory]);
+
+const handleProductClick = (productId) => {
+    console.log('🖱️ ProductList - handleProductClick called with ID:', productId);
+    if (onProductClick) {
+      onProductClick(productId);
+    } else {
+      console.warn('⚠️ onProductClick prop not provided');
+    }
+  };
 
 const fetchProducts = async () => {
   try {
@@ -1107,9 +1116,10 @@ if (loading && !showRealError) {
         <div className="product-grid">
           {products.map(product => (
             <ProductCard 
-              key={product._id} 
-              product={product} 
-            />
+  key={product._id} 
+  product={product}
+  onProductClick={handleProductClick}
+/>
           ))}
         </div>
       )}

@@ -1,13 +1,15 @@
-// frontend/src/App.jsx - Welcome Animation → Server Error Flow
+// frontend/src/App.jsx - Fixed with Complete Settings Integration + ProductPreview
 import React, { useState } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import Header from './components/Header';
 import ProductList from './components/ProductList';
+import ProductPreview from './components/ProductPreview'; // 🆕 เพิ่ม ProductPreview
 import LoginForm from './components/LoginForm';
 import CartModal from './components/CartModal';
 import AdminDashboard from './components/admin/AdminDashboard';
 import UserProfileModal from './components/UserProfileModal';
+import CustomerSettings from './components/settings/CustomerSettings'; // 🔥 เพิ่ม Import
 import WelcomeAnimation from './components/WelcomeAnimation'; // Welcome Animation
 import { useCart } from './context/CartContext';
 import { useAuth } from './context/AuthContext';
@@ -21,14 +23,40 @@ function AppContent() {
   const [currentView, setCurrentView] = useState('home');
   const [showWelcome, setShowWelcome] = useState(true); // 🆕 Welcome state
   const [simulateServerError, setSimulateServerError] = useState(true); // 🆕 Force server error
+  const [selectedProductId, setSelectedProductId] = useState(null); // 🆕 เพิ่ม Product ID state
   const { isCartOpen, closeCart } = useCart();
   const { isAdmin } = useAuth();
+  const [showSettings, setShowSettings] = useState(false); // 🔥 เพิ่ม Settings state
 
   // 🆕 Welcome animation complete → Show server error page
   const handleAnimationComplete = () => {
     setShowWelcome(false);
     // หลัง welcome animation เสร็จ จะแสดงหน้า ProductList 
     // ซึ่งจะแสดง Server Error เพราะ backend ไม่ทำงาน
+  };
+
+  // 🔥 เพิ่ม Settings Handler
+  const handleSettingsClick = () => {
+    console.log('📱 App.jsx - handleSettingsClick called!'); // Debug
+    setShowSettings(true);
+  };
+
+  const handleCloseSettings = () => {
+    console.log('📱 App.jsx - handleCloseSettings called!'); // Debug
+    setShowSettings(false);
+  };
+
+  // 🆕 Product Preview Handlers
+  const handleShowProduct = (productId) => {
+    console.log('🛍️ App.jsx - handleShowProduct called with ID:', productId);
+    setSelectedProductId(productId);
+    setCurrentView('product');
+  };
+
+  const handleBackFromProduct = () => {
+    console.log('⬅️ App.jsx - handleBackFromProduct called');
+    setCurrentView('home');
+    setSelectedProductId(null);
   };
 
   const handleLoginSuccess = (user) => {
@@ -52,6 +80,7 @@ function AppContent() {
 
   const handleBackToHome = () => {
     setCurrentView('home');
+    setSelectedProductId(null); // 🆕 Reset product ID เมื่อกลับหน้าหลัก
   };
 
   const handleShowProfile = () => {
@@ -77,15 +106,23 @@ function AppContent() {
             onAdminClick={handleShowAdmin}
             onBackToHome={handleBackToHome}
             onProfileClick={handleShowProfile}
+            onSettingsClick={handleSettingsClick} // 🔥 เพิ่ม Settings prop
             currentView={currentView}
           />
           
-          {/* 
-            🎯 ProductList จะแสดง Server Error Page เพราะ backend ไม่เปิด
-            (หน้าที่มี animation server shutdown ที่เราทำไว้) 
-          */}
-          {currentView === 'home' && <ProductList />}
+          {/* 🆕 Enhanced View Routing */}
+          {currentView === 'home' && (
+            <ProductList onProductClick={handleShowProduct} />
+          )}
+          
           {currentView === 'admin' && <AdminDashboard />}
+          
+          {currentView === 'product' && selectedProductId && (
+            <ProductPreview 
+              productId={selectedProductId}
+              onBack={handleBackFromProduct}
+            />
+          )}
           
           {/* Modals */}
           {showLogin && (
@@ -102,7 +139,16 @@ function AppContent() {
             />
           )}
 
-          {currentView === 'home' && (
+          {/* 🔥 Settings Modal - เพิ่มส่วนนี้ */}
+          {showSettings && (
+            <CustomerSettings
+              isOpen={showSettings}
+              onClose={handleCloseSettings}
+            />
+          )}
+
+          {/* 🆕 Cart Modal - แสดงแค่ในหน้า home และ product */}
+          {(currentView === 'home' || currentView === 'product') && (
             <CartModal 
               isOpen={isCartOpen}
               onClose={closeCart}

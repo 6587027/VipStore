@@ -1,25 +1,24 @@
-// frontend/src/components/Header.jsx - Updated with Custom Logout Modal
+// frontend/src/components/Header.jsx - Updated with Settings Button
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
-import LogoutModal from './LogoutModal'; // 🎨 Import Custom Modal
+import LogoutModal from './LogoutModal';
 
-const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, currentView }) => {
+
+const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, onSettingsClick, currentView }) => {
   const { user, logout, isAdmin, isLoggedIn } = useAuth();
   const { totalItems, toggleCart, formatCurrency, totalAmount } = useCart();
   
-  // 🎨 Modal State
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogout = () => {
-    // 🎨 Show Beautiful Modal instead of window.confirm
     setShowLogoutModal(true);
   };
 
   const confirmLogout = () => {
     logout();
     setShowLogoutModal(false);
-    if (currentView === 'admin') {
+    if (currentView === 'admin' || currentView === 'settings') {
       onBackToHome();
     }
   };
@@ -37,6 +36,24 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
   const handleProfileClick = () => {
     if (user && user.role === 'customer' && onProfileClick) {
       onProfileClick();
+    }
+  };
+
+  // 🆕 Handle Settings Click - แก้ไขให้ทำงาน
+  const handleSettingsClick = () => {
+    console.log('🔧 Settings button clicked!'); // Debug log
+    console.log('👤 User:', user);
+    console.log('🔧 onSettingsClick function:', onSettingsClick);
+    
+    if (user && user.role === 'customer' && onSettingsClick) {
+      console.log('✅ Opening Settings...');
+      onSettingsClick();
+    } else {
+      console.log('❌ Cannot open Settings:', {
+        hasUser: !!user,
+        userRole: user?.role,
+        hasSettingsFunction: !!onSettingsClick
+      });
     }
   };
 
@@ -72,10 +89,9 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
     <>
       <header className="header">
         <div className="container">
-          {/* 📱 MOBILE-FIRST LAYOUT */}
           <div className="header-layout">
             
-            {/* TOP ROW: Logo + Admin Badge */}
+            {/* TOP ROW: Logo + View Badge */}
             <div className="header-top">
               {/* Logo Section */}
               <div className="logo-section" onClick={onBackToHome}>
@@ -94,17 +110,21 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
                     <h1 className="logo-title">Vip Store Website</h1>
                   </div>
                   
-                  {/* Description - แสดงบนมือถือด้วย */}
                   <p className="logo-description">
                     📱 DEMO Version| เวอร์ชันมือถืออยู่ระหว่างการพัฒนา
                   </p>
                 </div>
               </div>
               
-              {/* Admin Badge */}
+              {/* View Badge */}
               {currentView === 'admin' && (
-                <span className="admin-badge">
+                <span className="view-badge admin-badge">
                   👨‍💼 Admin Panel
+                </span>
+              )}
+              {currentView === 'settings' && (
+                <span className="view-badge settings-badge">
+                  ⚙️ Settings
                 </span>
               )}
             </div>
@@ -114,8 +134,8 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
               
               {/* Left Side: Back/Cart Buttons */}
               <div className="header-left">
-                {/* Back to Home Button (Admin view only) */}
-                {currentView === 'admin' && (
+                {/* Back to Home Button (Admin/Settings view only) */}
+                {(currentView === 'admin' || currentView === 'settings') && (
                   <button 
                     className="btn-secondary btn-back"
                     onClick={onBackToHome}
@@ -151,31 +171,60 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
                     {/* User Info Card */}
                     <div className={`user-info ${isAdmin() ? 'admin' : 'customer'}`}>
                       <div className="user-avatar">
-                        {isAdmin() ? '👨‍💼' : '🛍️'}
+                        {/* 🆕 Show Profile Picture if available */}
+                        {user.profileImage ? (
+                          <img 
+                            src={user.profileImage} 
+                            alt="Profile"
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              borderRadius: '50%',
+                              objectFit: 'cover'
+                            }}
+                          />
+                        ) : (
+                          isAdmin() ? '👨‍💼' : '🛍️'
+                        )}
                       </div>
-                    <div className="user-details">
-                      <span className="user-name">
-                        {getDisplayName()}
-                      </span>
-                      <span className="user-role">
-                        {getRoleDisplay()}
-                      </span>
-                    </div>
+                      <div className="user-details">
+                        <span className="user-name">
+                          {getDisplayName()}
+                        </span>
+                        <span className="user-role">
+                          {getRoleDisplay()}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Action Buttons */}
                     <div className="action-buttons">
-                      {/* Profile Button (Customer only, Home view only) */}
+                      {/* Settings Button (Customer only, Home view only) */}
                       {user && user.role === 'customer' && currentView === 'home' && (
+                        <button 
+                          className="btn-primary btn-settings"
+                          onClick={() => {
+                            console.log('🔧 Settings button physical click!');
+                            handleSettingsClick();
+                          }}
+                          title="การตั้งค่า"
+                        >
+                          <span className="btn-text">การตั้งค่า</span>
+                          <span className="btn-icon">⚙️</span>
+                        </button>
+                      )}
+
+                      {/* Profile Button (Customer only, Home view only) - ย้ายมาหลัง Settings */}
+                      {/* {user && user.role === 'customer' && currentView === 'home' && (
                         <button 
                           className="btn-primary btn-profile"
                           onClick={handleProfileClick}
-                          title="แก้ไขข้อมูลส่วนตัว"
+                          title="ข้อมูลผู้ใช้"
                         >
-                          <span>ข้อมูลผู้ใช้</span>
-                          <span>👤</span>
+                          <span className="btn-text">ข้อมูลผู้ใช้</span>
+                          <span className="btn-icon">👤</span>
                         </button>
-                      )}
+                      )} */}
 
                       {/* Admin Panel Button (Admin only, Home view only) */}
                       {isAdmin() && currentView === 'home' && (
@@ -192,7 +241,8 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
                         className="btn-outline btn-logout"
                         onClick={handleLogout}
                       >
-                        🚪 ออก
+                        <span className="btn-text">ออกจากระบบ</span>
+                        <span className="btn-icon">🚪</span>
                       </button>
                     </div>
                   </>
@@ -210,7 +260,7 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
           </div>
         </div>
 
-        {/* 📱 MOBILE-FIRST INLINE STYLES - Same as before */}
+        {/* Enhanced CSS with Settings Badge */}
         <style jsx>{`
           /* ===== MOBILE-FIRST HEADER LAYOUT ===== */
           .header-layout {
@@ -280,15 +330,23 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
             display: block;
           }
 
-          /* ===== ADMIN BADGE ===== */
-          .admin-badge {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+          /* ===== VIEW BADGES ===== */
+          .view-badge {
             padding: 4px 8px;
             border-radius: 12px;
             font-size: 0.7rem;
             font-weight: 600;
             white-space: nowrap;
+          }
+
+          .admin-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+          }
+
+          .settings-badge {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
           }
 
           /* ===== HEADER SECTIONS ===== */
@@ -304,15 +362,15 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
           }
 
           /* ===== USER INFO ===== */
-         .user-info {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 8px;
-    border-radius: 12px;
-    border: 1px solid;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  }
+          .user-info {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            border: 1px solid;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+          }
 
           .user-info.admin {
             background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
@@ -333,6 +391,7 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
             justify-content: center;
             font-size: 0.8rem;
             color: white;
+            overflow: hidden;
           }
 
           .user-info.admin .user-avatar {
@@ -349,16 +408,16 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
             align-items: flex-start;
           }
 
-         .user-name {
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: #1f2937;
-    line-height: 1.1;
-    max-width: 180px; 
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
+          .user-name {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #1f2937;
+            line-height: 1.1;
+            max-width: 180px; 
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
 
           .user-role {
             font-size: 0.65rem;
@@ -381,7 +440,7 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
             border: 2px solid #667eea;
           }
 
-          .btn-profile {
+          .btn-settings {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             border: none;
             display: flex;
@@ -389,8 +448,12 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
             gap: 2px;
           }
 
-          .btn-profile span:first-child {
-            display: none;
+          .btn-profile {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 2px;
           }
 
           .btn-admin {
@@ -413,6 +476,16 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
           .btn-login {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
+          }
+
+          /* ===== RESPONSIVE TEXT HANDLING ===== */
+          .btn-text {
+            display: none;
+          }
+
+          .btn-icon {
+            display: inline;
+            font-size: 1rem;
           }
 
           /* ===== TABLET+ RESPONSIVE (768px+) ===== */
@@ -459,7 +532,7 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
               font-size: 1.5rem;
             }
 
-            .admin-badge {
+            .view-badge {
               font-size: 0.8rem;
               padding: 5px 12px;
             }
@@ -475,18 +548,22 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
               font-size: 1rem;
             }
 
-           .user-name {
-      font-size: 0.9rem;
-      max-width: 180px;
-      font-weight: 700;
-    }
+            .user-name {
+              font-size: 0.9rem;
+              max-width: 180px;
+              font-weight: 700;
+            }
 
             .user-role {
               font-size: 0.7rem;
             }
 
-            .btn-profile span:first-child {
+            .btn-text {
               display: inline;
+            }
+
+            .btn-icon {
+              display: none;
             }
 
             .action-buttons {
@@ -510,39 +587,13 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
             }
           }
 
-          /* ===== SMALL MOBILE (max-width: 480px) ===== */
-          @media (max-width: 480px) {
-            .header-layout {
-              gap: 6px;
-            }
-
-            .header-bottom {
-              gap: 6px;
-            }
-
-            .header-left,
-            .header-right {
-              gap: 4px;
-            }
-
-            .logo-title {
-              font-size: 1rem;
-            }
-
-            .logo-image {
-              width: 20px;
-              height: 20px;
-            }
-
-            .admin-badge {
-              font-size: 0.65rem;
-              padding: 3px 6px;
-            }
-
+          /* ===== MOBILE RESPONSIVE ENHANCEMENTS ===== */
+          @media (max-width: 768px) {
             .user-info {
-      padding: 6px 10px; 
-      gap: 8px; 
-    }
+              padding: 4px 8px;
+              gap: 6px;
+              max-width: 140px;
+            }
 
             .user-avatar {
               width: 20px;
@@ -551,111 +602,67 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, curr
             }
 
             .user-name {
-      font-size: 0.9rem;
-      max-width: 100px;
-      font-weight: 500;
-    }
+              font-size: 0.75rem;
+              max-width: 80px;
+            }
 
-            .user-role {
-              font-size: 0.55rem;
+            .user-role.mobile-hidden {
+              display: none;
             }
 
             .action-buttons {
-              gap: 3px;
+              gap: 4px;
+            }
+
+            .btn-settings,
+            .btn-profile,
+            .btn-admin,
+            .btn-logout {
+              padding: 6px 8px;
+              font-size: 0.8rem;
+              min-width: 36px;
+              height: 32px;
+            }
+
+            .header-bottom {
+              gap: 6px;
+            }
+
+            .header-right {
+              gap: 6px;
+              flex-wrap: nowrap;
             }
           }
 
-          /* ===== MOBILE RESPONSIVE ENHANCEMENTS ===== */
-  @media (max-width: 768px) {
-    .user-info {
-      padding: 4px 8px;
-      gap: 6px;
-      max-width: 140px;
-    }
+          @media (max-width: 480px) {
+            .user-info {
+              padding: 3px 6px;
+              gap: 4px;
+              max-width: 120px;
+            }
 
-    .user-avatar {
-      width: 20px;
-      height: 20px;
-      font-size: 0.7rem;
-    }
+            .user-name {
+              font-size: 0.7rem;
+              max-width: 70px;
+            }
 
-    .user-name {
-      font-size: 0.75rem;
-      max-width: 80px;
-    }
+            .btn-settings,
+            .btn-profile,
+            .btn-admin,
+            .btn-logout {
+              padding: 5px 6px;
+              min-width: 32px;
+              height: 28px;
+            }
 
-    .user-role.mobile-hidden {
-      display: none;
-    }
-
-    .action-buttons {
-      gap: 4px;
-    }
-
-    .btn-admin,
-    .btn-logout {
-      padding: 6px 8px;
-      font-size: 0.8rem;
-      min-width: 36px;
-      height: 32px;
-    }
-
-    .btn-text {
-      display: none;
-    }
-
-    .btn-icon {
-      display: inline;
-      font-size: 1rem;
-    }
-
-    .header-bottom {
-      gap: 6px;
-    }
-
-    .header-right {
-      gap: 6px;
-      flex-wrap: nowrap;
-    }
-  }
-
-  @media (min-width: 769px) {
-    .btn-text {
-      display: inline;
-    }
-
-    .btn-icon {
-      display: none;
-    }
-  }
-
-  @media (max-width: 480px) {
-    .user-info {
-      padding: 3px 6px;
-      gap: 4px;
-      max-width: 120px;
-    }
-
-    .user-name {
-      font-size: 0.7rem;
-      max-width: 70px;
-    }
-
-    .btn-admin,
-    .btn-logout {
-      padding: 5px 6px;
-      min-width: 32px;
-      height: 28px;
-    }
-
-    .btn-icon {
-      font-size: 0.9rem;
-    }
-  }
+            .btn-icon {
+              font-size: 0.9rem;
+            }
+          }
         `}</style>
       </header>
 
-      {/* 🎨 Beautiful Logout Modal */}
+      {/* Logout Modal */}
       <LogoutModal
         isOpen={showLogoutModal}
         onConfirm={confirmLogout}

@@ -1,4 +1,4 @@
-// frontend/src/context/CartContext.jsx
+// frontend/src/context/CartContext.jsx - FIXED VERSION
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const CartContext = createContext();
@@ -37,39 +37,53 @@ export const CartProvider = ({ children }) => {
 
   // Add item to cart
   const addToCart = (product, quantity = 1) => {
+    console.log('🛒 Adding to cart:', product.name, 'Quantity:', quantity);
     setCartItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === product._id);
       
       if (existingItem) {
         // Update quantity if item already exists
-        return prevItems.map(item =>
-          item.id === product._id
-            ? { 
-                ...item, 
-                quantity: item.quantity + quantity,
-                subtotal: (item.quantity + quantity) * item.price 
-              }
-            : item
-        );
+        const newQuantity = existingItem.quantity + quantity;
+        if (newQuantity <= product.stock) {
+          return prevItems.map(item =>
+            item.id === product._id
+              ? { 
+                  ...item, 
+                  quantity: newQuantity,
+                  subtotal: newQuantity * item.price 
+                }
+              : item
+          );
+        } else {
+          // ถ้าเกิน stock ให้แจ้งเตือน
+          console.warn('Cannot add more items - stock limit reached');
+          return prevItems;
+        }
       } else {
         // Add new item to cart
-        const newItem = {
-          id: product._id,
-          name: product.name,
-          price: product.price,
-          image: product.image,
-          quantity: quantity,
-          subtotal: product.price * quantity,
-          stock: product.stock || 99, // Default stock if not provided
-          addedAt: new Date().toISOString()
-        };
-        return [...prevItems, newItem];
+        if (quantity <= product.stock) {
+          const newItem = {
+            id: product._id,
+            name: product.name,
+            price: product.price,
+            image: product.image,
+            quantity: quantity,
+            subtotal: product.price * quantity,
+            stock: product.stock || 99,
+            addedAt: new Date().toISOString()
+          };
+          return [...prevItems, newItem];
+        } else {
+          console.warn('Cannot add item - insufficient stock');
+          return prevItems;
+        }
       }
     });
   };
 
   // Remove item from cart completely
   const removeFromCart = (productId) => {
+    console.log('🗑️ Removing from cart:', productId);
     setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
   };
 
@@ -111,6 +125,7 @@ export const CartProvider = ({ children }) => {
 
   // Clear entire cart
   const clearCart = () => {
+    console.log('🧹 Clearing cart');
     setCartItems([]);
   };
 
@@ -131,10 +146,15 @@ export const CartProvider = ({ children }) => {
     return cartItems.some(item => item.id === productId);
   };
 
-  // Get quantity of specific product in cart
-  const getItemQuantity = (productId) => {
+  // ✅ **FIXED: เพิ่มฟังก์ชัน getCartItemQuantity สำหรับ ProductPreview**
+  const getCartItemQuantity = (productId) => {
     const item = cartItems.find(item => item.id === productId);
     return item ? item.quantity : 0;
+  };
+
+  // Get quantity of specific product in cart (เก็บไว้เพื่อ backward compatibility)
+  const getItemQuantity = (productId) => {
+    return getCartItemQuantity(productId);
   };
 
   // Get cart item by ID
@@ -211,7 +231,8 @@ export const CartProvider = ({ children }) => {
     // Getters
     getCartStats,
     isInCart,
-    getItemQuantity,
+    getItemQuantity,           // เก็บไว้เพื่อ backward compatibility
+    getCartItemQuantity,       // ✅ **เพิ่มฟังก์ชันใหม่สำหรับ ProductPreview**
     getCartItem,
     getShippingCost,
     getFinalTotal,

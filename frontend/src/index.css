@@ -735,3 +735,186 @@ body {
   outline: 2px solid #667eea;
   outline-offset: 2px;
 }
+
+/* frontend/src/index.css - เพิ่มส่วนนี้ต่อจาก CSS เดิม */
+
+/* ===== PRODUCT PREVIEW SPECIFIC STYLES ===== */
+
+/* Loading Spinner Animation */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-spinner {
+  width: 60px;
+  height: 60px;
+  border: 4px solid #f3f4f6;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Slide In Animation for Notifications */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Fade In Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Button Focus States for Accessibility */
+.back-button:focus,
+.quantity-btn:focus,
+.add-to-cart-main-btn:focus,
+.action-btn:focus,
+.show-more-btn:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .stock-badge,
+  .category-badge,
+  .price-badge {
+    border: 2px solid currentColor;
+  }
+  
+  .add-to-cart-main-btn {
+    border: 2px solid white;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===== PRODUCT CARD ENHANCEMENTS ===== */
+
+/* เพิ่ม cursor pointer สำหรับ product cards */
+.product-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+}
+
+/* ป้องกันการ click ผ่านไปยัง parent element เมื่อคลิกปุ่ม */
+.add-to-cart-button {
+  position: relative;
+  z-index: 10;
+}
+
+.add-to-cart-button:hover,
+.add-to-cart-button:focus {
+  z-index: 20;
+}
+
+/* ===== MOBILE SPECIFIC ENHANCEMENTS ===== */
+
+@media (max-width: 768px) {
+  /* ปรับปรุง touch targets บน mobile */
+  .product-card {
+    min-height: 280px;
+  }
+  
+  .add-to-cart-button {
+    min-height: 44px; /* iOS Human Interface Guidelines */
+    font-size: 1rem;
+  }
+  
+  /* ปรับปรุง spacing บน mobile */
+  .product-preview-container {
+    padding: 12px;
+  }
+  
+  .product-preview-header {
+    padding: 8px 0;
+    margin-bottom: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Extra small mobile adjustments */
+  .product-card {
+    min-height: 260px;
+  }
+  
+  .back-button {
+    min-height: 40px;
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+}
+
+/* ===== UTILITY CLASSES ===== */
+
+/* Quick utility สำหรับ debugging */
+.debug-border {
+  border: 2px solid red !important;
+}
+
+.debug-bg {
+  background: rgba(255, 0, 0, 0.1) !important;
+}
+
+/* Loading states */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+/* Success states */
+.success-message {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 16px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Error states */
+.error-message {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  padding: 16px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
