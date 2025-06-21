@@ -5,6 +5,7 @@ import axios from 'axios';
 // ✅ ใช้ Environment Variable จาก Vercel
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com/api';
 // const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://wrong-server-url.com/api'; // ใช้ URL ที่ไม่ถูกต้องเพื่อทดสอบการจัดการข้อผิดพลาด
+// const API_BASE_URL = 'http://localhost:3001/api';
 
 // ✅ Force ใช้ Environment Variable ถ้ามี
 if (import.meta.env.VITE_API_URL) {
@@ -297,24 +298,47 @@ export const authAPI = {
 };
 
 // Orders API
+// ✅ FIXED: ordersAPI.updatePayment function
 export const ordersAPI = {
   create: (orderData) => api.post('/orders', orderData),
   getMyOrders: (userId) => api.get('/orders/my-orders', { params: { userId } }),
   getById: (id) => api.get(`/orders/${id}`),
   updateOrderStatus: (orderId, status) => api.put(`/orders/admin/${orderId}/status`, { status }),
   
-  // 🆕 เพิ่มฟังก์ชันนี้
+  // ✅ FIXED: updatePayment function with enhanced error handling
   updatePayment: async (orderId, paymentData) => {
     try {
-      console.log('🔄 API: Updating payment status...', { orderId, paymentData });
+      console.log('🔄 API: Updating payment status...', { 
+        orderId, 
+        paymentData,
+        endpoint: `/orders/${orderId}/payment`,
+        fullURL: `${API_BASE_URL}/orders/${orderId}/payment`
+      });
+      
+      // ✅ Validate inputs
+      if (!orderId) {
+        throw new Error('Order ID is required');
+      }
+      
+      if (!paymentData.paymentMethod) {
+        throw new Error('Payment method is required');
+      }
       
       const response = await api.put(`/orders/${orderId}/payment`, paymentData);
       
-      console.log('✅ API: Payment update successful');
+      console.log('✅ API: Payment update successful:', response.data);
       return response.data;
     } catch (error) {
-      console.error('❌ API: Payment update failed:', error);
-      throw error;
+      console.error('❌ API: Payment update failed:', {
+        error: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        orderId: orderId
+      });
+      
+      // ✅ Return more descriptive error
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to update payment';
+      throw new Error(`Payment update failed: ${errorMessage}`);
     }
   },
 

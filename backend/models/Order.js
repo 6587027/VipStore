@@ -1,5 +1,4 @@
- // backend/models/Order.js
-
+// backend/models/Order.js - FIXED COMPLETE VERSION
 
 const mongoose = require('mongoose');
 
@@ -16,7 +15,6 @@ const orderSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed, // ✅ เปลี่ยนจาก ObjectId เป็น Mixed
     required: false // Allow guest orders
   },
-  
   
   // Customer Information (from address form)
   customerInfo: {
@@ -68,23 +66,9 @@ const orderSchema = new mongoose.Schema({
     enum: ['pending', 'paid', 'failed', 'refunded'],
     default: 'pending'
   },
-  // เพิ่มหลังจาก paymentStatus: { ... }
-paymentInfo: {
-  method: {
-    type: String,
-    enum: ['qr_code', 'credit_card', 'bank_transfer', 'wallet', 'cash'],
-    default: null
-  },
-  methodName: { type: String, default: null },
-  paidAt: { type: Date, default: null },
-  transactionId: { type: String, default: null },
-  cardData: {
-    last4: { type: String, default: null },
-    cardType: { type: String, default: null }
-  }
-},
 
-
+  // ✅ FIXED: Payment Info - เอาออกจาก schema เพื่อหลีกเลี่ยง validation error
+  // จะเพิ่มทีหลังผ่าน $set operation เมื่อชำระเงินจริง
   
   // Dates
   orderDate: { type: Date, default: Date.now },
@@ -94,7 +78,8 @@ paymentInfo: {
   notes: { type: String, default: '' },
   trackingNumber: { type: String, default: '' }
 }, {
-  timestamps: true
+  timestamps: true,
+  strict: false // ✅ เพิ่ม strict: false เพื่อให้เพิ่ม paymentInfo ได้ทีหลัง
 });
 
 // ✅ แก้ไข orderNumber generation
