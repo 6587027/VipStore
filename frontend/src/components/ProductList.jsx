@@ -21,7 +21,7 @@ const ProductList = ({ onProductClick }) => {
   const [filteredProducts, setFilteredProducts] = useState([]);
   
   // 🆕 Advanced Filter States
-  const [priceRange, setPriceRange] = useState({ min: 0, max: 100000 });
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 3000000 });
   const [sortOption, setSortOption] = useState('');
   
   // 🆕 Unified Dropdown State
@@ -89,7 +89,7 @@ const ProductList = ({ onProductClick }) => {
   const clearAllFilters = () => {
     setSelectedCategory('');
     setSearchTerm('');
-    setPriceRange({ min: 0, max: 100000 });
+    setPriceRange({ min: 0, max: 3000000 });
     setSortOption('');
   };
 
@@ -98,14 +98,14 @@ const ProductList = ({ onProductClick }) => {
     let count = 0;
     if (selectedCategory) count++;
     if (searchTerm.trim()) count++;
-    if (priceRange.min > 0 || priceRange.max < 100000) count++;
+    if (priceRange.min > 0 || priceRange.max < 3000000) count++;
     if (sortOption) count++;
     return count;
   };
 
   // 🆕 Get Price Range for Slider
   const getPriceStats = () => {
-    if (products.length === 0) return { min: 0, max: 100000 };
+    if (products.length === 0) return { min: 0, max: 3000000 };
     const prices = products.map(p => p.price);
     return {
       min: Math.min(...prices),
@@ -1345,7 +1345,7 @@ if (loading && !showRealError) {
                     type="number"
                     placeholder="สูงสุด"
                     value={priceRange.max}
-                    onChange={(e) => setPriceRange({...priceRange, max: parseInt(e.target.value) || 100000})}
+                    onChange={(e) => setPriceRange({...priceRange, max: parseInt(e.target.value) || 3000000})}
                     style={{
                       width: '50%',
                       padding: '8px',

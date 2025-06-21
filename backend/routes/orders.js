@@ -1,12 +1,11 @@
-// backend/routes/orders.js
+// backend/routes/orders.js - FIXED VERSION
 
 const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 
-
-// ✅ POST /api/orders - Create new order 
+// ✅ POST /api/orders - Create new order - FIXED VERSION
 router.post('/', async (req, res) => {
   try {
     const { 
@@ -16,13 +15,40 @@ router.post('/', async (req, res) => {
       pricing 
     } = req.body;
 
-    console.log('📝 Creating order with data:', { userId, customerInfo, items: items?.length, pricing });
+    console.log('📝 Creating order with data:', { 
+      userId, 
+      customerInfo: customerInfo ? 'provided' : 'missing', 
+      items: items?.length, 
+      pricing: pricing ? 'provided' : 'missing'
+    });
+
+    // 🔍 Debug incoming data
+    console.log('📦 Items received:', items);
+    console.log('💰 Pricing received:', pricing);
+    console.log('👤 Customer info received:', customerInfo);
 
     // Validate required fields
     if (!customerInfo || !items || !pricing) {
+      console.log('❌ Missing required fields:', { 
+        customerInfo: !!customerInfo, 
+        items: !!items, 
+        pricing: !!pricing 
+      });
       return res.status(400).json({
         success: false,
-        message: 'Missing required order information'
+        message: 'Missing required order information',
+        details: {
+          customerInfo: !!customerInfo,
+          items: !!items,
+          pricing: !!pricing
+        }
+      });
+    }
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Order must contain at least one item'
       });
     }
 
@@ -32,86 +58,122 @@ router.post('/', async (req, res) => {
 
     for (const item of items) {
       try {
-        // Verify product exists and has sufficient stock
-        const product = await Product.findById(item.productId);
-        if (!product) {
-          console.log(`❌ Product not found: ${item.productId}`);
+        // 🔧 FIX: Handle both item.id and item.productId
+        const productId = item.productId || item.id;
+        
+        if (!productId) {
+          console.log('❌ Missing product ID in item:', item);
           return res.status(400).json({
             success: false,
-            message: `Product not found: ${item.productName || item.productId}`
+            message: `Missing product ID for item: ${item.productName || 'Unknown'}`
+          });
+        }
+
+        console.log(`🔍 Looking for product ID: ${productId}`);
+
+        // Verify product exists and has sufficient stock
+        const product = await Product.findById(productId);
+        if (!product) {
+          console.log(`❌ Product not found: ${productId}`);
+          return res.status(400).json({
+            success: false,
+            message: `Product not found: ${item.productName || productId}`
           });
         }
 
         console.log(`✅ Product found: ${product.name}, Stock: ${product.stock}, Requested: ${item.quantity}`);
 
+        // Check stock availability
         if (product.stock < item.quantity) {
+          console.log(`❌ Insufficient stock for ${product.name}`);
           return res.status(400).json({
             success: false,
-            message: `Insufficient stock for ${product.name}. Available: ${product.stock}`
+            message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Requested: ${item.quantity}`
           });
         }
 
+        // Calculate subtotal
         const itemSubtotal = product.price * item.quantity;
         calculatedSubtotal += itemSubtotal;
 
         processedItems.push({
           productId: product._id,
           productName: product.name,
-          productImage: product.image,
+          productImage: product.image || '/api/placeholder/80/80',
           quantity: item.quantity,
           price: product.price,
           subtotal: itemSubtotal
         });
 
         // Update product stock
+        const oldStock = product.stock;
         product.stock -= item.quantity;
         await product.save();
-        console.log(`📦 Updated stock for ${product.name}: ${product.stock + item.quantity} → ${product.stock}`);
+        
+        console.log(`📦 Updated stock for ${product.name}: ${oldStock} → ${product.stock}`);
 
       } catch (productError) {
-        console.error(`Error processing product ${item.productId}:`, productError);
+        console.error(`❌ Error processing product ${item.productId || item.id}:`, productError);
         return res.status(400).json({
           success: false,
-          message: `Error processing product: ${item.productName || 'Unknown'}`
+          message: `Error processing product: ${item.productName || 'Unknown'}`,
+          error: productError.message
         });
       }
     }
 
-    // Validate pricing
-    if (Math.abs(calculatedSubtotal - pricing.subtotal) > 0.01) {
-      console.log(`💰 Price mismatch: calculated ${calculatedSubtotal}, received ${pricing.subtotal}`);
+    // Validate pricing calculations
+    console.log(`💰 Price validation: calculated=${calculatedSubtotal}, received=${pricing.subtotal}`);
+    
+    if (Math.abs(calculatedSubtotal - pricing.subtotal) > 1) { // Allow 1 baht difference for rounding
+      console.log(`❌ Price mismatch: calculated ${calculatedSubtotal}, received ${pricing.subtotal}`);
       return res.status(400).json({
         success: false,
-        message: 'Price calculation mismatch'
+        message: 'Price calculation mismatch',
+        details: {
+          calculated: calculatedSubtotal,
+          received: pricing.subtotal,
+          difference: Math.abs(calculatedSubtotal - pricing.subtotal)
+        }
       });
     }
 
-    // ✅ แก้ไขการสร้าง Order - ไม่ต้องส่ง orderNumber
+    // Prepare order data
     const orderData = {
       customerInfo,
       items: processedItems,
-      pricing,
+      pricing: {
+        subtotal: calculatedSubtotal, // Use calculated value
+        shipping: pricing.shipping || 0,
+        total: calculatedSubtotal + (pricing.shipping || 0)
+      },
       status: 'pending',
       paymentStatus: 'pending'
     };
 
-    // ✅ เพิ่ม userId เฉพาะเมื่อมีค่า
+    // Add userId if provided
     if (userId) {
       orderData.userId = userId;
+      console.log(`👤 Order linked to user: ${userId}`);
+    } else {
+      console.log(`🛒 Guest order (no user ID)`);
     }
 
     console.log('🚀 Creating order with processed data:', {
-      userId: orderData.userId,
+      userId: orderData.userId || 'guest',
       itemCount: orderData.items.length,
+      subtotal: orderData.pricing.subtotal,
+      shipping: orderData.pricing.shipping,
       total: orderData.pricing.total
     });
 
+    // Create and save order
     const newOrder = new Order(orderData);
     await newOrder.save();
 
     console.log(`✅ Order created successfully: ${newOrder.orderNumber}`);
 
-    // Populate product references
+    // Populate product references for response
     await newOrder.populate('items.productId');
 
     res.status(201).json({
@@ -121,12 +183,10 @@ router.post('/', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Create order error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to create order',
-      error: error.message
-    });
+    console.error('❌ Create order error:', error);
+    
+    // Pass error to global error handler
+    next(error);
   }
 });
 
@@ -231,13 +291,12 @@ router.get('/admin/all', async (req, res) => {
   }
 });
 
-// 🔧 PUT /api/orders/admin/:id/status - Update order status (Admin) - FIXED WITH STOCK RESTORE
+// 🔧 PUT /api/orders/admin/:id/status - Update order status (Admin)
 router.put('/admin/:id/status', async (req, res) => {
   try {
     const { status, paymentStatus, trackingNumber, notes } = req.body;
     const orderId = req.params.id;
 
-    // 🔍 ดึงข้อมูล order เดิมก่อน
     const existingOrder = await Order.findById(orderId).populate('items.productId');
     
     if (!existingOrder) {
@@ -249,19 +308,17 @@ router.put('/admin/:id/status', async (req, res) => {
 
     console.log(`📝 Updating order ${existingOrder.orderNumber} from ${existingOrder.status} to ${status}`);
 
-    // 🔄 ถ้าเปลี่ยนเป็น 'cancelled' และ order เดิมยังไม่ใช่ cancelled
+    // Stock restoration logic (existing code)
     if (status === 'cancelled' && existingOrder.status !== 'cancelled') {
       console.log('🔄 Order cancelled - restoring stock...');
       
-      // คืนสต็อกสินค้าทั้งหมดใน order
       for (const item of existingOrder.items) {
         try {
           const product = await Product.findById(item.productId);
           if (product) {
             const oldStock = product.stock;
-            product.stock += item.quantity; // เพิ่มสต็อกกลับ
+            product.stock += item.quantity;
             await product.save();
-            
             console.log(`📦 Restored stock for ${product.name}: ${oldStock} + ${item.quantity} = ${product.stock}`);
           }
         } catch (error) {
@@ -270,20 +327,17 @@ router.put('/admin/:id/status', async (req, res) => {
       }
     }
 
-    // 🔄 ถ้าเปลี่ยนจาก 'cancelled' เป็นสถานะอื่น
     if (existingOrder.status === 'cancelled' && status !== 'cancelled') {
       console.log('🔄 Order reactivated - deducting stock...');
       
-      // หักสต็อกใหม่ (เพราะเมื่อยกเลิกไปแล้วได้คืนสต็อกไว้)
       for (const item of existingOrder.items) {
         try {
           const product = await Product.findById(item.productId);
           if (product) {
             if (product.stock >= item.quantity) {
               const oldStock = product.stock;
-              product.stock -= item.quantity; // หักสต็อกใหม่
+              product.stock -= item.quantity;
               await product.save();
-              
               console.log(`📦 Deducted stock for ${product.name}: ${oldStock} - ${item.quantity} = ${product.stock}`);
             } else {
               return res.status(400).json({
@@ -298,14 +352,12 @@ router.put('/admin/:id/status', async (req, res) => {
       }
     }
 
-    // 📝 อัพเดต order status
     const updateData = {};
     if (status) updateData.status = status;
     if (paymentStatus) updateData.paymentStatus = paymentStatus;
     if (trackingNumber) updateData.trackingNumber = trackingNumber;
     if (notes) updateData.notes = notes;
 
-    // Set delivery date if status changes to delivered
     if (status === 'delivered') {
       updateData.deliveryDate = new Date();
     }
@@ -333,12 +385,11 @@ router.put('/admin/:id/status', async (req, res) => {
   }
 });
 
-// 🔧 DELETE /api/orders/admin/:orderId - ลบออเดอร์ - FIXED WITH STOCK RESTORE
+// 🔧 DELETE /api/orders/admin/:orderId - Delete order with stock restoration
 router.delete('/admin/:orderId', async (req, res) => {
   try {
     const { orderId } = req.params;
     
-    // 🔍 ดึงข้อมูล order ก่อนลบ
     const orderToDelete = await Order.findById(orderId).populate('items.productId');
     
     if (!orderToDelete) {
@@ -350,7 +401,6 @@ router.delete('/admin/:orderId', async (req, res) => {
 
     console.log(`🗑️ Deleting order ${orderToDelete.orderNumber} - status: ${orderToDelete.status}`);
 
-    // 🔄 ถ้า order ยังไม่ถูก cancel ให้คืนสต็อกก่อนลบ
     if (orderToDelete.status !== 'cancelled') {
       console.log('🔄 Restoring stock before deletion...');
       
@@ -359,9 +409,8 @@ router.delete('/admin/:orderId', async (req, res) => {
           const product = await Product.findById(item.productId);
           if (product) {
             const oldStock = product.stock;
-            product.stock += item.quantity; // คืนสต็อก
+            product.stock += item.quantity;
             await product.save();
-            
             console.log(`📦 Restored stock for ${product.name}: ${oldStock} + ${item.quantity} = ${product.stock}`);
           }
         } catch (error) {
@@ -370,7 +419,6 @@ router.delete('/admin/:orderId', async (req, res) => {
       }
     }
     
-    // ✅ ลบ order
     const deletedOrder = await Order.findByIdAndDelete(orderId);
     
     console.log(`✅ Order ${orderToDelete.orderNumber} deleted successfully with stock restoration`);
@@ -390,7 +438,7 @@ router.delete('/admin/:orderId', async (req, res) => {
   }
 });
 
-// ✅ GET /api/orders/admin/stats - Get order statistics (Admin)
+// ✅ GET /api/orders/admin/stats - Get order statistics
 router.get('/admin/stats', async (req, res) => {
   try {
     const today = new Date();
@@ -445,9 +493,7 @@ router.get('/admin/stats', async (req, res) => {
   }
 });
 
-// backend/routes/orders.js - เพิ่ม route ใหม่
-
-// ✅ PUT /api/orders/:orderId/payment - อัปเดต Payment Status
+// ✅ PUT /api/orders/:orderId/payment - Update payment status
 router.put('/:orderId/payment', async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -458,7 +504,6 @@ router.put('/:orderId/payment', async (req, res) => {
       methodName: paymentMethodName
     });
 
-    // ค้นหา Order
     const order = await Order.findById(orderId);
     if (!order) {
       return res.status(404).json({
@@ -467,23 +512,20 @@ router.put('/:orderId/payment', async (req, res) => {
       });
     }
 
-    // อัปเดต Payment Information
     const updateData = {
-      status: 'confirmed',              // เปลี่ยนจาก pending เป็น confirmed
-      paymentStatus: 'paid',            // เปลี่ยนเป็น paid
+      status: 'confirmed',
+      paymentStatus: 'paid',
       'paymentInfo.method': paymentMethod,
       'paymentInfo.methodName': paymentMethodName,
       'paymentInfo.paidAt': new Date(),
       'paymentInfo.transactionId': `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     };
 
-    // ถ้าเป็น Credit Card ให้เก็บข้อมูลการ์ด (แค่ 4 หลักสุดท้าย)
     if (paymentMethod === 'credit_card' && cardData) {
       updateData['paymentInfo.cardData.last4'] = cardData.cardNumber.replace(/\s/g, '').slice(-4);
-      updateData['paymentInfo.cardData.cardType'] = 'VISA'; // สามารถปรับให้ detect ได้
+      updateData['paymentInfo.cardData.cardType'] = 'VISA';
     }
 
-    // อัปเดต Order
     const updatedOrder = await Order.findByIdAndUpdate(
       orderId,
       updateData,

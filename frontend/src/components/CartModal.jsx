@@ -333,8 +333,9 @@ const CartModal = ({ isOpen, onClose }) => {
   };
   
 
-  // 🔧 Enhanced handleAddressSubmit - แก้ไขให้เปิด Payment Modal
-  const handleAddressSubmit = async (e) => {
+ // CartModal.jsx - Debug Fix สำหรับ handleAddressSubmit
+
+const handleAddressSubmit = async (e) => {
   e.preventDefault();
   
   let finalAddressData;
@@ -345,7 +346,7 @@ const CartModal = ({ isOpen, onClose }) => {
     const missingFields = requiredFields.filter(field => !shippingAddress[field].trim());
     
     if (missingFields.length > 0) {
-      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      alert('กรุณากรอกข้อมูลให้ครบถ้วน: ' + missingFields.join(', '));
       return;
     }
 
@@ -385,21 +386,57 @@ const CartModal = ({ isOpen, onClose }) => {
     // 🆕 สร้าง Order ก่อนเปิด PaymentModal
     console.log('📦 Creating order before payment...');
     
+    // 🔍 DEBUG: Log ข้อมูลที่จะส่ง
+    console.log('🔍 Cart Items for Order:', cartItems);
+    console.log('🔍 Final Address Data:', finalAddressData);
+    console.log('🔍 User ID:', getUserId());
+    
     const orderData = {
       userId: getUserId(),
       customerInfo: finalAddressData,
-      items: cartItems.map(item => ({
-        productId: item.id,
-        productName: item.name,
-        quantity: item.quantity,
-        price: item.price
-      })),
+      items: cartItems.map(item => {
+        console.log('🔍 Mapping cart item:', item); // Debug แต่ละ item
+        
+        return {
+          productId: item.id,        // 🎯 ใช้ item.id (ไม่ใช่ item.productId)
+          productName: item.name,
+          quantity: item.quantity,
+          price: item.price
+        };
+      }),
       pricing: {
         subtotal: totalAmount,
         shipping: shippingCost,
         total: finalTotal
       }
     };
+
+    // 🔍 DEBUG: Log ข้อมูล Order ที่จะส่ง
+    console.log('📤 Order Data to Send:', JSON.stringify(orderData, null, 2));
+    
+    // 🔍 เช็คว่า Cart Items มี id หรือเปล่า
+    const itemsWithoutId = cartItems.filter(item => !item.id);
+    if (itemsWithoutId.length > 0) {
+      console.error('❌ Cart items missing ID:', itemsWithoutId);
+      alert('เกิดข้อผิดพลาด: สินค้าในตะกร้าไม่มี ID');
+      return;
+    }
+
+    // 🔍 เช็คว่า Pricing ถูกต้องหรือไม่
+    if (!totalAmount || !finalTotal) {
+      console.error('❌ Invalid pricing:', { totalAmount, shippingCost, finalTotal });
+      alert('เกิดข้อผิดพลาดในการคำนวณราคา');
+      return;
+    }
+
+    // 🔍 เช็คว่า Customer Info ครบหรือไม่
+    if (!finalAddressData.firstName || !finalAddressData.lastName || !finalAddressData.phone) {
+      console.error('❌ Incomplete customer info:', finalAddressData);
+      alert('ข้อมูลลูกค้าไม่ครบถ้วน');
+      return;
+    }
+
+    console.log('🚀 All validations passed, creating order...');
 
     const response = await ordersAPI.create(orderData);
     
@@ -416,6 +453,8 @@ const CartModal = ({ isOpen, onClose }) => {
         finalTotal: formatCurrency(finalTotal)
       };
 
+      console.log('💳 Opening Payment Modal with data:', orderForPayment);
+      
       setPaymentOrderData(orderForPayment);
       setShowPaymentModal(true);
     } else {
@@ -423,7 +462,25 @@ const CartModal = ({ isOpen, onClose }) => {
     }
   } catch (error) {
     console.error('❌ Order creation error:', error);
-    alert(`เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ: ${error.message || 'กรุณาลองใหม่อีกครั้ง'}`);
+    
+    // 🔍 DEBUG: แสดงรายละเอียด Error
+    console.error('Error Details:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      stack: error.stack
+    });
+    
+    // แสดง Error ที่เข้าใจง่าย
+    let errorMessage = 'เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ';
+    
+    if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    alert(`${errorMessage}\n\nกรุณาลองใหม่อีกครั้ง หรือติดต่อเจ้าหน้าที่`);
   }
 };
 
