@@ -445,4 +445,67 @@ router.get('/admin/stats', async (req, res) => {
   }
 });
 
+// backend/routes/orders.js - เพิ่ม route ใหม่
+
+// ✅ PUT /api/orders/:orderId/payment - อัปเดต Payment Status
+router.put('/:orderId/payment', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { paymentMethod, paymentMethodName, cardData } = req.body;
+
+    console.log(`💳 Updating payment for order ${orderId}:`, {
+      method: paymentMethod,
+      methodName: paymentMethodName
+    });
+
+    // ค้นหา Order
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'ไม่พบออเดอร์'
+      });
+    }
+
+    // อัปเดต Payment Information
+    const updateData = {
+      status: 'confirmed',              // เปลี่ยนจาก pending เป็น confirmed
+      paymentStatus: 'paid',            // เปลี่ยนเป็น paid
+      'paymentInfo.method': paymentMethod,
+      'paymentInfo.methodName': paymentMethodName,
+      'paymentInfo.paidAt': new Date(),
+      'paymentInfo.transactionId': `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    };
+
+    // ถ้าเป็น Credit Card ให้เก็บข้อมูลการ์ด (แค่ 4 หลักสุดท้าย)
+    if (paymentMethod === 'credit_card' && cardData) {
+      updateData['paymentInfo.cardData.last4'] = cardData.cardNumber.replace(/\s/g, '').slice(-4);
+      updateData['paymentInfo.cardData.cardType'] = 'VISA'; // สามารถปรับให้ detect ได้
+    }
+
+    // อัปเดต Order
+    const updatedOrder = await Order.findByIdAndUpdate(
+      orderId,
+      updateData,
+      { new: true, runValidators: true }
+    ).populate('items.productId');
+
+    console.log(`✅ Payment updated for order ${updatedOrder.orderNumber}`);
+
+    res.json({
+      success: true,
+      message: 'อัปเดตการชำระเงินสำเร็จ',
+      order: updatedOrder
+    });
+
+  } catch (error) {
+    console.error('Payment update error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในการอัปเดตการชำระเงิน',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;

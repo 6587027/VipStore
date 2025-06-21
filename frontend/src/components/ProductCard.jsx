@@ -112,15 +112,15 @@ const ProductCard = ({ product, onProductClick }) => {
         </div>
 
         {/* Stock Info */}
-        <div className="product-stock">
-          {isOutOfStock ? (
-            <span className="stock-status out-of-stock">❌ สินค้าหมด</span>
-          ) : isLowStock ? (
-            <span className="stock-status low-stock">⚠️ เหลือน้อย</span>
-          ) : (
-            <span className="stock-status in-stock">✅ มีสินค้า</span>
-          )}
-        </div>
+       <div className="product-stock">
+  {isOutOfStock ? (
+    <span className="stock-status out-of-stock">❌ สินค้าหมด</span>
+  ) : isLowStock ? (
+    <span className="stock-status low-stock">⚠️ เหลือน้อย</span>
+  ) : (
+    <span className="stock-status in-stock">✅ มีสินค้า {product.stock} ชิ้น</span>  
+  )}
+</div>
 
         {/* Add to Cart Button */}
         <div className="product-actions">

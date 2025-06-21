@@ -1,3 +1,6 @@
+ // backend/models/Order.js
+
+
 const mongoose = require('mongoose');
 
 const orderSchema = new mongoose.Schema({
@@ -13,6 +16,7 @@ const orderSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.Mixed, // ✅ เปลี่ยนจาก ObjectId เป็น Mixed
     required: false // Allow guest orders
   },
+  
   
   // Customer Information (from address form)
   customerInfo: {
@@ -64,6 +68,23 @@ const orderSchema = new mongoose.Schema({
     enum: ['pending', 'paid', 'failed', 'refunded'],
     default: 'pending'
   },
+  // เพิ่มหลังจาก paymentStatus: { ... }
+paymentInfo: {
+  method: {
+    type: String,
+    enum: ['qr_code', 'credit_card', 'bank_transfer', 'wallet', 'cash'],
+    default: null
+  },
+  methodName: { type: String, default: null },
+  paidAt: { type: Date, default: null },
+  transactionId: { type: String, default: null },
+  cardData: {
+    last4: { type: String, default: null },
+    cardType: { type: String, default: null }
+  }
+},
+
+
   
   // Dates
   orderDate: { type: Date, default: Date.now },

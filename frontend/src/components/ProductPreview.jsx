@@ -312,12 +312,14 @@ const ProductPreview = ({ productId, onBack }) => {
                 <span className="spec-label">รหัสสินค้า:</span>
                 <span className="spec-value">{product._id?.slice(-8).toUpperCase() || 'N/A'}</span>
               </div>
-              <div className="spec-item">
+              
+              {/* <div className="spec-item">
                 <span className="spec-label">สถานะ:</span>
                 <span className="spec-value">
                   {product.isActive !== false ? '✅ วางจำหน่าย' : '❌ หยุดจำหน่าย'}
                 </span>
-              </div>
+              </div> */}
+
             </div>
           </div>
 

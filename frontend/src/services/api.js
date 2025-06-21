@@ -301,22 +301,29 @@ export const ordersAPI = {
   create: (orderData) => api.post('/orders', orderData),
   getMyOrders: (userId) => api.get('/orders/my-orders', { params: { userId } }),
   getById: (id) => api.get(`/orders/${id}`),
+  updateOrderStatus: (orderId, status) => api.put(`/orders/admin/${orderId}/status`, { status }),
   
+  // 🆕 เพิ่มฟังก์ชันนี้
+  updatePayment: async (orderId, paymentData) => {
+    try {
+      console.log('🔄 API: Updating payment status...', { orderId, paymentData });
+      
+      const response = await api.put(`/orders/${orderId}/payment`, paymentData);
+      
+      console.log('✅ API: Payment update successful');
+      return response.data;
+    } catch (error) {
+      console.error('❌ API: Payment update failed:', error);
+      throw error;
+    }
+  },
+
   admin: {
     getAll: (params = {}) => api.get('/orders/admin/all', { params }),
     updateStatus: (id, updateData) => api.put(`/orders/admin/${id}/status`, updateData),
     getStats: () => api.get('/orders/admin/stats'),
     delete: (orderId) => api.delete(`/orders/admin/${orderId}`)
   }
-};
-
-// Reports API
-export const reportsAPI = {
-  getOverview: (params = {}) => api.get('/reports/overview', { params }),
-  getSales: (params = {}) => api.get('/reports/sales', { params }),
-  getProducts: (params = {}) => api.get('/reports/products', { params }),
-  getUsers: (params = {}) => api.get('/reports/users', { params }),
-  getOrders: (params = {}) => api.get('/reports/orders', { params }),
 };
 
 // ✅ API Health Check

@@ -1,9 +1,10 @@
-// frontend/src/components/CartModal.jsx - Production-Ready Version
+// frontend/src/components/CartModal.jsx - Production-Ready Version + Payment Integration
 import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import './CartModal.css';
 import { ordersAPI, authAPI } from '../services/api'; 
+import PaymentModal from './payment/PaymentModal'; 
 
 const CartModal = ({ isOpen, onClose }) => {
   const {
@@ -22,6 +23,10 @@ const CartModal = ({ isOpen, onClose }) => {
   const { isLoggedIn, user } = useAuth();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState('cart'); // 'cart', 'address', 'processing', 'success'
+
+  // 🆕 Payment States - เพิ่มใหม่
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentOrderData, setPaymentOrderData] = useState(null);
 
   // 🆕 Address Profile Management States
   const [addressProfiles, setAddressProfiles] = useState([]);
@@ -260,6 +265,45 @@ const CartModal = ({ isOpen, onClose }) => {
     }
   };
 
+  // 🆕 Payment Success Handler
+  const handlePaymentSuccess = async (paymentData) => {
+  console.log('💳 Payment completed:', paymentData);
+  
+  setIsCheckingOut(true);
+  setCheckoutStep('processing');
+  setShowPaymentModal(false); // ปิด Payment Modal
+
+  try {
+    // ✅ ไม่ต้องสร้าง Order ใหม่ เพราะมีแล้ว!
+    // แค่แสดงหน้า Success
+    console.log('✅ Order already exists, payment completed!');
+    
+    setCheckoutStep('success');
+    clearCart();
+    
+    setTimeout(() => {
+      setCheckoutStep('cart');
+      setIsCheckingOut(false);
+      resetStates();
+      onClose();
+    }, 4000);
+    
+  } catch (error) {
+    console.error('❌ Payment completion error:', error);
+    setIsCheckingOut(false);
+    setCheckoutStep('address');
+    alert(`เกิดข้อผิดพลาด: ${error.message || 'กรุณาลองใหม่อีกครั้ง'}`);
+  }
+};
+
+
+  // 🆕 Payment Close Handler - เพิ่มใหม่
+  const handlePaymentClose = () => {
+    setShowPaymentModal(false);
+    setPaymentOrderData(null);
+    // ไม่ต้อง reset checkout step เพื่อให้ user กลับมาที่หน้า address
+  };
+
   if (!isOpen) return null;
 
   const shippingCost = getShippingCost();
@@ -287,104 +331,101 @@ const CartModal = ({ isOpen, onClose }) => {
 
     setCheckoutStep('address');
   };
+  
 
-  // Enhanced handleAddressSubmit
+  // 🔧 Enhanced handleAddressSubmit - แก้ไขให้เปิด Payment Modal
   const handleAddressSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
+  
+  let finalAddressData;
+  
+  if (useManualAddress) {
+    // Validate manual address
+    const requiredFields = ['firstName', 'lastName', 'phone', 'address', 'district', 'province', 'postalCode'];
+    const missingFields = requiredFields.filter(field => !shippingAddress[field].trim());
     
-    let finalAddressData;
-    
-    if (useManualAddress) {
-      // Validate manual address
-      const requiredFields = ['firstName', 'lastName', 'phone', 'address', 'district', 'province', 'postalCode'];
-      const missingFields = requiredFields.filter(field => !shippingAddress[field].trim());
-      
-      if (missingFields.length > 0) {
-        alert('กรุณากรอกข้อมูลให้ครบถ้วน');
-        return;
-      }
+    if (missingFields.length > 0) {
+      alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+      return;
+    }
 
-      finalAddressData = {
-        firstName: shippingAddress.firstName,
-        lastName: shippingAddress.lastName,
-        email: user?.email || '',
-        phone: shippingAddress.phone,
-        address: {
-          street: shippingAddress.address,
-          district: shippingAddress.district,
-          province: shippingAddress.province,
-          postalCode: shippingAddress.postalCode,
-          country: 'Thailand',
-          notes: shippingAddress.notes
-        }
+    finalAddressData = {
+      firstName: shippingAddress.firstName,
+      lastName: shippingAddress.lastName,
+      email: user?.email || '',
+      phone: shippingAddress.phone,
+      address: {
+        street: shippingAddress.address,
+        district: shippingAddress.district,
+        province: shippingAddress.province,
+        postalCode: shippingAddress.postalCode,
+        country: 'Thailand',
+        notes: shippingAddress.notes
+      }
+    };
+  } else {
+    // Use selected profile
+    const selectedProfile = addressProfiles.find(p => p.profileId === selectedProfileId);
+    
+    if (!selectedProfile) {
+      alert('กรุณาเลือกที่อยู่จัดส่ง');
+      return;
+    }
+
+    finalAddressData = {
+      firstName: selectedProfile.firstName,
+      lastName: selectedProfile.lastName,
+      email: user?.email || '',
+      phone: selectedProfile.phone,
+      address: selectedProfile.address
+    };
+  }
+
+  try {
+    // 🆕 สร้าง Order ก่อนเปิด PaymentModal
+    console.log('📦 Creating order before payment...');
+    
+    const orderData = {
+      userId: getUserId(),
+      customerInfo: finalAddressData,
+      items: cartItems.map(item => ({
+        productId: item.id,
+        productName: item.name,
+        quantity: item.quantity,
+        price: item.price
+      })),
+      pricing: {
+        subtotal: totalAmount,
+        shipping: shippingCost,
+        total: finalTotal
+      }
+    };
+
+    const response = await ordersAPI.create(orderData);
+    
+    if (response.data.success) {
+      const createdOrder = response.data.order;
+      console.log('✅ Order created successfully:', createdOrder._id);
+
+      // 🆕 ส่ง orderId ไป PaymentModal
+      const orderForPayment = {
+        orderId: createdOrder._id,           // 🎯 นี่แหละที่สำคัญ!
+        orderNumber: createdOrder.orderNumber,
+        totalAmount: formatCurrency(totalAmount),
+        shippingCost: shippingCost === 0 ? 'ฟรี!' : formatCurrency(shippingCost),
+        finalTotal: formatCurrency(finalTotal)
       };
+
+      setPaymentOrderData(orderForPayment);
+      setShowPaymentModal(true);
     } else {
-      // Use selected profile
-      const selectedProfile = addressProfiles.find(p => p.profileId === selectedProfileId);
-      
-      if (!selectedProfile) {
-        alert('กรุณาเลือกที่อยู่จัดส่ง');
-        return;
-      }
-
-      finalAddressData = {
-        firstName: selectedProfile.firstName,
-        lastName: selectedProfile.lastName,
-        email: user?.email || '',
-        phone: selectedProfile.phone,
-        address: selectedProfile.address
-      };
+      throw new Error(response.data.message || 'Failed to create order');
     }
-
-    setIsCheckingOut(true);
-    setCheckoutStep('processing');
-
-    try {
-      // เตรียมข้อมูล Order with enhanced user ID handling
-      const userId = getUserId();
-      
-      const orderData = {
-        userId: userId,
-        customerInfo: finalAddressData,
-        items: cartItems.map(item => ({
-          productId: item.id,
-          productName: item.name,
-          quantity: item.quantity,
-          price: item.price
-        })),
-        pricing: {
-          subtotal: totalAmount,
-          shipping: shippingCost,
-          total: finalTotal
-        }
-      };
-
-      console.log('📦 Creating order:', orderData);
-      const response = await ordersAPI.create(orderData);
-      
-      if (response.data.success) {
-        console.log('✅ Order created successfully:', response.data.order);
-        
-        setCheckoutStep('success');
-        clearCart();
-        
-        setTimeout(() => {
-          setCheckoutStep('cart');
-          setIsCheckingOut(false);
-          resetStates();
-          onClose();
-        }, 4000);
-      } else {
-        throw new Error(response.data.message || 'Failed to create order');
-      }
-      
-    } catch (error) {
-      console.error('❌ Checkout error:', error);
-      setIsCheckingOut(false);
-      setCheckoutStep('address');
-      alert(`เกิดข้อผิดพลาดในการสั่งซื้อ: ${error.message || 'กรุณาลองใหม่อีกครั้ง'}`);
-    }
-  };
+  } catch (error) {
+    console.error('❌ Order creation error:', error);
+    alert(`เกิดข้อผิดพลาดในการสร้างคำสั่งซื้อ: ${error.message || 'กรุณาลองใหม่อีกครั้ง'}`);
+  }
+};
 
   // Handle Input Changes
   const handleInputChange = (e) => {
@@ -415,7 +456,7 @@ const CartModal = ({ isOpen, onClose }) => {
     }
   };
 
-  // Reset States
+  // 🔧 Reset States - เพิ่ม Payment states
   const resetStates = () => {
     setCheckoutStep('cart');
     setIsCheckingOut(false);
@@ -424,6 +465,9 @@ const CartModal = ({ isOpen, onClose }) => {
     setShowCreateProfile(false);
     setShowManageProfiles(false);
     setAddressProfiles([]);
+    // 🆕 เพิ่มการ reset Payment states
+    setShowPaymentModal(false);
+    setPaymentOrderData(null);
     setShippingAddress({
       firstName: '',
       lastName: '',
@@ -1103,93 +1147,105 @@ const renderAddressForm = () => (
   };
 
   return (
-    <div className="cart-modal-overlay" onClick={handleClose}>
-      <div className="cart-modal" onClick={e => e.stopPropagation()}>
-        {/* Header */}
-        <div className="cart-modal-header">
-          <h2>{getHeaderTitle()}</h2>
-          <button className="close-btn" onClick={handleClose}>✕</button>
-        </div>
+    <>
+      {/* Cart Modal - ส่วนเดิม */}
+      <div className="cart-modal-overlay" onClick={handleClose}>
+        <div className="cart-modal" onClick={e => e.stopPropagation()}>
+          {/* Header */}
+          <div className="cart-modal-header">
+            <h2>{getHeaderTitle()}</h2>
+            <button className="close-btn" onClick={handleClose}>✕</button>
+          </div>
 
-        {/* Content */}
-        <div className="cart-modal-content">
-          {checkoutStep === 'cart' && (
-            <>
-              {isEmpty ? (
-                <div className="empty-cart">
-                  <div className="empty-cart-icon">🛒</div>
-                  <h3>ตะกร้าสินค้าว่างเปล่า</h3>
-                  <p>เพิ่มสินค้าลงตะกร้าเพื่อเริ่มช้อปปิ้ง</p>
-                </div>
-              ) : (
-                <>
-                  {renderCartItems()}
-                  {renderCartSummary()}
-                </>
-              )}
-            </>
-          )}
+          {/* Content */}
+          <div className="cart-modal-content">
+            {checkoutStep === 'cart' && (
+              <>
+                {isEmpty ? (
+                  <div className="empty-cart">
+                    <div className="empty-cart-icon">🛒</div>
+                    <h3>ตะกร้าสินค้าว่างเปล่า</h3>
+                    <p>เพิ่มสินค้าลงตะกร้าเพื่อเริ่มช้อปปิ้ง</p>
+                  </div>
+                ) : (
+                  <>
+                    {renderCartItems()}
+                    {renderCartSummary()}
+                  </>
+                )}
+              </>
+            )}
 
-          {checkoutStep === 'address' && renderAddressForm()}
-          {checkoutStep === 'processing' && renderProcessing()}
-          {checkoutStep === 'success' && renderSuccess()}
-        </div>
+            {checkoutStep === 'address' && renderAddressForm()}
+            {checkoutStep === 'processing' && renderProcessing()}
+            {checkoutStep === 'success' && renderSuccess()}
+          </div>
 
-        {/* Footer */}
-        {!isEmpty && checkoutStep === 'cart' && (
-          <div className="cart-modal-footer">
-            <button 
-              className="clear-cart-btn"
-              onClick={clearCart}
-              disabled={isCheckingOut}
-            >
-              🗑️ ล้างตะกร้า
-            </button>
-            
-            <div className="checkout-actions">
+          {/* Footer */}
+          {!isEmpty && checkoutStep === 'cart' && (
+            <div className="cart-modal-footer">
               <button 
-                className="continue-shopping-btn"
-                onClick={handleClose}
+                className="clear-cart-btn"
+                onClick={clearCart}
+                disabled={isCheckingOut}
               >
-                🛍️ ช้อปต่อ
+                🗑️ ล้างตะกร้า
               </button>
               
+              <div className="checkout-actions">
+                <button 
+                  className="continue-shopping-btn"
+                  onClick={handleClose}
+                >
+                  🛍️ ช้อปต่อ
+                </button>
+                
+                <button 
+                  className="checkout-btn"
+                  onClick={handleCheckout}
+                  disabled={isCheckingOut || !isLoggedIn()}
+                >
+                  {!isLoggedIn() ? '🔐 เข้าสู่ระบบเพื่อสั่งซื้อ' : '🛒 ไปชำระเงิน'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {checkoutStep === 'address' && (
+            <div className="cart-modal-footer">
               <button 
-                className="checkout-btn"
-                onClick={handleCheckout}
-                disabled={isCheckingOut || !isLoggedIn()}
+                className="back-btn"
+                onClick={() => setCheckoutStep('cart')}
+                disabled={isCheckingOut}
               >
-                {!isLoggedIn() ? '🔐 เข้าสู่ระบบเพื่อสั่งซื้อ' : '🛒 ไปชำระเงิน'}
+                ← กลับ
+              </button>
+              
+              {/* 🔧 แก้ไขปุ่มนี้ให้เปิด Payment Modal */}
+              <button 
+                className="confirm-order-btn"
+                onClick={handleAddressSubmit}
+                disabled={isCheckingOut || (!useManualAddress && !selectedProfileId)}
+              >
+                💳 ไปชำระเงิน
               </button>
             </div>
-          </div>
-        )}
+          )}
 
-        {checkoutStep === 'address' && (
-          <div className="cart-modal-footer">
-            <button 
-              className="back-btn"
-              onClick={() => setCheckoutStep('cart')}
-              disabled={isCheckingOut}
-            >
-              ← กลับ
-            </button>
-            
-            <button 
-              className="confirm-order-btn"
-              onClick={handleAddressSubmit}
-              disabled={isCheckingOut || (!useManualAddress && !selectedProfileId)}
-            >
-              ✅ ยืนยันการสั่งซื้อ
-            </button>
-          </div>
-        )}
-
-        {/* 🆕 Modals */}
-        {renderCreateProfileModal()}
-        {renderManageProfilesModal()}
+          {/* 🆕 Modals */}
+          {renderCreateProfileModal()}
+          {renderManageProfilesModal()}
+        </div>
       </div>
-    </div>
+
+      {/* 🆕 Payment Modal */}
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={handlePaymentClose}
+        orderData={paymentOrderData}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
+    </>
   );
 };
 
