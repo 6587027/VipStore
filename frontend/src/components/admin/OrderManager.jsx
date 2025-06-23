@@ -17,7 +17,7 @@ const OrderManager = () => {
     status: 'all',
     searchTerm: '',
     page: 1,
-    limit: 20
+    limit: 500 // Limit to 500 for admin view
   });
   const [showOrderDetails, setShowOrderDetails] = useState(null);
   const [selectedOrders, setSelectedOrders] = useState([]);
