@@ -5,7 +5,7 @@ import axios from 'axios';
 // ✅ ใช้ Environment Variable จาก Vercel
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com/api';
 // const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://wrong-server-url.com/api'; // ใช้ URL ที่ไม่ถูกต้องเพื่อทดสอบการจัดการข้อผิดพลาด
-// const API_BASE_URL = 'http://localhost:3001/api';
+//const API_BASE_URL = 'http://localhost:3001/api';
 
 // ✅ Force ใช้ Environment Variable ถ้ามี
 if (import.meta.env.VITE_API_URL) {
@@ -582,6 +582,36 @@ export const getOrdersReports = async (params = {}) => {
       success: false,
       message: error.response?.data?.message || 'Failed to fetch orders reports'
     };
+  }
+};
+
+// เพิ่มส่วนนี้ใน api.js หลังจาก ordersAPI
+
+// ✅ 🆕 Reports API - เพิ่มส่วนนี้!
+export const reportsAPI = {
+  getOverview: (params = {}) => {
+    console.log('📊 Getting reports overview...');
+    return api.get('/reports/overview', { params });
+  },
+  
+  getSales: (params = {}) => {
+    console.log('💰 Getting sales reports...');
+    return api.get('/reports/sales', { params });
+  },
+  
+  getProducts: (params = {}) => {
+    console.log('📦 Getting products reports...');
+    return api.get('/reports/products', { params });
+  },
+  
+  getUsers: (params = {}) => {
+    console.log('👥 Getting users reports...');
+    return api.get('/reports/users', { params });
+  },
+  
+  getOrders: (params = {}) => {
+    console.log('🛒 Getting orders reports...');
+    return api.get('/reports/orders', { params });
   }
 };
 

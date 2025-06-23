@@ -206,7 +206,7 @@ const handlePayment = async () => {
       {/* Header */}
       <div className="payment-header">
         <div className="payment-title">
-          <h3>💳 เลือกวิธีการชำระเงิน</h3>
+          <h3>💳 เลือกวิธีการชำระเงิน (Demo)</h3>
           <div className="payment-timer">
             <span className="timer-icon">⏰</span>
             <span className={`timer-display ${timeLeft <= 60 ? 'urgent' : ''}`}>
@@ -301,7 +301,7 @@ const handlePayment = async () => {
               <div className="qr-instructions">
                 <p>1. เปิดแอพธนาคารของคุณ</p>
                 <p>2. เลือกเมนู "สแกน QR Code"</p>
-                <p>3. สแกน QR Code ด้านซ้าย</p>
+                <p>3. สแกน QR Code บน</p>
                 <p>4. ยืนยันการชำระเงิน</p>
               </div>
             </div>
@@ -345,14 +345,16 @@ const handlePayment = async () => {
                 </div>
                 
                 <div className="input-group">
-                  <label>ชื่อผู้ถือบัตร</label>
+                  <label>ชื่อผู้ถือบัตร *</label>
                   <input
                     type="text"
                     name="cardName"
                     value={cardData.cardName}
                     onChange={handleCardInputChange}
-                    placeholder="นาย วิป วงศ์ทรัพย์สกุล"
+                    placeholder="คุณชื่อ-นามสกุล"
                     className="card-input"
+                    required
+
                   />
                 </div>
                 

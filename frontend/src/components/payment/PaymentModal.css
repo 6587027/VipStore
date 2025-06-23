@@ -999,3 +999,131 @@
     display: none;
   }
 }
+
+/* 📝 Payment Note Card - เพิ่มใน PaymentModal.css */
+
+.payment-note-card {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 2px solid #f59e0b;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+  animation: noteSlideIn 0.5s ease;
+}
+
+@keyframes noteSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.note-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  animation: noteIconBounce 2s ease-in-out infinite;
+}
+
+@keyframes noteIconBounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.note-content {
+  flex: 1;
+}
+
+.note-content h4 {
+  margin: 0 0 12px 0;
+  color: #92400e;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.note-content p {
+  margin: 0 0 10px 0;
+  color: #78350f;
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
+.note-content p:last-of-type {
+  margin-bottom: 16px;
+}
+
+.highlight {
+  background: linear-gradient(120deg, #fbbf24 0%, #f59e0b 100%);
+  color: #78350f;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(245, 158, 11, 0.3);
+}
+
+.note-footer {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.demo-badge {
+  background: linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%);
+  color: #5b21b6;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid #a78bfa;
+}
+
+.safe-badge {
+  background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+  color: #065f46;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid #34d399;
+}
+
+/* Mobile Responsive for Note Card */
+@media (max-width: 768px) {
+  .payment-note-card {
+    padding: 16px;
+    margin: 16px 0;
+    gap: 12px;
+  }
+  
+  .note-icon {
+    font-size: 1.5rem;
+  }
+  
+  .note-content h4 {
+    font-size: 1rem;
+  }
+  
+  .note-content p {
+    font-size: 0.85rem;
+  }
+  
+  .note-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .demo-badge,
+  .safe-badge {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+  }
+}
