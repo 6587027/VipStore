@@ -1,46 +1,15 @@
-/* frontend/src/components/ProductPreview.css */
+/* frontend/src/components/ProductPreview.css - FIXED VERSION */
 
 .product-preview-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 20px; /* ✨ กลับเป็น padding ปกติ */
   background: #f8fafc;
   min-height: 100vh;
 }
 
-/* ===== HEADER SECTION ===== */
-.product-preview-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 32px;
-  padding: 16px 0;
-  border-bottom: 2px solid #e2e8f0;
-}
-
-.back-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  padding: 12px 20px;
-  border-radius: 12px;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 0.95rem;
-}
-
-.back-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-}
-
-.product-preview-header h1 {
-  color: #1e293b;
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin: 0;
-}
+/* ===== REMOVED: Header Section ===== */
+/* ปุ่มกลับจะแสดงใน Main Header แทน */
 
 /* ===== MAIN CONTENT LAYOUT ===== */
 .product-preview-content {
@@ -530,9 +499,9 @@
 /* ===== NOTIFICATION ===== */
 .add-to-cart-notification {
   position: fixed;
-  top: 20px;
+  top: 20px; /* ✨ กลับเป็นตำแหน่งปกติ */
   right: 20px;
-  z-index: 1000;
+  z-index: 1000; /* ✨ กลับเป็น z-index ปกติ */
   animation: slideInRight 0.3s ease-out;
 }
 
@@ -566,21 +535,29 @@
   .current-price {
     font-size: 2.2rem;
   }
+  
+  .product-preview-header {
+    padding: 16px 0; /* ✨ ลด padding บน tablet */
+  }
+  
+  .product-preview-header h1 {
+    font-size: 1.6rem; /* ✨ ปรับขนาดฟอนต์ */
+  }
 }
 
 /* Mobile */
 @media (max-width: 768px) {
   .product-preview-container {
-    padding: 16px;
+    padding: 16px; /* ✨ กลับเป็น padding ปกติ */
   }
   
   .product-preview-header {
-    margin-bottom: 24px;
-    padding: 12px 0;
+    padding: 16px 0; /* ✨ เพิ่ม padding บน mobile */
+    margin-bottom: 20px;
   }
   
   .product-preview-header h1 {
-    font-size: 1.5rem;
+    font-size: 1.5rem; /* ✨ ขนาดปกติบน mobile */
   }
   
   .back-button {
@@ -590,6 +567,7 @@
   
   .product-preview-content {
     gap: 24px;
+    margin-top: 16px; /* ✨ ลดระยะห่างบน mobile */
   }
   
   .main-image-container {
@@ -676,7 +654,7 @@
   }
   
   .add-to-cart-notification {
-    top: 10px;
+    top: 10px; /* ✨ กลับเป็นตำแหน่งปกติ */
     right: 10px;
     left: 10px;
   }
@@ -691,11 +669,16 @@
 /* Small Mobile */
 @media (max-width: 480px) {
   .product-preview-container {
-    padding: 12px;
+    padding: 12px; /* ✨ กลับเป็น padding ปกติ */
+  }
+  
+  .product-preview-header {
+    padding: 12px 0; /* ✨ เพิ่ม padding */
+    margin-bottom: 16px;
   }
   
   .product-preview-header h1 {
-    font-size: 1.3rem;
+    font-size: 1.3rem; /* ✨ ขนาดปกติ */
   }
   
   .back-button {
@@ -754,6 +737,10 @@
   .add-to-cart-main-btn {
     padding: 12px 20px;
     font-size: 1rem;
+  }
+  
+  .add-to-cart-notification {
+    top: 10px; /* ✨ กลับเป็นตำแหน่งปกติ */
   }
 }
 

@@ -1,4 +1,4 @@
-// frontend/src/App.jsx - Fixed with Complete Settings Integration + ProductPreview
+// frontend/src/App.jsx - Updated with ProductPreview Integration
 import React, { useState } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
@@ -24,9 +24,15 @@ function AppContent() {
   const [showWelcome, setShowWelcome] = useState(true); // 🆕 Welcome state
   const [simulateServerError, setSimulateServerError] = useState(true); // 🆕 Force server error
   const [selectedProductId, setSelectedProductId] = useState(null); // 🆕 เพิ่ม Product ID state
+  const [showSettings, setShowSettings] = useState(false); // 🔥 เพิ่ม Settings state
+  
+  // ✨ เพิ่ม Product Back Button State
+  const [showProductBackButton, setShowProductBackButton] = useState(false);
+  const [productBackHandler, setProductBackHandler] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null); // ✨ เพิ่ม selected product info
+
   const { isCartOpen, closeCart } = useCart();
   const { isAdmin } = useAuth();
-  const [showSettings, setShowSettings] = useState(false); // 🔥 เพิ่ม Settings state
 
   // 🆕 Welcome animation complete → Show server error page
   const handleAnimationComplete = () => {
@@ -46,17 +52,37 @@ function AppContent() {
     setShowSettings(false);
   };
 
-  // 🆕 Product Preview Handlers
-  const handleShowProduct = (productId) => {
+  // ✨ Enhanced Product Preview Handlers
+  const handleShowProduct = (productId, productData = null) => {
     console.log('🛍️ App.jsx - handleShowProduct called with ID:', productId);
+    console.log('📦 Product data:', productData);
+    
     setSelectedProductId(productId);
+    setSelectedProduct(productData); // เก็บข้อมูลสินค้า
     setCurrentView('product');
   };
 
+  // ✨ Enhanced Back from Product Handler
   const handleBackFromProduct = () => {
     console.log('⬅️ App.jsx - handleBackFromProduct called');
     setCurrentView('home');
     setSelectedProductId(null);
+    setSelectedProduct(null);
+    
+    // ✨ Reset Product Back Button State
+    setShowProductBackButton(false);
+    setProductBackHandler(null);
+  };
+
+  // ✨ Product Back Button Handler (จาก Header)
+  const handleProductBackClick = () => {
+    console.log('🔙 App.jsx - handleProductBackClick from Header');
+    if (productBackHandler && typeof productBackHandler === 'function') {
+      productBackHandler(); // เรียกฟังก์ชันที่ ProductPreview ส่งมา
+    } else {
+      // Fallback
+      handleBackFromProduct();
+    }
   };
 
   const handleLoginSuccess = (user) => {
@@ -81,6 +107,11 @@ function AppContent() {
   const handleBackToHome = () => {
     setCurrentView('home');
     setSelectedProductId(null); // 🆕 Reset product ID เมื่อกลับหน้าหลัก
+    setSelectedProduct(null);
+    
+    // ✨ Reset Product Back Button State
+    setShowProductBackButton(false);
+    setProductBackHandler(null);
   };
 
   const handleShowProfile = () => {
@@ -108,6 +139,11 @@ function AppContent() {
             onProfileClick={handleShowProfile}
             onSettingsClick={handleSettingsClick} // 🔥 เพิ่ม Settings prop
             currentView={currentView}
+            
+            // ✨ เพิ่ม Product Preview Props
+            showProductBackButton={showProductBackButton}
+            onProductBack={handleProductBackClick}
+            productName={selectedProduct?.name || ''}
           />
           
           {/* 🆕 Enhanced View Routing */}
@@ -117,10 +153,18 @@ function AppContent() {
           
           {currentView === 'admin' && <AdminDashboard />}
           
+          {/* ✨ Enhanced ProductPreview with Back Button Integration */}
           {currentView === 'product' && selectedProductId && (
             <ProductPreview 
               productId={selectedProductId}
               onBack={handleBackFromProduct}
+              
+              // ✨ เพิ่ม Prop สำหรับ Back Button ใน Header
+              onShowBackButton={(show, handler) => {
+                console.log('📤 App.jsx - onShowBackButton:', { show, handler: !!handler });
+                setShowProductBackButton(show);
+                setProductBackHandler(() => handler); // Wrap in function เพื่อป้องกัน infinite loop
+              }}
             />
           )}
           
@@ -147,7 +191,7 @@ function AppContent() {
             />
           )}
 
-          {/* 🆕 Cart Modal - แสดงแค่ในหน้า home และ product */}
+          {/* ✨ Enhanced Cart Modal - แสดงแค่ในหน้า home และ product */}
           {(currentView === 'home' || currentView === 'product') && (
             <CartModal 
               isOpen={isCartOpen}

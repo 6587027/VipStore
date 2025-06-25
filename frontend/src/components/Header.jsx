@@ -1,11 +1,21 @@
-// frontend/src/components/Header.jsx - Updated with Settings Button
+// frontend/src/components/Header.jsx - FIXED VERSION
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import LogoutModal from './LogoutModal';
 
-
-const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, onSettingsClick, currentView }) => {
+const Header = ({ 
+  onLoginClick, 
+  onAdminClick, 
+  onBackToHome, 
+  onProfileClick, 
+  onSettingsClick, 
+  currentView,
+  // ✨ เพิ่ม Props ใหม่สำหรับ Product Preview
+  showProductBackButton = false,
+  onProductBack = null,
+  productName = ''
+}) => {
   const { user, logout, isAdmin, isLoggedIn } = useAuth();
   const { totalItems, toggleCart, formatCurrency, totalAmount } = useCart();
   
@@ -39,9 +49,9 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, onSe
     }
   };
 
-  // 🆕 Handle Settings Click - แก้ไขให้ทำงาน
+  // Handle Settings Click
   const handleSettingsClick = () => {
-    console.log('🔧 Settings button clicked!'); // Debug log
+    console.log('🔧 Settings button clicked!');
     console.log('👤 User:', user);
     console.log('🔧 onSettingsClick function:', onSettingsClick);
     
@@ -54,6 +64,14 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, onSe
         userRole: user?.role,
         hasSettingsFunction: !!onSettingsClick
       });
+    }
+  };
+
+  // ✨ เพิ่มฟังก์ชันใหม่: Handle Product Back Click
+  const handleProductBackClick = () => {
+    console.log('🔙 Product back button clicked from header!');
+    if (onProductBack && typeof onProductBack === 'function') {
+      onProductBack();
     }
   };
 
@@ -127,6 +145,13 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, onSe
                   ⚙️ Settings
                 </span>
               )}
+              
+              {/* ✨ Product Preview Badge */}
+              {showProductBackButton && (
+                <span className="view-badge product-badge">
+                  📦 รายละเอียดสินค้า
+                </span>
+              )}
             </div>
 
             {/* BOTTOM ROW: Navigation */}
@@ -134,8 +159,19 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, onSe
               
               {/* Left Side: Back/Cart Buttons */}
               <div className="header-left">
+                
+                {/* ✨ Product Back Button (Product Preview mode) */}
+                {showProductBackButton && (
+                  <button 
+                    className="btn-secondary btn-product-back"
+                    onClick={handleProductBackClick}
+                  >
+                    🏠 กลับไปหน้าหลัก
+                  </button>
+                )}
+
                 {/* Back to Home Button (Admin/Settings view only) */}
-                {(currentView === 'admin' || currentView === 'settings') && (
+                {(currentView === 'admin' || currentView === 'settings') && !showProductBackButton && (
                   <button 
                     className="btn-secondary btn-back"
                     onClick={onBackToHome}
@@ -144,8 +180,8 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, onSe
                   </button>
                 )}
 
-                {/* Cart Button (Home view only) */}
-                {currentView === 'home' && (
+                {/* Cart Button (Home view only and not in product preview) */}
+                {currentView === 'home' && !showProductBackButton && (
                   <button 
                     className="btn-secondary cart-button"
                     onClick={toggleCart}
@@ -171,7 +207,7 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, onSe
                     {/* User Info Card */}
                     <div className={`user-info ${isAdmin() ? 'admin' : 'customer'}`}>
                       <div className="user-avatar">
-                        {/* 🆕 Show Profile Picture if available */}
+                        {/* Show Profile Picture if available */}
                         {user.profileImage ? (
                           <img 
                             src={user.profileImage} 
@@ -199,44 +235,38 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, onSe
 
                     {/* Action Buttons */}
                     <div className="action-buttons">
-                      {/* Settings Button (Customer only, Home view only) */}
-                      {user && user.role === 'customer' && currentView === 'home' && (
-                        <button 
-                          className="btn-primary btn-settings"
-                          onClick={() => {
-                            console.log('🔧 Settings button physical click!');
-                            handleSettingsClick();
-                          }}
-                          title="การตั้งค่า"
-                        >
-                          <span className="btn-text">การตั้งค่า</span>
-                          <span className="btn-icon">⚙️</span>
-                        </button>
+                      
+                      {/* ✨ ซ่อน Settings/Admin buttons ใน Product Preview mode */}
+                      {!showProductBackButton && (
+                        <>
+                          {/* Settings Button (Customer only, Home view only) */}
+                          {user && user.role === 'customer' && currentView === 'home' && (
+                            <button 
+                              className="btn-primary btn-settings"
+                              onClick={() => {
+                                console.log('🔧 Settings button physical click!');
+                                handleSettingsClick();
+                              }}
+                              title="การตั้งค่า"
+                            >
+                              <span className="btn-text">การตั้งค่า</span>
+                              <span className="btn-icon">⚙️</span>
+                            </button>
+                          )}
+
+                          {/* Admin Panel Button (Admin only, Home view only) */}
+                          {isAdmin() && currentView === 'home' && (
+                            <button 
+                              className="btn-primary btn-admin"
+                              onClick={handleAdminClick}
+                            >
+                              ⚙️ จัดการ
+                            </button>
+                          )}
+                        </>
                       )}
 
-                      {/* Profile Button (Customer only, Home view only) - ย้ายมาหลัง Settings */}
-                      {/* {user && user.role === 'customer' && currentView === 'home' && (
-                        <button 
-                          className="btn-primary btn-profile"
-                          onClick={handleProfileClick}
-                          title="ข้อมูลผู้ใช้"
-                        >
-                          <span className="btn-text">ข้อมูลผู้ใช้</span>
-                          <span className="btn-icon">👤</span>
-                        </button>
-                      )} */}
-
-                      {/* Admin Panel Button (Admin only, Home view only) */}
-                      {isAdmin() && currentView === 'home' && (
-                        <button 
-                          className="btn-primary btn-admin"
-                          onClick={handleAdminClick}
-                        >
-                          ⚙️ จัดการ
-                        </button>
-                      )}
-
-                      {/* Logout Button */}
+                      {/* Logout Button - Always show */}
                       <button 
                         className="btn-outline btn-logout"
                         onClick={handleLogout}
@@ -247,20 +277,22 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, onSe
                     </div>
                   </>
                 ) : (
-                  /* Login Button */
-                  <button 
-                    className="btn-primary btn-login"
-                    onClick={onLoginClick}
-                  >
-                    🔐 เข้าสู่ระบบ
-                  </button>
+                  /* Login Button - ซ่อนใน Product Preview mode */
+                  !showProductBackButton && (
+                    <button 
+                      className="btn-primary btn-login"
+                      onClick={onLoginClick}
+                    >
+                      🔐 เข้าสู่ระบบ
+                    </button>
+                  )
                 )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Enhanced CSS with Settings Badge */}
+        {/* Enhanced CSS with Product Preview Support */}
         <style jsx>{`
           /* ===== MOBILE-FIRST HEADER LAYOUT ===== */
           .header-layout {
@@ -346,6 +378,12 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, onSe
 
           .settings-badge {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+          }
+
+          /* ✨ Product Preview Badge */
+          .product-badge {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
             color: white;
           }
 
@@ -438,6 +476,21 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, onSe
             background: white;
             color: #667eea;
             border: 2px solid #667eea;
+          }
+
+          /* ✨ Product Back Button */
+          .btn-product-back {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+            transition: all 0.3s ease;
+          }
+
+          .btn-product-back:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+            background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%) !important;
           }
 
           .btn-settings {
@@ -569,6 +622,11 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, onSe
             .action-buttons {
               gap: 8px;
             }
+
+            .btn-product-back {
+              padding: 10px 16px;
+              font-size: 0.9rem;
+            }
           }
 
           /* ===== LARGE DESKTOP (1024px+) ===== */
@@ -617,7 +675,8 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, onSe
             .btn-settings,
             .btn-profile,
             .btn-admin,
-            .btn-logout {
+            .btn-logout,
+            .btn-product-back {
               padding: 6px 8px;
               font-size: 0.8rem;
               min-width: 36px;
@@ -649,7 +708,8 @@ const Header = ({ onLoginClick, onAdminClick, onBackToHome, onProfileClick, onSe
             .btn-settings,
             .btn-profile,
             .btn-admin,
-            .btn-logout {
+            .btn-logout,
+            .btn-product-back {
               padding: 5px 6px;
               min-width: 32px;
               height: 28px;

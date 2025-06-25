@@ -1,4 +1,4 @@
-// frontend/src/components/payment/PaymentModal.jsx - เวอร์ชันสมบูรณ์
+// frontend/src/components/payment/PaymentModal.jsx 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import './PaymentModal.css';

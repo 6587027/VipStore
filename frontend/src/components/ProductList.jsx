@@ -15,6 +15,10 @@ const ProductList = ({ onProductClick }) => {
   const [serverWakeAttempts, setServerWakeAttempts] = useState(0);
   const [showRealError, setShowRealError] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isHotReloading, setIsHotReloading] = useState(false);
+  const [lastReloadTime, setLastReloadTime] = useState(null);
+  const [reloadCount, setReloadCount] = useState(0);
+  const [autoReloadEnabled, setAutoReloadEnabled] = useState(true);
 
   // ✅ Search & Filter States
   const [searchTerm, setSearchTerm] = useState('');

@@ -1,11 +1,11 @@
-// frontend/src/components/ProductPreview.jsx - FIXED VERSION
+// frontend/src/components/ProductPreview.jsx - FIXED VERSION WITH AUTO SCROLL
 import React, { useState, useEffect } from 'react';
 import { productsAPI } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import './ProductPreview.css';
 
-const ProductPreview = ({ productId, onBack }) => {
+const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
   console.log('🔍 ProductPreview rendered with productId:', productId);
   
   const [product, setProduct] = useState(null);
@@ -18,6 +18,36 @@ const ProductPreview = ({ productId, onBack }) => {
   
   const { addToCart, getCartItemQuantity } = useCart();
   const { user } = useAuth();
+
+  // ✨ SCROLL TO TOP WHEN COMPONENT LOADS
+  useEffect(() => {
+    console.log('🔝 Scrolling to top of page...');
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'smooth' // เลื่อนอย่างนุ่มนวล
+    });
+    
+    // Reset page position for instant scroll (fallback)
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [productId]); // ✨ Trigger เมื่อ productId เปลี่ยน
+
+  // ✨ Notify parent to show back button in header
+  useEffect(() => {
+    if (onShowBackButton && typeof onShowBackButton === 'function') {
+      console.log('📤 Notifying parent to show back button in header...');
+      onShowBackButton(true, handleBackClick);
+    }
+    
+    // Cleanup: hide back button when component unmounts
+    return () => {
+      if (onShowBackButton && typeof onShowBackButton === 'function') {
+        console.log('🧹 Hiding back button on component unmount...');
+        onShowBackButton(false);
+      }
+    };
+  }, [onShowBackButton]);
 
   // โหลดข้อมูลสินค้า
   useEffect(() => {
@@ -51,16 +81,34 @@ const ProductPreview = ({ productId, onBack }) => {
     }
   };
 
-  // Handle Back Button
+  // Handle Back Button with Smooth Experience
   const handleBackClick = () => {
     console.log('🔙 Back button clicked');
-    if (onBack && typeof onBack === 'function') {
-      onBack();
-    } else {
-      // Fallback: ถ้าไม่มี onBack prop ให้ reload หน้า
-      window.location.reload();
-    }
+    
+    // ✨ เลื่อนไปด้านบนก่อนที่จะกลับ (เผื่อมี animation)
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+    
+    // ✨ รอ animation เสร็จแล้วค่อยกลับ
+    setTimeout(() => {
+      if (onBack && typeof onBack === 'function') {
+        onBack();
+      } else {
+        // Fallback: ถ้าไม่มี onBack prop ให้ reload หน้า
+        window.location.reload();
+      }
+    }, 200); // รอ 200ms ให้ scroll animation เสร็จ
   };
+
+  // ✨ ส่ง Back Handler ไปยัง Parent Component เพื่อแสดงใน Header
+  useEffect(() => {
+    if (onBack && typeof onBack === 'function') {
+      // Notify parent that we need back button in header
+      console.log('📤 Sending back handler to parent...');
+    }
+  }, [onBack]);
 
   // จัดการรูปภาพหลายรูป
   const getProductImages = (product) => {
@@ -186,13 +234,8 @@ const ProductPreview = ({ productId, onBack }) => {
         </div>
       )}
 
-      {/* Header with Back Button */}
-      <div className="product-preview-header">
-        <button className="back-button" onClick={handleBackClick}>
-          ← กลับไปหน้าหลัก
-        </button>
-        <h1>รายละเอียดสินค้า</h1>
-      </div>
+      {/* Header with Back Button - REMOVED เอาออกแล้ว */}
+      {/* ปุ่มกลับจะแสดงใน Main Header แทน */}
 
       <div className="product-preview-content">
         {/* Image Gallery Section */}

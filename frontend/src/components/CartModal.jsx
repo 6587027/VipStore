@@ -1284,7 +1284,7 @@ const renderAddressForm = () => (
                 onClick={handleAddressSubmit}
                 disabled={isCheckingOut || (!useManualAddress && !selectedProfileId)}
               >
-                💳 ไปชำระเงิน
+                💳 ไปชำระเงิน หรือ บันทึกสินค้า
               </button>
             </div>
           )}

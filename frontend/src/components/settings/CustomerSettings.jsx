@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { authAPI, ordersAPI } from '../../services/api';
-
+import PaymentModal from '../payment/PaymentModal'; 
 // ✅ Use Environment Variable or Fallback to Production URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com/api';
 
@@ -16,6 +16,10 @@ const CustomerSettings = ({ isOpen, onClose }) => {
   const [showManageProfiles, setShowManageProfiles] = useState(false);
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [profilePicture, setProfilePicture] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentOrderData, setPaymentOrderData] = useState(null);
+
+
 
 
 // 🆕 New Profile Form State
@@ -172,102 +176,71 @@ const [newProfileData, setNewProfileData] = useState({
     }
   };
 
-  // 💳 ฟังก์ชันจำลองการชำระเงิน (ย้ายมาจาก UserProfileModal)
-  const handlePayment = async (orderId, orderNumber, totalAmount) => {
-    const paymentMethod = window.prompt(
-      `💳 เลือกวิธีชำระเงินสำหรับออเดอร์ ${orderNumber}\n` +
-      `💰 ยอดเงิน: ${formatPrice(totalAmount)}\n\n` +
-      `กรุณาเลือกวิธีชำระเงิน:\n` +
-      `1. บัตรเครดิต/เดบิต\n` +
-      `2. โอนผ่านธนาคาร\n` +
-      `3. พร้อมเพย์\n` +
-      `4. เก็บเงินปลายทาง\n\n` +
-      `พิมพ์เลข 1-4:`,
-      "1"
-    );
-
-    if (!paymentMethod || !['1', '2', '3', '4'].includes(paymentMethod)) {
-      return;
-    }
-
-    const methods = {
-      '1': 'บัตรเครดิต/เดบิต 💳',
-      '2': 'โอนผ่านธนาคาร 🏦',
-      '3': 'พร้อมเพย์ 📱',
-      '4': 'เก็บเงินปลายทาง 💵'
-    };
-
-    const selectedMethod = methods[paymentMethod];
-
-    const confirmed = window.confirm(
-      `💳 ยืนยันการชำระเงิน\n\n` +
-      `📦 ออเดอร์: ${orderNumber}\n` +
-      `💰 ยอดเงิน: ${formatPrice(totalAmount)}\n` +
-      `💳 วิธีชำระ: ${selectedMethod}\n\n` +
-      `⚠️ นี่เป็นการจำลองเท่านั้น ไม่มีการหักเงินจริง\n\n` +
-      `ต้องการดำเนินการต่อไหม?`
-    );
-
-    if (!confirmed) return;
-
-    try {
-      setLoading(true);
-      setError('');
-
-      console.log(`💳 Processing payment for order: ${orderNumber}`);
-
-      const processingTime = Math.random() * 2000 + 1000;
-      setSuccess(`⏳ กำลังประมวลผลการชำระเงิน ${selectedMethod}...`);
-
-      await new Promise(resolve => setTimeout(resolve, processingTime));
-
-      const isSuccess = Math.random() > 0.05;
-
-      if (isSuccess) {
-        const response = await ordersAPI.admin.updateStatus(orderId, {
-          status: 'confirmed',
-          paymentStatus: 'paid',
-          notes: `ชำระเงินสำเร็จด้วย ${selectedMethod} เมื่อ ${new Date().toLocaleString('th-TH')} (จำลอง)`
-        });
-
-        if (response.data.success) {
-          setSuccess(
-            `🎉 ชำระเงินสำเร็จ!\n\n` +
-            `📦 ออเดอร์: ${orderNumber}\n` +
-            `💰 ยอดเงิน: ${formatPrice(totalAmount)}\n` +
-            `💳 วิธีชำระ: ${selectedMethod}\n` +
-            `📅 เวลา: ${new Date().toLocaleString('th-TH')}\n\n` +
-            `✅ ออเดอร์ได้รับการยืนยันแล้ว เตรียมจัดส่งสินค้า`
-          );
-
-          await fetchOrderHistory();
-
-          setTimeout(() => {
-            setSuccess('');
-          }, 5000);
-
-        } else {
-          setError('ชำระเงินสำเร็จ แต่ไม่สามารถอัพเดตสถานะออเดอร์ได้');
-        }
-
-      } else {
-        setError(
-          `❌ การชำระเงินล้มเหลว\n\n` +
-          `สาเหตุที่เป็นไปได้:\n` +
-          `• ยอดเงินในบัญชีไม่เพียงพอ\n` +
-          `• ข้อมูลบัตรไม่ถูกต้อง\n` +
-          `• ปัญหาจากระบบธนาคาร\n\n` +
-          `กรุณาลองใหม่อีกครั้ง หรือเปลี่ยนวิธีชำระเงิน`
-        );
-      }
-
-    } catch (error) {
-      console.error('Payment processing error:', error);
-      setError('เกิดข้อผิดพลาดในระบบชำระเงิน กรุณาลองใหม่อีกครั้ง');
-    } finally {
-      setLoading(false);
-    }
+  // 💳 ฟังก์ชันชำระเงินใหม่ (ใช้ PaymentModal แทน window.prompt)
+const handlePayment = async (orderId, orderNumber, totalAmount) => {
+  console.log(`💳 Preparing payment for order: ${orderNumber}`);
+  
+  // 🆕 เตรียมข้อมูล Order สำหรับ Payment Modal
+  const orderForPayment = {
+    orderId: orderId,
+    orderNumber: orderNumber,
+    totalAmount: formatPrice(totalAmount),
+    shippingCost: 'รวมแล้ว', // แสดงว่ารวมค่าจัดส่งแล้ว
+    finalTotal: formatPrice(totalAmount)
   };
+
+  console.log('💳 Opening Payment Modal with data:', orderForPayment);
+  
+  // 🆕 เปิด Payment Modal (แทนการใช้ alert)
+  setPaymentOrderData(orderForPayment);
+  setShowPaymentModal(true);
+};
+
+// 4. 🆕 เพิ่ม Payment Success Handler
+const handlePaymentSuccess = async (paymentData) => {
+  console.log('💳 Payment completed:', paymentData);
+  
+  try {
+    setLoading(true);
+    setError('');
+
+    // อัพเดตสถานะออเดอร์เป็นชำระเงินแล้ว
+    const response = await ordersAPI.admin.updateStatus(paymentData.orderId || paymentOrderData.orderId, {
+      status: 'confirmed',
+      paymentStatus: 'paid',
+      notes: `ชำระเงินสำเร็จด้วย ${paymentData.methodName || paymentData.method} เมื่อ ${new Date().toLocaleString('th-TH')} (ผ่าน Payment Modal)`
+    });
+
+    if (response.data.success) {
+      setSuccess(`🎉 ชำระเงินสำเร็จ! ออเดอร์ ${paymentOrderData.orderNumber} ได้รับการยืนยันแล้ว`);
+      
+      // รีเฟรชรายการออเดอร์
+      await fetchOrderHistory();
+      
+      // ปิด Payment Modal
+      setShowPaymentModal(false);
+      setPaymentOrderData(null);
+      
+      setTimeout(() => {
+        setSuccess('');
+      }, 5000);
+    } else {
+      setError('ชำระเงินสำเร็จ แต่ไม่สามารถอัพเดตสถานะออเดอร์ได้');
+    }
+
+  } catch (error) {
+    console.error('Payment completion error:', error);
+    setError('เกิดข้อผิดพลาดในการยืนยันการชำระเงิน');
+  } finally {
+    setLoading(false);
+  }
+};
+// 5. 🆕 Payment Close Handler
+const handlePaymentClose = () => {
+  setShowPaymentModal(false);
+  setPaymentOrderData(null);
+};
+
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -676,7 +649,7 @@ const handleNewProfileInputChange = (e) => {
     // }
   ];
 
-  // 🛒 Render Order History แบบเดิมเป๊ะเลย (ย้ายมาจาก UserProfileModal)
+  
   const renderOrderHistory = () => (
     <div>
       <div style={{
@@ -3697,6 +3670,13 @@ case 'addresses':
           }
         `}</style>
       </div>
+      {/* 🔥 เพิ่ม PaymentModal ตรงนี้! */}
+    <PaymentModal
+      isOpen={showPaymentModal}
+      onClose={handlePaymentClose}
+      orderData={paymentOrderData}
+      onPaymentSuccess={handlePaymentSuccess}
+    />
     </div>
   );
 };
