@@ -205,9 +205,7 @@ const ProductList = ({ onProductClick }) => {
   const categories = ['Electronics', 'Clothing', 'Books', 'Home', 'Sports', 'Beauty', 'Other'];
   const priceStats = getPriceStats();
 
- // 🛠️ Maintenance Mode Interface แบบเดิมจาก Code เก่า
-// ใส่ในส่วน Maintenance Check ของ ProductList.jsx
-
+// Maintenance Mode Check
 
 if (typeof MAINTENANCE_MODE !== 'undefined' && MAINTENANCE_MODE) {
   return (
@@ -586,7 +584,7 @@ if (typeof MAINTENANCE_MODE !== 'undefined' && MAINTENANCE_MODE) {
             </div>
             <div style={{ marginBottom: '8px' }}>
               🌐 Website: <a 
-                href="https://vippersonalwebsite.vercel.app/contact" 
+                href="https://vippersonalwebsite.vercel.app/" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 onClick={(e) => {
@@ -739,7 +737,10 @@ if (typeof MAINTENANCE_MODE !== 'undefined' && MAINTENANCE_MODE) {
   );
 }
 
-  // Loading State (ย่อ)
+// --------------------------------------------------------------------------------------
+
+
+// 🚀 VipStore Enhanced Loading State
 
 if (loading && !showRealError) {
   // 🆕 Enhanced Loading แค่ตอน initial load
@@ -752,164 +753,135 @@ if (loading && !showRealError) {
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: '500px',
-          gap: '24px',
+          gap: '20px', // เดิม: 24px → ใหม่: 20px
           padding: '40px 20px'
         }}>
           
-          {/* 🔄 Dynamic Loading Icon based on Phase */}
+          {/* 🔄 FASTER Loading Icon */}
           <div style={{
-            width: '80px',
-            height: '80px',
+            width: '70px', // เดิม: 80px → ใหม่: 70px (เล็กลง = เร็วขึ้น)
+            height: '70px',
             position: 'relative',
-            marginBottom: '20px'
+            marginBottom: '16px' // เดิม: 20px → ใหม่: 16px
           }}>
-            {/* Outer Ring */}
+            {/* Outer Ring - FASTER */}
             <div style={{
               width: '100%',
               height: '100%',
-              border: '4px solid #f3f4f6',
-              borderTop: '4px solid #667eea',
+              border: '3px solid #f3f4f6', // เดิม: 4px → ใหม่: 3px
+              borderTop: '3px solid #667eea',
               borderRadius: '50%',
-              animation: 'spin 1.5s linear infinite'
+              animation: 'fastSpin 0.8s linear infinite' // เดิม: 1.5s → ใหม่: 0.8s
             }}></div>
             
-            {/* Inner Ring */}
+            {/* Inner Ring - FASTER */}
             <div style={{
               position: 'absolute',
-              top: '20px',
-              left: '20px',
-              width: '40px',
-              height: '40px',
-              border: '3px solid #e5e7eb',
-              borderRight: '3px solid #10b981',
+              top: '17px', // ปรับตามขนาดใหม่
+              left: '17px',
+              width: '36px', // ปรับตามขนาดใหม่
+              height: '36px',
+              border: '2px solid #e5e7eb', // เดิม: 3px → ใหม่: 2px
+              borderRight: '2px solid #10b981',
               borderRadius: '50%',
-              animation: 'spin 1s linear infinite reverse'
+              animation: 'fastSpin 0.6s linear infinite reverse' // เดิม: 1s → ใหม่: 0.6s
             }}></div>
             
-            {/* Center Icon */}
+            {/* Center Icon - FASTER Pulse */}
             <div style={{
               position: 'absolute',
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
-              fontSize: '1.5rem',
-              animation: 'pulse 2s infinite'
+              fontSize: '1.3rem', // เดิม: 1.5rem → ใหม่: 1.3rem
+              animation: 'fastPulse 1.2s infinite' // เดิม: 2s → ใหม่: 1.2s
             }}>
-              {loadingPhase === 'initializing' && '🚀'}
               {loadingPhase === 'connecting' && '🔗'}
               {loadingPhase === 'fetching' && '📦'}
               {loadingPhase === 'retrying' && '☕'}
             </div>
           </div>
 
-          {/* 📝 Dynamic Loading Messages */}
-          <div style={{ textAlign: 'center', maxWidth: '400px' }}>
+          {/* 📝 Faster Loading Messages */}
+          <div style={{ textAlign: 'center', maxWidth: '380px' }}> {/* เดิม: 400px → ใหม่: 380px */}
             <h2 style={{
               color: '#374151',
-              fontSize: '1.5rem',
+              fontSize: '1.4rem', // เดิม: 1.5rem → ใหม่: 1.4rem
               fontWeight: '600',
-              marginBottom: '12px',
-              animation: 'fadeInUp 0.6s ease-out'
+              marginBottom: '10px', // เดิม: 12px → ใหม่: 10px
+              animation: 'fastFadeInUp 0.4s ease-out' // เดิม: 0.6s → ใหม่: 0.4s
             }}>
-              {loadingPhase === 'initializing' && '🚀 เริ่มต้นระบบ...'}
               {loadingPhase === 'connecting' && '🔗 เชื่อมต่อเซิร์ฟเวอร์...'}
               {loadingPhase === 'fetching' && '📦 โหลดข้อมูลสินค้า...'}
-              {loadingPhase === 'retrying' && '☕ ปลุกเซิร์ฟเวอร์ให้ตื่น...'}
+              {loadingPhase === 'retrying' && '☕ เซิร์ฟเวอร์อยู่ระหว่างเตรียมความพร้อม...'}
             </h2>
 
-            <p style={{
-              color: '#6b7280',
-              fontSize: '1rem',
-              marginBottom: '20px',
-              lineHeight: '1.6'
-            }}>
-              {loadingPhase === 'initializing' && 'กำลังเตรียมความพร้อม'}
-              {loadingPhase === 'connecting' && 'กำลังสร้างการเชื่อมต่อ'}
-              {loadingPhase === 'fetching' && 'กำลังดึงข้อมูลจากฐานข้อมูล'}
-              {loadingPhase === 'retrying' && `ความพยายามครั้งที่ ${serverWakeAttempts} จาก 10 ครั้ง`}
-            </p>
-
-            {/* 📊 Progress Indicator */}
-            {loadingPhase === 'retrying' && (
-              <div style={{
-                background: '#f3f4f6',
-                borderRadius: '10px',
-                overflow: 'hidden',
-                height: '8px',
-                marginBottom: '16px'
-              }}>
-                <div style={{
-                  height: '100%',
-                  background: 'linear-gradient(90deg, #667eea, #764ba2)',
-                  borderRadius: '10px',
-                  width: `${(serverWakeAttempts / 10) * 100}%`,
-                  transition: 'width 0.5s ease',
-                  animation: 'progressGlow 2s infinite'
-                }}></div>
-              </div>
-            )}
-
-            {/* 💡 Helpful Tips */}
+            {/* 💡 Compact Tips */}
             <div style={{
               background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-              padding: '16px',
-              borderRadius: '12px',
+              padding: '12px 16px', // เดิม: 16px → ใหม่: 12px 16px
+              borderRadius: '10px', // เดิม: 12px → ใหม่: 10px
               border: '1px solid #bae6fd',
-              marginTop: '20px'
+              marginTop: '16px' // เดิม: 20px → ใหม่: 16px
             }}>
               <p style={{
                 color: '#0369a1',
-                fontSize: '0.9rem',
+                fontSize: '0.85rem', // เดิม: 0.9rem → ใหม่: 0.85rem
                 margin: 0,
                 fontWeight: '500'
               }}>
-                  {loadingPhase === 'initializing' && '💡 เตรียมส่วนประกอบของเว็บไซต์'}
-                  {loadingPhase === 'connecting' && '💡 กำลังติดต่อกับเซิร์ฟเวอร์'}
-                  {loadingPhase === 'fetching' && '💡 กำลังโหลดสินค้าทั้งหมดให้คุณ'}
-                  {loadingPhase === 'retrying' && serverWakeAttempts <= 3 && '💡 เซิร์ฟเวอร์อาจกำลังหลับ กำลังปลุกให้ตื่น'}
-                  {loadingPhase === 'retrying' && serverWakeAttempts > 3 && serverWakeAttempts <= 7 && '💡 เซิร์ฟเวอร์กำลังอุ่นเครื่อง กรุณารอสักครู่'}
-                  {loadingPhase === 'retrying' && serverWakeAttempts > 7 && '💡 เซิร์ฟเวอร์ใช้เวลานานกว่าปกติ กำลังพยายามเชื่อมต่อ'}
+                {loadingPhase === 'connecting' && '💡 กำลังติดต่อกับเซิร์ฟเวอร์'}
+                {loadingPhase === 'fetching' && '💡 กำลังโหลดสินค้าทั้งหมดให้คุณ'}
+                {loadingPhase === 'retrying' && serverWakeAttempts <= 5 && '💡 เซิร์ฟเวอร์อาจกำลังหลับ กำลังปลุกให้ตื่น'}
+                {loadingPhase === 'retrying' && serverWakeAttempts > 7 && serverWakeAttempts <= 10 && '💡 เซิร์ฟเวอร์กำลังอุ่นเครื่อง กรุณารอสักครู่'}
+                {loadingPhase === 'retrying' && serverWakeAttempts > 10 && '💡 กำลังพยายามเชื่อมต่อ'}
               </p>
             </div>
           </div>
 
-          {/* 🎭 Fun Loading Animation */}
+          {/* 🎭 FASTER Loading Dots */}
           <div style={{
             display: 'flex',
-            gap: '8px',
-            marginTop: '20px'
+            gap: '6px', // เดิม: 8px → ใหม่: 6px
+            marginTop: '16px' // เดิม: 20px → ใหม่: 16px
           }}>
             {[1, 2, 3, 4, 5].map(dot => (
               <div
                 key={dot}
                 style={{
-                  width: '12px',
-                  height: '12px',
+                  width: '10px', // เดิม: 12px → ใหม่: 10px
+                  height: '10px',
                   backgroundColor: '#667eea',
                   borderRadius: '50%',
-                  animation: `bounce 1.8s infinite ease-in-out`,
-                  animationDelay: `${dot * 0.2}s`
+                  animation: `fastBounce 1.2s infinite ease-in-out`, // เดิม: 1.8s → ใหม่: 1.2s
+                  animationDelay: `${dot * 0.15}s` // เดิม: 0.2s → ใหม่: 0.15s
                 }}
               ></div>
             ))}
           </div>
 
-          {/* CSS Animations */}
+          {/* OPTIMIZED CSS Animations */}
           <style jsx>{`
-            @keyframes spin {
+            @keyframes fastSpin {
               0% { transform: rotate(0deg); }
               100% { transform: rotate(360deg); }
             }
             
-            @keyframes pulse {
-              0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-              50% { opacity: 0.7; transform: translate(-50%, -50%) scale(1.1); }
+            @keyframes fastPulse {
+              0%, 100% { 
+                opacity: 1; 
+                transform: translate(-50%, -50%) scale(1); 
+              }
+              50% { 
+                opacity: 0.7; 
+                transform: translate(-50%, -50%) scale(1.08); 
+              }
             }
             
-            @keyframes bounce {
+            @keyframes fastBounce {
               0%, 80%, 100% {
                 transform: scale(0);
-                opacity: 0.5;
+                opacity: 0.6;
               }
               40% {
                 transform: scale(1);
@@ -917,23 +889,14 @@ if (loading && !showRealError) {
               }
             }
             
-            @keyframes fadeInUp {
+            @keyframes fastFadeInUp {
               from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(15px);
               }
               to {
                 opacity: 1;
                 transform: translateY(0);
-              }
-            }
-            
-            @keyframes progressGlow {
-              0%, 100% {
-                box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
-              }
-              50% {
-                box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
               }
             }
           `}</style>
@@ -941,137 +904,58 @@ if (loading && !showRealError) {
       </div>
     );
   } else {
-    // 🆕 Simple Loading สำหรับ Filter Change (เก็บแบบเดิม)
-    return (
-      <div className="container">
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '200px',
-          gap: '16px',
-          padding: '20px'
-        }}>
-          {/* Simple Spinner */}
-          <div style={{
-            width: '50px',
-            height: '50px',
-            border: '4px solid #f3f4f6',
-            borderTop: '4px solid #667eea',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }}></div>
-          
-          {/* Simple Text */}
-          <div style={{ textAlign: 'center' }}>
-            <h3 style={{
-              color: '#374151',
-              fontSize: '1.2rem',
-              fontWeight: '600',
-              margin: '0 0 8px 0'
-            }}>
-              🔄 อัปเดตรายการสินค้า
-            </h3>
-            <p style={{
-              color: '#6b7280',
-              fontSize: '0.95rem',
-              margin: 0
-            }}>
-              กำลังโหลดสินค้าในหมวดหมู่ที่เลือก...
-            </p>
-          </div>
-
-          {/* Simple Loading Dots */}
-          <div style={{
-            display: 'flex',
-            gap: '6px'
-          }}>
-            {[1, 2, 3].map(dot => (
-              <div
-                key={dot}
-                style={{
-                  width: '8px',
-                  height: '8px',
-                  backgroundColor: '#667eea',
-                  borderRadius: '50%',
-                  animation: `bounce 1.4s infinite ease-in-out`,
-                  animationDelay: `${dot * 0.16}s`
-                }}
-              ></div>
-            ))}
-          </div>
-
-          <style jsx>{`
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-            
-            @keyframes bounce {
-              0%, 80%, 100% {
-                transform: scale(0);
-                opacity: 0.5;
-              }
-              40% {
-                transform: scale(1);
-                opacity: 1;
-              }
-            }
-          `}</style>
-        </div>
-      </div>
-    );
+    // ✅ ไม่แสดง Loading เลย, แสดงข้อมูลเดิม
+    return null;
   }
 }
 
   // Error State (ย่อ)
-  if (error && showRealError) {
-    return (
-      <div className="container">
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '400px',
-          padding: '40px 20px',
-          background: 'linear-gradient(135deg, #fef3c7 0%, #fbbf24 100%)',
-          borderRadius: '20px',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '4rem', marginBottom: '24px' }}>🔌💥🖥️</div>
-          <h2 style={{ color: '#92400e', fontSize: '1.8rem', marginBottom: '16px' }}>
-            เซิร์ฟเวอร์ไม่สามารถเข้าถึงได้
-          </h2>
-          <p style={{ color: '#d97706', fontSize: '1.1rem', marginBottom: '24px' }}>
-            ระบบได้พยายามเชื่อมต่อแล้ว {serverWakeAttempts} ครั้ง<br/>
-            เซิร์ฟเวอร์อาจปิดการให้บริการชั่วคราว หรือ กำลังปรับปรุงระบบ
-          </p>
-          <button
-            onClick={() => {
-              setServerWakeAttempts(0);
-              setShowRealError(false);
-              fetchProducts();
-            }}
-            style={{
-              background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-              border: 'none',
-              padding: '12px 24px',
-              fontSize: '1rem',
-              fontWeight: '600',
-              borderRadius: '12px',
-              color: 'white',
-              cursor: 'pointer'
-            }}
-          >
-            🔄 ลองใหม่อีกครั้ง
-          </button>
-        </div>
-      </div>
-    );
-  }
-
+  // if (error && showRealError) {
+  //   return (
+  //     <div className="container">
+  //       <div style={{
+  //         display: 'flex',
+  //         flexDirection: 'column',
+  //         alignItems: 'center',
+  //         justifyContent: 'center',
+  //         minHeight: '400px',
+  //         padding: '40px 20px',
+  //         background: 'linear-gradient(135deg, #fef3c7 0%, #fbbf24 100%)',
+  //         borderRadius: '20px',
+  //         textAlign: 'center'
+  //       }}>
+  //         <div style={{ fontSize: '4rem', marginBottom: '24px' }}>🔌💥🖥️</div>
+  //         <h2 style={{ color: '#92400e', fontSize: '1.8rem', marginBottom: '16px' }}>
+  //           เซิร์ฟเวอร์ไม่สามารถเข้าถึงได้
+  //         </h2>
+  //         <p style={{ color: '#d97706', fontSize: '1.1rem', marginBottom: '24px' }}>
+  //           ระบบได้พยายามเชื่อมต่อแล้ว {serverWakeAttempts} ครั้ง<br/>
+  //           เซิร์ฟเวอร์อาจปิดการให้บริการชั่วคราว หรือ กำลังปรับปรุงระบบ
+  //         </p>
+  //         <button
+  //           onClick={() => {
+  //             setServerWakeAttempts(0);
+  //             setShowRealError(false);
+  //             fetchProducts();
+  //           }}
+  //           style={{
+  //             background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+  //             border: 'none',
+  //             padding: '12px 24px',
+  //             fontSize: '1rem',
+  //             fontWeight: '600',
+  //             borderRadius: '12px',
+  //             color: 'white',
+  //             cursor: 'pointer'
+  //           }}
+  //         >
+  //           🔄 ลองใหม่อีกครั้ง
+  //         </button>
+  //       </div>
+  //     </div>
+  //   );
+  // }
+  
   return (
     <div className="container">
       {/* ============ 🆕 UNIFIED FILTER DROPDOWN ============ */}
