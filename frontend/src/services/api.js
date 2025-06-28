@@ -346,7 +346,18 @@ export const ordersAPI = {
     getAll: (params = {}) => api.get('/orders/admin/all', { params }),
     updateStatus: (id, updateData) => api.put(`/orders/admin/${id}/status`, updateData),
     getStats: () => api.get('/orders/admin/stats'),
-    delete: (orderId) => api.delete(`/orders/admin/${orderId}`)
+    delete: (orderId) => api.delete(`/orders/admin/${orderId}`),
+
+    // 🆕 เพิ่ม Refund APIs
+  processRefund: (orderId, refundData) => {
+    console.log('💰 Processing refund for order:', orderId, refundData);
+    return api.put(`/orders/admin/${orderId}/refund`, refundData);
+  },
+  
+  getRefundInfo: (orderId) => {
+    console.log('📊 Getting refund info for order:', orderId);
+    return api.get(`/orders/admin/${orderId}/refund-info`);
+  }
   }
 };
 

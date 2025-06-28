@@ -158,6 +158,216 @@ const OrderManager = () => {
     }
   };
 
+  
+  // 🔄 Revert order status function
+const revertOrderStatus = async (orderId, currentStatus, orderNumber) => {
+  // กำหนด Revert mapping
+  const revertMapping = {
+    'confirmed': 'pending',
+    'processing': 'confirmed', 
+    'shipped': 'processing',
+    'delivered': 'shipped',
+    'cancelled': 'pending'
+  };
+
+  const newStatus = revertMapping[currentStatus];
+  
+  if (!newStatus) {
+    alert('❌ ไม่สามารถยกเลิกสถานะนี้ได้');
+    return;
+  }
+
+  // สร้าง confirmation message ที่ชัดเจน
+  const revertMessages = {
+    'confirmed': 'ยกเลิกการยืนยัน และคืนสต็อกสินค้า',
+    'processing': 'ยกเลิกการเตรียมสินค้า',
+    'shipped': 'ยกเลิกการจัดส่ง',
+    'delivered': 'ยกเลิกการจัดส่งสำเร็จ', 
+    'cancelled': 'เปิดใช้งานออเดอร์ใหม่ และหักสต็อกสินค้า'
+  };
+
+  const confirmMessage = `🔄 ${revertMessages[currentStatus]}\n\nออเดอร์: ${orderNumber}\nจาก: ${getStatusText(currentStatus)} → ${getStatusText(newStatus)}\n\n⚠️ การดำเนินการนี้จะส่งผลต่อสต็อกสินค้า\nต้องการดำเนินการต่อหรือไม่?`;
+  
+  if (!window.confirm(confirmMessage)) {
+    return;
+  }
+
+  try {
+    const response = await ordersAPI.admin.updateStatus(orderId, { 
+      status: newStatus,
+      isRevert: true, // บอก backend ว่าเป็นการ revert
+      previousStatus: currentStatus
+    });
+    
+    if (response.data.success) {
+      // Update local state
+      setOrders(orders.map(order => 
+        order._id === orderId 
+          ? { ...order, status: newStatus }
+          : order
+      ));
+      
+      // Refresh stats
+      fetchStats();
+      
+      // Success message with details
+      const stockMessage = response.data.changes?.stockAdjusted ? 
+        '\n✅ สต็อกสินค้าได้รับการปรับปรุงแล้ว' : '';
+      
+      alert(`✅ เปลี่ยนสถานะสำเร็จ!\n\nออเดอร์: ${orderNumber}\nสถานะใหม่: ${getStatusText(newStatus)}${stockMessage}`);
+    }
+  } catch (error) {
+    console.error('Revert status error:', error);
+    
+    // Show specific error message
+    const errorMessage = error.response?.data?.message || 'เกิดข้อผิดพลาดในการยกเลิกสถานะ';
+    alert(`❌ ${errorMessage}`);
+  }
+};
+
+// เพิ่ม Functions เหล่านี้ใน OrderManager.jsx
+
+// 💰 Process refund function
+const processRefund = async (orderId, orderNumber, totalAmount) => {
+  // ตรวจสอบก่อนว่าสามารถคืนเงินได้หรือไม่
+  try {
+    const refundInfoResponse = await ordersAPI.admin.getRefundInfo(orderId);
+    
+    if (!refundInfoResponse.data.success || !refundInfoResponse.data.refundInfo.canRefund) {
+      alert('❌ ไม่สามารถคืนเงินได้สำหรับออเดอร์นี้');
+      return;
+    }
+  } catch (error) {
+    console.error('Error checking refund eligibility:', error);
+    alert('❌ เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์การคืนเงิน');
+    return;
+  }
+
+  // สร้าง Refund Confirmation Dialog
+  const refundReason = prompt(
+    `💰 การคืนเงินสำหรับออเดอร์ ${orderNumber}\n\n` +
+    `ยอดเงินที่จะคืน: ฿${totalAmount.toLocaleString()}\n\n` +
+    `⚠️ การคืนเงินจะทำให้:\n` +
+    `• เปลี่ยนสถานะออเดอร์เป็น "ยกเลิก"\n` +
+    `• คืนสต็อกสินค้าทั้งหมด\n` +
+    `• ไม่สามารถยกเลิกการคืนเงินได้\n\n` +
+    `กรุณาระบุเหตุผลในการคืนเงิน:`
+  );
+
+  if (!refundReason || refundReason.trim() === '') {
+    return; // ยกเลิกถ้าไม่ได้ใส่เหตุผล
+  }
+
+  // Final confirmation
+  const confirmRefund = window.confirm(
+    `🔄 ยืนยันการคืนเงิน?\n\n` +
+    `ออเดอร์: ${orderNumber}\n` +
+    `จำนวนเงิน: ฿${totalAmount.toLocaleString()}\n` +
+    `เหตุผล: ${refundReason}\n\n` +
+    `⚠️ การดำเนินการนี้ไม่สามารถยกเลิกได้!`
+  );
+
+  if (!confirmRefund) {
+    return;
+  }
+
+  try {
+    const response = await ordersAPI.admin.processRefund(orderId, {
+      refundReason: refundReason.trim(),
+      refundAmount: totalAmount,
+      refundMethod: 'admin_manual'
+    });
+    
+    if (response.data.success) {
+      // Update local state
+      setOrders(orders.map(order => 
+        order._id === orderId 
+          ? { ...order, status: 'cancelled', paymentStatus: 'refunded' }
+          : order
+      ));
+      
+      // Refresh stats
+      fetchStats();
+      
+      // Success message
+      alert(
+        `✅ คืนเงินสำเร็จ!\n\n` +
+        `ออเดอร์: ${orderNumber}\n` +
+        `จำนวนเงิน: ฿${totalAmount.toLocaleString()}\n` +
+        `รหัสธุรกรรม: ${response.data.refund.transactionId}\n\n` +
+        `📦 สต็อกสินค้าได้รับการคืนแล้ว`
+      );
+    }
+  } catch (error) {
+    console.error('Refund error:', error);
+    
+    const errorMessage = error.response?.data?.message || 'เกิดข้อผิดพลาดในการคืนเงิน';
+    alert(`❌ ${errorMessage}`);
+  }
+};
+
+// 🔍 Check if order can be refunded
+const canRefund = (order) => {
+  return order.paymentStatus === 'paid' && order.paymentStatus !== 'refunded';
+};
+
+// 💰 Get refund status badge
+const getRefundBadge = (paymentStatus, refundInfo) => {
+  if (paymentStatus === 'refunded') {
+    return (
+      <span style={{
+        background: '#fef3c7',
+        color: '#92400e',
+        padding: '4px 8px',
+        borderRadius: '12px',
+        fontSize: '0.75rem',
+        fontWeight: '600',
+        border: '1px solid #f59e0b20',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px'
+      }}>
+        💰 Refunded
+        {refundInfo?.amount && (
+          <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>
+            ฿{refundInfo.amount.toLocaleString()}
+          </span>
+        )}
+      </span>
+    );
+  }
+  return null;
+};
+
+// 📝 Helper function สำหรับแสดงชื่อสถานะเป็นไทย
+const getStatusText = (status) => {
+  const statusTexts = {
+    'pending': 'รอดำเนินการ',
+    'confirmed': 'ยืนยันแล้ว', 
+    'processing': 'กำลังเตรียม',
+    'shipped': 'จัดส่งแล้ว',
+    'delivered': 'จัดส่งสำเร็จ',
+    'cancelled': 'ยกเลิก'
+  };
+  return statusTexts[status] || status;
+};
+
+// 🔄 Helper function สำหรับ revert mapping
+const getRevertStatus = (currentStatus) => {
+  const revertMapping = {
+    'confirmed': 'pending',
+    'processing': 'confirmed', 
+    'shipped': 'processing',
+    'delivered': 'shipped',
+    'cancelled': 'pending'
+  };
+  return revertMapping[currentStatus] || currentStatus;
+};
+
+// 🎯 Helper function เช็คว่า status นี้สามารถ revert ได้หรือไม่
+const canRevertStatus = (status) => {
+  return ['confirmed', 'processing', 'shipped', 'delivered', 'cancelled'].includes(status);
+};
 
   // Delete order function
 const deleteOrder = async (orderId, orderNumber) => {
@@ -236,7 +446,7 @@ const deleteOrder = async (orderId, orderNumber) => {
       pending: { color: '#f59e0b', bg: '#fef3c7', text: '💳 Pending' },
       paid: { color: '#10b981', bg: '#d1fae5', text: '✅ Payment suscess' },
       failed: { color: '#ef4444', bg: '#fee2e2', text: '❌ Payment failed' },
-      refunded: { color: '#6b7280', bg: '#f3f4f6', text: '↩️ Refunded' }
+      refunded: { color: '#f59e0b', bg: '#fef3c7', text: '💰 Refunded' }
     };
 
     const config = paymentConfig[paymentStatus] || paymentConfig.pending;
@@ -581,95 +791,284 @@ const deleteOrder = async (orderId, orderNumber) => {
                       {formatDate(order.orderDate || order.createdAt)}
                     </td>
                     <td style={{ padding: '16px', textAlign: 'center' }}>
-                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                        <button
-                          onClick={() => setShowOrderDetails(order)}
-                          style={{
-                            padding: '6px 12px',
-                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            fontSize: '0.85rem',
-                            fontWeight: '600',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          👁️ ดู
-                        </button>
-                        
-                        {order.status === 'pending' && (
-                          <button
-                            onClick={() => updateOrderStatus(order._id, 'confirmed', 'paid')}
-                            style={{
-                              padding: '6px 12px',
-                              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '6px',
-                              fontSize: '0.85rem',
-                              fontWeight: '600',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            ✅ ยืนยัน
-                          </button>
-                        )}
+  <div style={{ 
+    display: 'flex', 
+    gap: '6px', 
+    justifyContent: 'center', 
+    flexWrap: 'wrap',
+    alignItems: 'center'
+  }}>
+    {/* View Button - แสดงเสมอ */}
+    <button
+      onClick={() => setShowOrderDetails(order)}
+      style={{
+        padding: '6px 12px',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        color: 'white',
+        border: 'none',
+        borderRadius: '6px',
+        fontSize: '0.85rem',
+        fontWeight: '600',
+        cursor: 'pointer'
+      }}
+    >
+      👁️ ดู
+    </button>
+    
+    {/* PENDING STATUS ACTIONS */}
+    {order.status === 'pending' && (
+      <>
+        <button
+          onClick={() => updateOrderStatus(order._id, 'confirmed', 'paid')}
+          style={{
+            padding: '6px 12px',
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            fontSize: '0.85rem',
+            fontWeight: '600',
+            cursor: 'pointer'
+          }}
+        >
+          ✅ ยืนยัน
+        </button>
+        <button
+          onClick={() => updateOrderStatus(order._id, 'cancelled')}
+          style={{
+            padding: '6px 12px',
+            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            fontSize: '0.85rem',
+            fontWeight: '600',
+            cursor: 'pointer'
+          }}
+        >
+          ❌ ยกเลิก
+        </button>
+      </>
+    )}
 
-                        {order.status === 'confirmed' && (
-                          <button
-                            onClick={() => updateOrderStatus(order._id, 'shipped')}
-                            style={{
-                              padding: '6px 12px',
-                              background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '6px',
-                              fontSize: '0.85rem',
-                              fontWeight: '600',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            🚚 จัดส่ง
-                          </button>
-                        )}
+    {/* CONFIRMED STATUS ACTIONS */}
+    {order.status === 'confirmed' && (
+      <>
+        <button
+          onClick={() => updateOrderStatus(order._id, 'processing')}
+          style={{
+            padding: '6px 12px',
+            background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            fontSize: '0.85rem',
+            fontWeight: '600',
+            cursor: 'pointer'
+          }}
+        >
+          ⚙️ เตรียมสินค้า
+        </button>
+        {/* ⬅️ REVERT: Confirmed → Pending */}
+        <button
+          onClick={() => revertOrderStatus(order._id, order.status, order.orderNumber)}
+          style={{
+            padding: '6px 12px',
+            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            fontSize: '0.85rem',
+            fontWeight: '600',
+            cursor: 'pointer'
+          }}
+          title="ยกเลิกการยืนยัน - กลับเป็นรอดำเนินการ (คืนสต็อก)"
+        >
+          ยกเลิกการยืนยัน
+        </button>
+      </>
+    )}
 
-                        {order.status === 'shipped' && (
-                          <button
-                            onClick={() => updateOrderStatus(order._id, 'delivered')}
-                            style={{
-                              padding: '6px 12px',
-                              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '6px',
-                              fontSize: '0.85rem',
-                              fontWeight: '600',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            📦 สำเร็จ
-                          </button>
-                        )}
+    {/* PROCESSING STATUS ACTIONS */}
+    {order.status === 'processing' && (
+      <>
+        <button
+          onClick={() => updateOrderStatus(order._id, 'shipped')}
+          style={{
+            padding: '6px 12px',
+            background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            fontSize: '0.85rem',
+            fontWeight: '600',
+            cursor: 'pointer'
+          }}
+        >
+          🚚 จัดส่ง
+        </button>
+        {/* ⬅️ REVERT: Processing → Confirmed */}
+        <button
+          onClick={() => revertOrderStatus(order._id, order.status, order.orderNumber)}
+          style={{
+            padding: '6px 12px',
+            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            fontSize: '0.85rem',
+            fontWeight: '600',
+            cursor: 'pointer'
+          }}
+          title="ยกเลิกการเตรียม - กลับเป็นยืนยันแล้ว"
+        >
+          ยกเลิกการเตรียม
+        </button>
+      </>
+    )}
 
-                        {/* Delete Button */}
-                            <button
-                            onClick={() => deleteOrder(order._id, order.orderNumber)}
-                            style={{
-                                padding: '6px 12px',
-                                background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '6px',
-                                fontSize: '0.85rem',
-                                fontWeight: '600',
-                                cursor: 'pointer'
-                            }}
-                            >
-                            🗑️ ลบ
-                            </button>
-                      </div>
-                    </td>
+    {/* SHIPPED STATUS ACTIONS */}
+    {order.status === 'shipped' && (
+      <>
+        <button
+          onClick={() => updateOrderStatus(order._id, 'delivered')}
+          style={{
+            padding: '6px 12px',
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            fontSize: '0.85rem',
+            fontWeight: '600',
+            cursor: 'pointer'
+          }}
+        >
+          📦 สำเร็จ
+        </button>
+        {/* ⬅️ REVERT: Shipped → Processing */}
+        <button
+          onClick={() => revertOrderStatus(order._id, order.status, order.orderNumber)}
+          style={{
+            padding: '6px 12px',
+            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            fontSize: '0.85rem',
+            fontWeight: '600',
+            cursor: 'pointer'
+          }}
+          title="ยกเลิกการจัดส่ง - กลับเป็นกำลังเตรียม"
+        >
+          ยกเลิกการจัดส่ง
+        </button>
+      </>
+    )}
+
+    {/* DELIVERED STATUS ACTIONS */}
+    {order.status === 'delivered' && (
+      <>
+        <span style={{
+          padding: '6px 12px',
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          color: 'white',
+          borderRadius: '6px',
+          fontSize: '0.85rem',
+          fontWeight: '600'
+        }}>
+          🎉 เสร็จสิ้น
+        </span>
+        {/* ⬅️ REVERT: Delivered → Shipped */}
+        <button
+          onClick={() => revertOrderStatus(order._id, order.status, order.orderNumber)}
+          style={{
+            padding: '6px 12px',
+            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            fontSize: '0.85rem',
+            fontWeight: '600',
+            cursor: 'pointer'
+          }}
+          title="ยกเลิกการสำเร็จ - กลับเป็นจัดส่งแล้ว"
+        >
+          ยกเลิกจัดส่งสำเร็จ
+        </button>
+      </>
+    )}
+
+    {/* CANCELLED STATUS ACTIONS */}
+    {order.status === 'cancelled' && (
+      <>
+        <span style={{
+          padding: '6px 12px',
+          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+          color: 'white',
+          borderRadius: '6px',
+          fontSize: '0.85rem',
+          fontWeight: '600'
+        }}>
+          ❌ ยกเลิกแล้ว
+        </span>
+        {/* 🔄 REACTIVATE: Cancelled → Pending */}
+        <button
+          onClick={() => revertOrderStatus(order._id, order.status, order.orderNumber)}
+          style={{
+            padding: '6px 12px',
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '6px',
+            fontSize: '0.85rem',
+            fontWeight: '600',
+            cursor: 'pointer'
+          }}
+          title="เปิดใช้งานออเดอร์ใหม่ - กลับเป็นรอดำเนินการ (หักสต็อก)"
+        >
+          เรียกใช้งานใหม่
+        </button>
+      </>
+    )}
+    {/* REFUND BUTTON */}
+{canRefund(order) && (
+  <button
+    onClick={() => processRefund(order._id, order.orderNumber, order.pricing.total)}
+    style={{
+      padding: '6px 12px',
+      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+      color: 'white',
+      border: 'none',
+      borderRadius: '6px',
+      fontSize: '0.85rem',
+      fontWeight: '600',
+      cursor: 'pointer'
+    }}
+    title="คืนเงินและยกเลิกออเดอร์"
+  >
+    💰 คืนเงิน
+  </button>
+)}
+
+    {/* DELETE BUTTON - แสดงเสมอ */}
+    <button
+      onClick={() => deleteOrder(order._id, order.orderNumber)}
+      style={{
+        padding: '6px 12px',
+        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+        color: 'white',
+        border: 'none',
+        borderRadius: '6px',
+        fontSize: '0.85rem',
+        fontWeight: '600',
+        cursor: 'pointer'
+      }}
+      title="ลบออเดอร์ถาวร (คืนสต็อกอัตโนมัติ)"
+    >
+      🗑️ ลบ
+    </button>
+  </div>
+</td>
                   </tr>
                 ))}
               </tbody>
@@ -829,107 +1228,340 @@ const deleteOrder = async (orderId, orderNumber) => {
               </div>
 
               {/* Action Buttons */}
-              <div style={{ 
-                display: 'flex', 
-                gap: '12px', 
-                justifyContent: 'flex-end',
-                borderTop: '2px solid #e5e7eb',
-                paddingTop: '16px'
-              }}>
-                {showOrderDetails.status === 'pending' && (
-                  <>
-                    <button
-                      onClick={() => {
-                        updateOrderStatus(showOrderDetails._id, 'confirmed', 'paid');
-                        setShowOrderDetails(null);
-                      }}
-                      style={{
-                        padding: '12px 20px',
-                        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontWeight: '600'
-                      }}
-                    >
-                      ✅ ยืนยันออเดอร์
-                    </button>
-                    <button
-                      onClick={() => {
-                        updateOrderStatus(showOrderDetails._id, 'cancelled');
-                        setShowOrderDetails(null);
-                      }}
-                      style={{
-                        padding: '12px 20px',
-                        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        fontWeight: '600'
-                      }}
-                    >
-                      ❌ ยกเลิกออเดอร์
-                    </button>
-                  </>
-                )}
+<div style={{ 
+  display: 'flex', 
+  gap: '12px', 
+  justifyContent: 'flex-end',
+  borderTop: '2px solid #e5e7eb',
+  paddingTop: '16px',
+  flexWrap: 'wrap'
+}}>
+  {/* PENDING STATUS ACTIONS */}
+  {showOrderDetails.status === 'pending' && (
+    <>
+      <button
+        onClick={() => {
+          updateOrderStatus(showOrderDetails._id, 'confirmed', 'paid');
+          setShowOrderDetails(null);
+        }}
+        style={{
+          padding: '12px 20px',
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontWeight: '600',
+          fontSize: '0.95rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}
+      >
+        ✅ ยืนยันออเดอร์
+      </button>
+      <button
+        onClick={() => {
+          updateOrderStatus(showOrderDetails._id, 'cancelled');
+          setShowOrderDetails(null);
+        }}
+        style={{
+          padding: '12px 20px',
+          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontWeight: '600',
+          fontSize: '0.95rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}
+      >
+        ❌ ยกเลิกออเดอร์
+      </button>
+    </>
+  )}
 
-                {showOrderDetails.status === 'confirmed' && (
-                  <button
-                    onClick={() => {
-                      updateOrderStatus(showOrderDetails._id, 'shipped');
-                      setShowOrderDetails(null);
-                    }}
-                    style={{
-                      padding: '12px 20px',
-                      background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontWeight: '600'
-                    }}
-                  >
-                    🚚 เปลี่ยนเป็นจัดส่งแล้ว
-                  </button>
-                )}
+  {/* CONFIRMED STATUS ACTIONS */}
+  {showOrderDetails.status === 'confirmed' && (
+    <>
+      <button
+        onClick={() => {
+          updateOrderStatus(showOrderDetails._id, 'processing');
+          setShowOrderDetails(null);
+        }}
+        style={{
+          padding: '12px 20px',
+          background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontWeight: '600',
+          fontSize: '0.95rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}
+      >
+        ⚙️ เริ่มเตรียมสินค้า
+      </button>
+      {/* Revert to Pending */}
+      <button
+        onClick={() => {
+          revertOrderStatus(showOrderDetails._id, showOrderDetails.status, showOrderDetails.orderNumber);
+          setShowOrderDetails(null);
+        }}
+        style={{
+          padding: '12px 20px',
+          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontWeight: '600',
+          fontSize: '0.95rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}
+      >
+        ⬅️ ยกเลิกการยืนยัน
+      </button>
+    </>
+  )}
 
-                {showOrderDetails.status === 'shipped' && (
-                  <button
-                    onClick={() => {
-                      updateOrderStatus(showOrderDetails._id, 'delivered');
-                      setShowOrderDetails(null);
-                    }}
-                    style={{
-                      padding: '12px 20px',
-                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontWeight: '600'
-                    }}
-                  >
-                    📦 เปลี่ยนเป็นจัดส่งสำเร็จ
-                  </button>
-                )}
+  {/* PROCESSING STATUS ACTIONS */}
+  {showOrderDetails.status === 'processing' && (
+    <>
+      <button
+        onClick={() => {
+          updateOrderStatus(showOrderDetails._id, 'shipped');
+          setShowOrderDetails(null);
+        }}
+        style={{
+          padding: '12px 20px',
+          background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontWeight: '600',
+          fontSize: '0.95rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}
+      >
+        🚚 จัดส่งสินค้า
+      </button>
+      {/* Revert to Confirmed */}
+      <button
+        onClick={() => {
+          revertOrderStatus(showOrderDetails._id, showOrderDetails.status, showOrderDetails.orderNumber);
+          setShowOrderDetails(null);
+        }}
+        style={{
+          padding: '12px 20px',
+          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontWeight: '600',
+          fontSize: '0.95rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}
+      >
+        ⬅️ ยกเลิกการเตรียม
+      </button>
+    </>
+  )}
 
-                <button
-                  onClick={() => setShowOrderDetails(null)}
-                  style={{
-                    padding: '12px 20px',
-                    background: '#6b7280',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontWeight: '600'
-                  }}
-                >
-                  ปิด
-                </button>
-              </div>
+  {/* SHIPPED STATUS ACTIONS */}
+  {showOrderDetails.status === 'shipped' && (
+    <>
+      <button
+        onClick={() => {
+          updateOrderStatus(showOrderDetails._id, 'delivered');
+          setShowOrderDetails(null);
+        }}
+        style={{
+          padding: '12px 20px',
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontWeight: '600',
+          fontSize: '0.95rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}
+      >
+        📦 ยืนยันการจัดส่งสำเร็จ
+      </button>
+      {/* Revert to Processing */}
+      <button
+        onClick={() => {
+          revertOrderStatus(showOrderDetails._id, showOrderDetails.status, showOrderDetails.orderNumber);
+          setShowOrderDetails(null);
+        }}
+        style={{
+          padding: '12px 20px',
+          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontWeight: '600',
+          fontSize: '0.95rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}
+      >
+        ⬅️ ยกเลิกการจัดส่ง
+      </button>
+    </>
+  )}
+
+  {/* DELIVERED STATUS ACTIONS */}
+  {showOrderDetails.status === 'delivered' && (
+    <>
+      <div style={{
+        padding: '12px 20px',
+        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+        color: 'white',
+        borderRadius: '8px',
+        fontWeight: '600',
+        fontSize: '0.95rem',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
+      }}>
+        🎉 ออเดอร์เสร็จสิ้นแล้ว
+      </div>
+      {/* Revert to Shipped */}
+      <button
+        onClick={() => {
+          revertOrderStatus(showOrderDetails._id, showOrderDetails.status, showOrderDetails.orderNumber);
+          setShowOrderDetails(null);
+        }}
+        style={{
+          padding: '12px 20px',
+          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontWeight: '600',
+          fontSize: '0.95rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}
+      >
+        ⬅️ ยกเลิกการสำเร็จ
+      </button>
+    </>
+  )}
+
+  {/* CANCELLED STATUS ACTIONS */}
+  {showOrderDetails.status === 'cancelled' && (
+    <>
+      <div style={{
+        padding: '12px 20px',
+        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+        color: 'white',
+        borderRadius: '8px',
+        fontWeight: '600',
+        fontSize: '0.95rem',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
+      }}>
+        ❌ ออเดอร์ถูกยกเลิก
+      </div>
+      {/* Reactivate Order */}
+      <button
+        onClick={() => {
+          revertOrderStatus(showOrderDetails._id, showOrderDetails.status, showOrderDetails.orderNumber);
+          setShowOrderDetails(null);
+        }}
+        style={{
+          padding: '12px 20px',
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontWeight: '600',
+          fontSize: '0.95rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}
+      >
+        🔄 เปิดใช้งานออเดอร์ใหม่
+      </button>
+    </>
+  )}
+
+  {/* REFUND BUTTON */}
+{canRefund(showOrderDetails) && (
+  <button
+    onClick={() => {
+      processRefund(
+        showOrderDetails._id, 
+        showOrderDetails.orderNumber, 
+        showOrderDetails.pricing.total
+      );
+      setShowOrderDetails(null);
+    }}
+    style={{
+      padding: '12px 20px',
+      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+      color: 'white',
+      border: 'none',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      fontWeight: '600',
+      fontSize: '0.95rem',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px'
+    }}
+  >
+    💰 คืนเงิน ฿{showOrderDetails.pricing.total.toLocaleString()}
+  </button>
+)}
+
+  {/* CLOSE BUTTON - แสดงเสมอ */}
+  <button
+    onClick={() => setShowOrderDetails(null)}
+    style={{
+      padding: '12px 20px',
+      background: '#6b7280',
+      color: 'white',
+      border: 'none',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      fontWeight: '600',
+      fontSize: '0.95rem',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px'
+    }}
+  >
+    ปิด
+  </button>
+</div>
             </div>
           </div>
         </div>

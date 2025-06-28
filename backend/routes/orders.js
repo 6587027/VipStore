@@ -291,10 +291,10 @@ router.get('/admin/all', async (req, res) => {
   }
 });
 
-// 🔧 PUT /api/orders/admin/:id/status - Update order status (Admin)
+// 🔧 PUT /api/orders/admin/:id/status - Update order status with REVERT support (Admin)
 router.put('/admin/:id/status', async (req, res) => {
   try {
-    const { status, paymentStatus, trackingNumber, notes } = req.body;
+    const { status, paymentStatus, trackingNumber, notes, isRevert, previousStatus } = req.body;
     const orderId = req.params.id;
 
     const existingOrder = await Order.findById(orderId).populate('items.productId');
@@ -306,81 +306,164 @@ router.put('/admin/:id/status', async (req, res) => {
       });
     }
 
-    console.log(`📝 Updating order ${existingOrder.orderNumber} from ${existingOrder.status} to ${status}`);
+    const oldStatus = existingOrder.status;
+    console.log(`📝 Updating order ${existingOrder.orderNumber} from ${oldStatus} to ${status}`);
 
-    // Stock restoration logic (existing code)
-    if (status === 'cancelled' && existingOrder.status !== 'cancelled') {
-      console.log('🔄 Order cancelled - restoring stock...');
+    // 🆕 REVERT LOGIC - Handle stock when reverting statuses
+    if (isRevert && previousStatus) {
+      console.log(`🔄 REVERTING: ${existingOrder.orderNumber} from ${previousStatus} to ${status}`);
       
-      for (const item of existingOrder.items) {
-        try {
-          const product = await Product.findById(item.productId);
-          if (product) {
-            const oldStock = product.stock;
-            product.stock += item.quantity;
-            await product.save();
-            console.log(`📦 Restored stock for ${product.name}: ${oldStock} + ${item.quantity} = ${product.stock}`);
+      // Case 1: Revert from 'confirmed' to 'pending' - คืนสต็อก
+      if (previousStatus === 'confirmed' && status === 'pending') {
+        console.log('🔄 Reverting confirmation - restoring stock...');
+        
+        for (const item of existingOrder.items) {
+          try {
+            const product = await Product.findById(item.productId);
+            if (product) {
+              const oldStock = product.stock;
+              product.stock += item.quantity; // คืนสต็อก
+              await product.save();
+              console.log(`📦 Restored stock for ${product.name}: ${oldStock} + ${item.quantity} = ${product.stock}`);
+            }
+          } catch (error) {
+            console.error(`❌ Error restoring stock for product ${item.productId}:`, error);
           }
-        } catch (error) {
-          console.error(`❌ Error restoring stock for product ${item.productId}:`, error);
         }
       }
-    }
-
-    if (existingOrder.status === 'cancelled' && status !== 'cancelled') {
-      console.log('🔄 Order reactivated - deducting stock...');
       
-      for (const item of existingOrder.items) {
-        try {
-          const product = await Product.findById(item.productId);
-          if (product) {
-            if (product.stock >= item.quantity) {
+      // Case 2: Revert from 'cancelled' to 'pending' - หักสต็อกใหม่
+      else if (previousStatus === 'cancelled' && status === 'pending') {
+        console.log('🔄 Reverting cancellation - deducting stock...');
+        
+        for (const item of existingOrder.items) {
+          try {
+            const product = await Product.findById(item.productId);
+            if (product) {
               const oldStock = product.stock;
-              product.stock -= item.quantity;
+              
+              // ตรวจสอบสต็อกพอหรือไม่
+              if (product.stock < item.quantity) {
+                return res.status(400).json({ 
+                  success: false, 
+                  message: `สต็อกสินค้า ${product.name} ไม่เพียงพอ (ต้องการ ${item.quantity} มีอยู่ ${product.stock})` 
+                });
+              }
+              
+              product.stock -= item.quantity; // หักสต็อก
               await product.save();
               console.log(`📦 Deducted stock for ${product.name}: ${oldStock} - ${item.quantity} = ${product.stock}`);
-            } else {
-              return res.status(400).json({
-                success: false,
-                message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Required: ${item.quantity}`
-              });
             }
+          } catch (error) {
+            console.error(`❌ Error deducting stock for product ${item.productId}:`, error);
+            return res.status(500).json({
+              success: false,
+              message: `Error processing stock for ${item.productName || 'product'}`
+            });
           }
-        } catch (error) {
-          console.error(`❌ Error deducting stock for product ${item.productId}:`, error);
+        }
+      }
+      
+      // Case 3: Other reverts (processing->confirmed, shipped->processing, delivered->shipped)
+      // ไม่ต้องจัดการสต็อกเพราะสินค้ายังไม่ได้ถูกยกเลิกหรือยืนยัน
+      else {
+        console.log(`🔄 Simple revert from ${previousStatus} to ${status} - no stock changes needed`);
+      }
+    }
+    
+    // 🔧 EXISTING LOGIC - Handle normal status changes (ไม่ใช่ revert)
+    else {
+      // Cancel order - restore stock
+      if (status === 'cancelled' && existingOrder.status !== 'cancelled') {
+        console.log('🔄 Order cancelled - restoring stock...');
+        
+        for (const item of existingOrder.items) {
+          try {
+            const product = await Product.findById(item.productId);
+            if (product) {
+              const oldStock = product.stock;
+              product.stock += item.quantity;
+              await product.save();
+              console.log(`📦 Restored stock for ${product.name}: ${oldStock} + ${item.quantity} = ${product.stock}`);
+            }
+          } catch (error) {
+            console.error(`❌ Error restoring stock for product ${item.productId}:`, error);
+          }
+        }
+      }
+
+      // Reactivate cancelled order - deduct stock
+      if (existingOrder.status === 'cancelled' && status !== 'cancelled') {
+        console.log('🔄 Order reactivated - deducting stock...');
+        
+        for (const item of existingOrder.items) {
+          try {
+            const product = await Product.findById(item.productId);
+            if (product) {
+              if (product.stock >= item.quantity) {
+                const oldStock = product.stock;
+                product.stock -= item.quantity;
+                await product.save();
+                console.log(`📦 Deducted stock for ${product.name}: ${oldStock} - ${item.quantity} = ${product.stock}`);
+              } else {
+                return res.status(400).json({
+                  success: false,
+                  message: `Insufficient stock for ${product.name}. Available: ${product.stock}, Required: ${item.quantity}`
+                });
+              }
+            }
+          } catch (error) {
+            console.error(`❌ Error deducting stock for product ${item.productId}:`, error);
+          }
         }
       }
     }
 
+    // 📝 Update order data
     const updateData = {};
     if (status) updateData.status = status;
     if (paymentStatus) updateData.paymentStatus = paymentStatus;
     if (trackingNumber) updateData.trackingNumber = trackingNumber;
     if (notes) updateData.notes = notes;
 
+    // Set delivery date when status becomes delivered
     if (status === 'delivered') {
       updateData.deliveryDate = new Date();
     }
 
+    // Apply updates
     const updatedOrder = await Order.findByIdAndUpdate(
       orderId,
       updateData,
       { new: true, runValidators: true }
     ).populate('items.productId');
 
-    console.log(`✅ Order ${updatedOrder.orderNumber} updated successfully`);
+    const actionType = isRevert ? 'reverted' : 'updated';
+    const stockMessage = isRevert ? 
+      (status === 'pending' && previousStatus === 'confirmed' ? ' Stock restored.' : 
+       status === 'pending' && previousStatus === 'cancelled' ? ' Stock deducted.' : '') :
+      (status === 'cancelled' ? ' Stock restored.' : '');
+
+    console.log(`✅ Order ${updatedOrder.orderNumber} ${actionType} successfully from ${oldStatus} to ${status}`);
 
     res.json({
       success: true,
-      message: `Order updated successfully. ${status === 'cancelled' ? 'Stock restored.' : ''}`,
-      order: updatedOrder
+      message: `Order ${actionType} successfully.${stockMessage}`,
+      order: updatedOrder,
+      changes: {
+        from: oldStatus,
+        to: status,
+        isRevert: !!isRevert,
+        stockAdjusted: !!stockMessage
+      }
     });
 
   } catch (error) {
     console.error('Update order status error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to update order'
+      message: 'Failed to update order',
+      error: error.message
     });
   }
 });
@@ -438,7 +521,7 @@ router.delete('/admin/:orderId', async (req, res) => {
   }
 });
 
-// ✅ GET /api/orders/admin/stats - Get order statistics
+// ✅ GET /api/orders/admin/stats - Get order statistics (updated with refunds)
 router.get('/admin/stats', async (req, res) => {
   try {
     const today = new Date();
@@ -454,20 +537,29 @@ router.get('/admin/stats', async (req, res) => {
       totalOrders,
       pendingOrders,
       completedOrders,
+      cancelledOrders,
+      refundedOrders, // 🆕 เพิ่ม refunded orders
       todayOrders,
       weekOrders,
       monthOrders,
-      totalRevenue
+      totalRevenue,
+      totalRefunds // 🆕 เพิ่ม total refunds
     ] = await Promise.all([
       Order.countDocuments(),
       Order.countDocuments({ status: 'pending' }),
       Order.countDocuments({ status: 'delivered' }),
+      Order.countDocuments({ status: 'cancelled' }),
+      Order.countDocuments({ paymentStatus: 'refunded' }), // 🆕
       Order.countDocuments({ orderDate: { $gte: today } }),
       Order.countDocuments({ orderDate: { $gte: thisWeek } }),
       Order.countDocuments({ orderDate: { $gte: thisMonth } }),
       Order.aggregate([
-        { $match: { status: { $ne: 'cancelled' } } },
+        { $match: { status: { $ne: 'cancelled' }, paymentStatus: { $ne: 'refunded' } } },
         { $group: { _id: null, total: { $sum: '$pricing.total' } } }
+      ]),
+      Order.aggregate([ // 🆕 คำนวณยอดเงินคืนทั้งหมด
+        { $match: { paymentStatus: 'refunded' } },
+        { $group: { _id: null, total: { $sum: '$refundInfo.amount' } } }
       ])
     ]);
 
@@ -477,10 +569,13 @@ router.get('/admin/stats', async (req, res) => {
         totalOrders,
         pendingOrders,
         completedOrders,
+        cancelledOrders,
+        refundedOrders, // 🆕
         todayOrders,
         weekOrders,
         monthOrders,
-        totalRevenue: totalRevenue[0]?.total || 0
+        totalRevenue: totalRevenue[0]?.total || 0,
+        totalRefunds: totalRefunds[0]?.total || 0 // 🆕
       }
     });
 
@@ -635,5 +730,152 @@ router.put('/:orderId/payment', async (req, res, next) => {
     });
   }
 });
+
+// เพิ่ม API Endpoint ใหม่ใน backend/routes/orders.js
+
+// 💰 PUT /api/orders/admin/:id/refund - Process refund (Admin)
+router.put('/admin/:id/refund', async (req, res) => {
+  try {
+    const { refundReason, refundAmount, refundMethod } = req.body;
+    const orderId = req.params.id;
+
+    const existingOrder = await Order.findById(orderId).populate('items.productId');
+    
+    if (!existingOrder) {
+      return res.status(404).json({
+        success: false,
+        message: 'ไม่พบออเดอร์'
+      });
+    }
+
+    console.log(`💰 Processing refund for order ${existingOrder.orderNumber}`);
+
+    // ตรวจสอบว่าสามารถคืนเงินได้หรือไม่
+    if (existingOrder.paymentStatus !== 'paid') {
+      return res.status(400).json({
+        success: false,
+        message: 'ไม่สามารถคืนเงินได้ เนื่องจากยังไม่ได้ชำระเงิน'
+      });
+    }
+
+    if (existingOrder.paymentStatus === 'refunded') {
+      return res.status(400).json({
+        success: false,
+        message: 'ออเดอร์นี้ได้รับการคืนเงินแล้ว'
+      });
+    }
+
+    // คำนวณจำนวนเงินคืน
+    const maxRefundAmount = existingOrder.pricing.total;
+    const finalRefundAmount = refundAmount || maxRefundAmount;
+
+    if (finalRefundAmount > maxRefundAmount) {
+      return res.status(400).json({
+        success: false,
+        message: `จำนวนเงินคืนเกินกว่ายอดออเดอร์ (สูงสุด ฿${maxRefundAmount})`
+      });
+    }
+
+    // 🔄 Restore stock if order is not cancelled yet
+    if (existingOrder.status !== 'cancelled') {
+      console.log('🔄 Refund processing - restoring stock...');
+      
+      for (const item of existingOrder.items) {
+        try {
+          const product = await Product.findById(item.productId);
+          if (product) {
+            const oldStock = product.stock;
+            product.stock += item.quantity;
+            await product.save();
+            console.log(`📦 Restored stock for ${product.name}: ${oldStock} + ${item.quantity} = ${product.stock}`);
+          }
+        } catch (error) {
+          console.error(`❌ Error restoring stock for product ${item.productId}:`, error);
+        }
+      }
+    }
+
+    // สร้าง Refund Transaction ID
+    const refundTransactionId = `REFUND-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // อัปเดตออเดอร์
+    const updateData = {
+      status: 'cancelled', // เปลี่ยนเป็น cancelled เมื่อคืนเงิน
+      paymentStatus: 'refunded',
+      refundInfo: {
+        amount: finalRefundAmount,
+        reason: refundReason || 'Admin initiated refund',
+        method: refundMethod || 'original_payment_method',
+        processedAt: new Date(),
+        transactionId: refundTransactionId,
+        processedBy: 'admin' // ในอนาคตอาจเก็บ admin ID
+      }
+    };
+
+    const updatedOrder = await Order.findByIdAndUpdate(
+      orderId,
+      { $set: updateData },
+      { new: true, runValidators: false, strict: false }
+    ).populate('items.productId');
+
+    console.log(`✅ Refund processed for order ${updatedOrder.orderNumber}: ฿${finalRefundAmount}`);
+
+    res.json({
+      success: true,
+      message: `คืนเงินสำเร็จ ฿${finalRefundAmount.toLocaleString()} สำหรับออเดอร์ ${updatedOrder.orderNumber}`,
+      order: updatedOrder,
+      refund: {
+        amount: finalRefundAmount,
+        transactionId: refundTransactionId,
+        processedAt: new Date()
+      }
+    });
+
+  } catch (error) {
+    console.error('Refund processing error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในการคืนเงิน',
+      error: error.message
+    });
+  }
+});
+
+// 📊 GET /api/orders/admin/:id/refund-info - Get refund information
+router.get('/admin/:id/refund-info', async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'ไม่พบออเดอร์'
+      });
+    }
+
+    const refundInfo = {
+      canRefund: order.paymentStatus === 'paid',
+      maxRefundAmount: order.pricing.total,
+      currentPaymentStatus: order.paymentStatus,
+      orderStatus: order.status,
+      refundInfo: order.refundInfo || null
+    };
+
+    res.json({
+      success: true,
+      refundInfo
+    });
+
+  } catch (error) {
+    console.error('Get refund info error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในการดึงข้อมูลการคืนเงิน'
+    });
+  }
+});
+
+
 
 module.exports = router;
