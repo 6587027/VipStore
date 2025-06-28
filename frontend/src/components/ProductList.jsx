@@ -1561,77 +1561,151 @@ if (loading && !showRealError) {
       </div>
 
       {/* Products Grid */}
-      {filteredProducts.length === 0 ? (
-        <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '16px' }}>
-            {searchTerm ? '🔍' : getActiveFiltersCount() > 0 ? '🏷️' : '📦'}
-          </div>
-          <h3 style={{ color: '#6b7280', marginBottom: '16px' }}>
-            {searchTerm ? 'ไม่พบสินค้าที่ค้นหา' : 
-             getActiveFiltersCount() > 0 ? 'ไม่มีสินค้าที่ตรงกับตัวกรอง' : 'ไม่พบสินค้า'}
-          </h3>
-          <p style={{ color: '#9ca3af', marginBottom: '20px' }}>
-            {searchTerm 
-              ? `ไม่พบสินค้าที่ตรงกับ "${searchTerm}"${selectedCategory ? ` ในหมวดหมู่ ${selectedCategory}` : ''}`
-              : getActiveFiltersCount() > 0
-                ? 'ลองปรับเปลี่ยนตัวกรองหรือล้างตัวกรองบางตัว'
-                : selectedCategory 
-                  ? `ไม่มีสินค้าในหมวดหมู่ ${selectedCategory}` 
-                  : 'ยังไม่มีสินค้าในระบบ'
-            }
-          </p>
-          {(searchTerm || getActiveFiltersCount() > 0) && (
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-              {searchTerm && (
-                <button
-                  onClick={() => setSearchTerm('')}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    fontWeight: '500',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  🗑️ ล้างการค้นหา
-                </button>
-              )}
-              {getActiveFiltersCount() > 0 && (
-                <button
-                  onClick={clearAllFilters}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#ef4444',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    fontWeight: '500',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  🗑️ ล้างตัวกรองทั้งหมด
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="product-grid">
-          {filteredProducts.map(product => (
-            <ProductCard 
-              key={product._id} 
-              product={product}
-              onProductClick={handleProductClick}
-            />
-          ))}
-        </div>
-      )}
+{filteredProducts.length === 0 ? (
+  <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
+    <div style={{ fontSize: '3rem', marginBottom: '16px' }}>
+      {searchTerm ? '🔍' : getActiveFiltersCount() > 0 ? '🏷️' : '📦'}
+    </div>
+    <h3 style={{ color: '#6b7280', marginBottom: '16px' }}>
+      {searchTerm ? 'ไม่พบสินค้าที่ค้นหา' : 
+       getActiveFiltersCount() > 0 ? 'ไม่มีสินค้าที่ตรงกับตัวกรอง' : 'ไม่พบสินค้า'}
+    </h3>
+    <p style={{ color: '#9ca3af', marginBottom: '20px' }}>
+      {searchTerm 
+        ? `ไม่พบสินค้าที่ตรงกับ "${searchTerm}"${selectedCategory ? ` ในหมวดหมู่ ${selectedCategory}` : ''}`
+        : getActiveFiltersCount() > 0
+          ? 'ลองปรับเปลี่ยนตัวกรองหรือล้างตัวกรองบางตัว'
+          : selectedCategory 
+            ? `ไม่มีสินค้าในหมวดหมู่ ${selectedCategory}` 
+            : 'ยังไม่มีสินค้าในระบบ'
+      }
+    </p>
+    {(searchTerm || getActiveFiltersCount() > 0) && (
+      <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+        {searchTerm && (
+          <button
+            onClick={() => setSearchTerm('')}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#10b981',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              fontWeight: '500',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            🗑️ ล้างการค้นหา
+          </button>
+        )}
+        {getActiveFiltersCount() > 0 && (
+          <button
+            onClick={clearAllFilters}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#ef4444',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              fontWeight: '500',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            🗑️ ล้างตัวกรองทั้งหมด
+          </button>
+        )}
+        
+        {/* 🆕 เพิ่มปุ่ม Reload ตรงนี้! */}
+        <button
+          onClick={() => {
+            console.log('🔄 Reload button clicked!');
+            // ล้างตัวกรองทั้งหมด + โหลดข้อมูลใหม่
+            clearAllFilters();
+            fetchProducts();
+          }}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#667eea',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '0.9rem',
+            fontWeight: '500',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = '#5a67d8';
+            e.target.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = '#667eea';
+            e.target.style.transform = 'translateY(0)';
+          }}
+        >
+          🔄 โหลดข้อมูลใหม่
+        </button>
+      </div>
+    )}
+    
+    {/* 🆕 ถ้าไม่มีตัวกรองใดๆ ให้แสดงปุ่ม Reload อยู่คนเดียว */}
+    {!searchTerm && getActiveFiltersCount() === 0 && (
+      <div style={{ marginTop: '20px' }}>
+        <button
+          onClick={() => {
+            console.log('🔄 Reload all products clicked!');
+            fetchProducts();
+          }}
+          style={{
+            padding: '12px 24px',
+            backgroundColor: '#667eea',
+            color: 'white',
+            border: 'none',
+            borderRadius: '12px',
+            cursor: 'pointer',
+            fontSize: '1rem',
+            fontWeight: '600',
+            transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            margin: '0 auto',
+            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.backgroundColor = '#5a67d8';
+            e.target.style.transform = 'translateY(-2px)';
+            e.target.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.backgroundColor = '#667eea';
+            e.target.style.transform = 'translateY(0)';
+            e.target.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+          }}
+        >
+          🔄 โหลดสินค้าใหม่
+        </button>
+      </div>
+    )}
+  </div>
+) : (
+  <div className="product-grid">
+    {filteredProducts.map(product => (
+      <ProductCard 
+        key={product._id} 
+        product={product}
+        onProductClick={handleProductClick}
+      />
+    ))}
+  </div>
+)}
 
       {/* CSS Styles */}
       <style jsx>{`
