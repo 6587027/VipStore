@@ -21,12 +21,23 @@ const OrderManager = () => {
   });
   const [showOrderDetails, setShowOrderDetails] = useState(null);
   const [selectedOrders, setSelectedOrders] = useState([]);
+  const [refundRequests, setRefundRequests] = useState([]);
+  const [showRefundRequests, setShowRefundRequests] = useState(false);
+  const [refundRequestStats, setRefundRequestStats] = useState({
+      totalRequests: 0,
+      pendingRequests: 0,
+      approvedRequests: 0,
+      rejectedRequests: 0
+});
 
   // Fetch orders and stats on component mount
   useEffect(() => {
-    fetchOrders();
-    fetchStats();
-  }, [filters.status, filters.page]);
+  fetchOrders();
+  fetchStats();
+  fetchRefundRequests(); 
+  fetchRefundRequestStats(); 
+}, [filters.status, filters.page]);
+
 
   // Fetch all orders
   const fetchOrders = async () => {
@@ -112,6 +123,188 @@ const OrderManager = () => {
       setLoading(false);
     }
   };
+  
+  // 🆕 API Base URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com/api';
+
+// 🆕 Fetch refund requests
+const fetchRefundRequests = async () => {
+  try {
+    console.log('📋 Fetching refund requests...');
+    const response = await fetch(`${API_BASE_URL}/orders/admin/refund-requests`);
+    const data = await response.json();
+    if (data.success) {
+      setRefundRequests(data.requests || []);
+      console.log('✅ Refund requests loaded:', data.requests?.length || 0);
+    }
+  } catch (error) {
+    console.error('❌ Error fetching refund requests:', error);
+  }
+};
+
+// 🆕 Fetch refund request statistics
+const fetchRefundRequestStats = async () => {
+  try {
+    console.log('📊 Fetching refund request stats...');
+    const response = await fetch(`${API_BASE_URL}/orders/admin/refund-requests/stats`);
+    const data = await response.json();
+    if (data.success) {
+      setRefundRequestStats(data.stats);
+      console.log('✅ Refund request stats loaded:', data.stats);
+    }
+  } catch (error) {
+    console.error('❌ Error fetching refund request stats:', error);
+  }
+};
+
+// 🆕 Approve refund request
+const approveRefundRequest = async (requestId, orderNumber, maxAmount) => {
+  const approvedAmount = prompt(`💰 ใส่จำนวนเงินที่อนุมัติคืนสำหรับออเดอร์ ${orderNumber}:\n\nจำนวนสูงสุด: ฿${maxAmount.toLocaleString()}`);
+  
+  if (!approvedAmount) return;
+  
+  const amount = parseFloat(approvedAmount);
+  if (isNaN(amount) || amount <= 0) {
+    alert('❌ กรุณาใส่จำนวนเงินที่ถูกต้อง');
+    return;
+  }
+  
+  if (amount > maxAmount) {
+    alert(`❌ จำนวนเงินเกินกว่าที่สามารถคืนได้ (สูงสุด ฿${maxAmount.toLocaleString()})`);
+    return;
+  }
+
+  const adminNotes = prompt('📝 หมายเหตุจาก Admin (ถ้ามี):') || '';
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/orders/admin/refund-requests/${requestId}/approve`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        approvedAmount: amount,
+        adminNotes,
+        approvedBy: 'admin'
+      })
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      alert(`✅ อนุมัติคืนเงิน ฿${amount.toLocaleString()} สำหรับออเดอร์ ${orderNumber} เรียบร้อย`);
+      fetchRefundRequests();
+      fetchRefundRequestStats();
+      fetchOrders();
+      fetchStats();
+    } else {
+      alert('❌ เกิดข้อผิดพลาด: ' + data.message);
+    }
+  } catch (error) {
+    console.error('❌ Approve refund error:', error);
+    alert('❌ เกิดข้อผิดพลาดในการอนุมัติคืนเงิน');
+  }
+};
+
+// 🆕 Reject refund request
+const rejectRefundRequest = async (requestId, orderNumber) => {
+  const rejectionReason = prompt(`❌ เหตุผลในการปฏิเสธคำขอคืนเงินสำหรับออเดอร์ ${orderNumber}:`);
+  if (!rejectionReason) return;
+
+  const adminNotes = prompt('📝 หมายเหตุเพิ่มเติม (ถ้ามี):') || '';
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/orders/admin/refund-requests/${requestId}/reject`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        rejectionReason,
+        adminNotes,
+        rejectedBy: 'admin'
+      })
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      alert(`✅ ปฏิเสธคำขอคืนเงินสำหรับออเดอร์ ${orderNumber} เรียบร้อย`);
+      fetchRefundRequests();
+      fetchRefundRequestStats();
+    } else {
+      alert('❌ เกิดข้อผิดพลาด: ' + data.message);
+    }
+  } catch (error) {
+    console.error('❌ Reject refund error:', error);
+    alert('❌ เกิดข้อผิดพลาดในการปฏิเสธคำขอคืนเงิน');
+  }
+};
+
+// 🆕 Format date for refund requests
+const formatRefundDate = (dateString) => {
+  if (!dateString) return 'ไม่ระบุ';
+  return new Date(dateString).toLocaleDateString('th-TH', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
+// 🆕 Get refund status badge
+const getRefundStatusBadge = (status) => {
+  switch(status) {
+    case 'pending':
+      return (
+        <span style={{
+          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+          color: 'white',
+          padding: '4px 8px',
+          borderRadius: '12px',
+          fontSize: '0.75rem',
+          fontWeight: '600'
+        }}>
+          ⏳ รอพิจารณา
+        </span>
+      );
+    case 'approved':
+      return (
+        <span style={{
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          color: 'white',
+          padding: '4px 8px',
+          borderRadius: '12px',
+          fontSize: '0.75rem',
+          fontWeight: '600'
+        }}>
+          ✅ อนุมัติแล้ว
+        </span>
+      );
+    case 'rejected':
+      return (
+        <span style={{
+          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+          color: 'white',
+          padding: '4px 8px',
+          borderRadius: '12px',
+          fontSize: '0.75rem',
+          fontWeight: '600'
+        }}>
+          ❌ ปฏิเสธ
+        </span>
+      );
+    default:
+      return (
+        <span style={{
+          background: '#6b7280',
+          color: 'white',
+          padding: '4px 8px',
+          borderRadius: '12px',
+          fontSize: '0.75rem',
+          fontWeight: '600'
+        }}>
+          ❓ ไม่ทราบสถานะ
+        </span>
+      );
+  }
+};
+
 
   // Fetch order statistics
   const fetchStats = async () => {
@@ -500,13 +693,17 @@ const deleteOrder = async (orderId, orderNumber) => {
         }}></div>
         <p style={{ color: '#666', fontSize: '1.1rem' }}>กำลังโหลดข้อมูลออเดอร์...</p>
         <style>
-          {`
-            @keyframes spin {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-          `}
-        </style>
+  {`
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+  `}
+</style>
       </div>
     );
   }
@@ -514,22 +711,77 @@ const deleteOrder = async (orderId, orderNumber) => {
   return (
     <div style={{ padding: '20px' }}>
       {/* Header Section */}
-      <div style={{ marginBottom: '24px' }}>
-        <h2 style={{ 
-          fontSize: '1.8rem', 
-          fontWeight: '700', 
-          color: '#333',
-          marginBottom: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
-          📦 Order Managment
-        </h2>
-        <p style={{ color: '#666', fontSize: '1rem' }}>
-          ติดตามและจัดการคำสั่งซื้อทั้งหมด
-        </p>
-      </div>
+      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+  <div>
+    <h2 style={{ 
+      fontSize: '1.8rem', 
+      fontWeight: '700', 
+      color: '#333',
+      marginBottom: '8px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px'
+    }}>
+      📦 Order Managment
+    </h2>
+    <p style={{ color: '#666', fontSize: '1rem' }}>
+      ติดตามและจัดการคำสั่งซื้อทั้งหมด
+    </p>
+  </div>
+  
+  {/* 🆕 Refund Request Notification Bell */}
+  <div style={{ position: 'relative' }}>
+    <button
+      onClick={() => setShowRefundRequests(true)}
+      style={{
+        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+        color: 'white',
+        border: 'none',
+        borderRadius: '50%',
+        width: '60px',
+        height: '60px',
+        fontSize: '1.8rem',
+        cursor: 'pointer',
+        position: 'relative',
+        boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)',
+        transition: 'transform 0.2s, box-shadow 0.2s'
+      }}
+      title="คำขอคืนเงินจากลูกค้า"
+      onMouseEnter={(e) => {
+        e.target.style.transform = 'scale(1.05)';
+        e.target.style.boxShadow = '0 6px 16px rgba(239, 68, 68, 0.6)';
+      }}
+      onMouseLeave={(e) => {
+        e.target.style.transform = 'scale(1)';
+        e.target.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
+      }}
+    >
+      💸
+    </button>
+    {refundRequestStats.pendingRequests > 0 && (
+      <span style={{
+        position: 'absolute',
+        top: '-8px',
+        right: '-8px',
+        background: '#fbbf24',
+        color: '#92400e',
+        borderRadius: '50%',
+        width: '28px',
+        height: '28px',
+        fontSize: '0.8rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: '700',
+        border: '2px solid white',
+        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+        animation: 'pulse 2s infinite'
+      }}>
+        {refundRequestStats.pendingRequests}
+      </span>
+    )}
+  </div>
+</div>
 
       {/* Stats Cards */}
       <div style={{ 
@@ -1566,7 +1818,235 @@ const deleteOrder = async (orderId, orderNumber) => {
           </div>
         </div>
       )}
+      {/* 🆕 Refund Requests Modal */}
+{showRefundRequests && (
+  <div style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0, 0, 0, 0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: '20px'
+  }}>
+    <div style={{
+      background: 'white',
+      borderRadius: '16px',
+      padding: '24px',
+      maxWidth: '1000px',
+      width: '100%',
+      maxHeight: '80vh',
+      overflowY: 'auto'
+    }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '20px'
+      }}>
+        <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>
+          💸 คำขอคืนเงินจากลูกค้า
+        </h3>
+        <button
+          onClick={() => setShowRefundRequests(false)}
+          style={{
+            background: 'none',
+            border: 'none',
+            fontSize: '1.5rem',
+            cursor: 'pointer',
+            padding: '4px'
+          }}
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Stats Cards */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: '12px',
+        marginBottom: '20px'
+      }}>
+        <div style={{
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          color: 'white',
+          padding: '16px',
+          borderRadius: '10px',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>
+            {refundRequestStats.totalRequests}
+          </div>
+          <div style={{ fontSize: '0.8rem', opacity: '0.9' }}>
+            คำขอทั้งหมด
+          </div>
+        </div>
+
+        <div style={{
+          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+          color: 'white',
+          padding: '16px',
+          borderRadius: '10px',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>
+            {refundRequestStats.pendingRequests}
+          </div>
+          <div style={{ fontSize: '0.8rem', opacity: '0.9' }}>
+            รอพิจารณา
+          </div>
+        </div>
+
+        <div style={{
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          color: 'white',
+          padding: '16px',
+          borderRadius: '10px',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>
+            {refundRequestStats.approvedRequests}
+          </div>
+          <div style={{ fontSize: '0.8rem', opacity: '0.9' }}>
+            อนุมัติแล้ว
+          </div>
+        </div>
+
+        <div style={{
+          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+          color: 'white',
+          padding: '16px',
+          borderRadius: '10px',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>
+            {refundRequestStats.rejectedRequests}
+          </div>
+          <div style={{ fontSize: '0.8rem', opacity: '0.9' }}>
+            ปฏิเสธแล้ว
+          </div>
+        </div>
+      </div>
+
+      {refundRequests.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '16px' }}>💸</div>
+          <p>ไม่มีคำขอคืนเงิน</p>
+        </div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: '#f1f5f9' }}>
+                <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>ออเดอร์</th>
+                <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>ลูกค้า</th>
+                <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: '#374151' }}>จำนวนเงิน</th>
+                <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>เหตุผล</th>
+                <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: '#374151' }}>สถานะ</th>
+                <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: '#374151' }}>วันที่ขอ</th>
+                <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: '#374151' }}>จัดการ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {refundRequests.map((request) => (
+                <tr key={request.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                  <td style={{ padding: '12px' }}>
+                    <div style={{ fontWeight: '600', fontFamily: 'monospace' }}>
+                      {request.orderNumber}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                      ฿{request.orderTotal.toLocaleString()}
+                    </div>
+                  </td>
+                  <td style={{ padding: '12px' }}>
+                    <div style={{ fontWeight: '600' }}>
+                      {request.customer.name}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                      {request.customer.email}
+                    </div>
+                  </td>
+                  <td style={{ padding: '12px', textAlign: 'center' }}>
+                    <div style={{ fontWeight: '600', color: '#ef4444' }}>
+                      ฿{request.requestedAmount.toLocaleString()}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>
+                      สูงสุด ฿{request.maxRefundAmount.toLocaleString()}
+                    </div>
+                  </td>
+                  <td style={{ padding: '12px' }}>
+                    <div style={{ 
+                      fontSize: '0.9rem', 
+                      color: '#374151',
+                      maxWidth: '150px',
+                      wordWrap: 'break-word'
+                    }}>
+                      {request.reason}
+                    </div>
+                  </td>
+                  <td style={{ padding: '12px', textAlign: 'center' }}>
+                    {getRefundStatusBadge(request.status)}
+                  </td>
+                  <td style={{ padding: '12px', textAlign: 'center', fontSize: '0.8rem', color: '#6b7280' }}>
+                    {formatRefundDate(request.requestedAt)}
+                  </td>
+                  <td style={{ padding: '12px', textAlign: 'center' }}>
+                    {request.status === 'pending' && (
+                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                        <button
+                          onClick={() => approveRefundRequest(request.id, request.orderNumber, request.maxRefundAmount)}
+                          style={{
+                            padding: '6px 12px',
+                            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            fontSize: '0.8rem',
+                            fontWeight: '600',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          ✅ อนุมัติ
+                        </button>
+                        <button
+                          onClick={() => rejectRefundRequest(request.id, request.orderNumber)}
+                          style={{
+                            padding: '6px 12px',
+                            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '6px',
+                            fontSize: '0.8rem',
+                            fontWeight: '600',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          ❌ ปฏิเสธ
+                        </button>
+                      </div>
+                    )}
+                    {request.status !== 'pending' && (
+                      <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                        {formatRefundDate(request.processedAt)}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
+  </div>
+)}
+    </div>
+    
   );
 };
 

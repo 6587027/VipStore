@@ -876,6 +876,370 @@ router.get('/admin/:id/refund-info', async (req, res) => {
   }
 });
 
+// ✅ เพิ่มส่วนนี้ใน backend/routes/orders.js หลัง refund APIs ที่มีอยู่แล้ว
+
+// 🆕 POST /api/orders/:orderId/request-refund - Customer request refund
+router.post('/:orderId/request-refund', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { userId, reason, requestedAmount } = req.body;
+
+    console.log('💸 Customer requesting refund for order:', orderId);
+
+    // Find the order
+    const order = await Order.findById(orderId).populate('items.productId');
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'ไม่พบออเดอร์'
+      });
+    }
+
+    // Validate customer owns this order
+    if (order.userId && order.userId.toString() !== userId) {
+      return res.status(403).json({
+        success: false,
+        message: 'คุณไม่มีสิทธิ์ขอคืนเงินสำหรับออเดอร์นี้'
+      });
+    }
+
+    // Check if order can be refunded
+    if (order.paymentStatus !== 'paid') {
+      return res.status(400).json({
+        success: false,
+        message: 'ไม่สามารถขอคืนเงินได้ เนื่องจากยังไม่ได้ชำระเงิน'
+      });
+    }
+
+    if (order.paymentStatus === 'refunded') {
+      return res.status(400).json({
+        success: false,
+        message: 'ออเดอร์นี้ได้รับการคืนเงินแล้ว'
+      });
+    }
+
+    // Check if already has pending request
+    if (order.refundRequest) {
+      return res.status(400).json({
+        success: false,
+        message: 'มีคำขอคืนเงินอยู่แล้ว รอการพิจารณาจาก Admin'
+      });
+    }
+
+    // Calculate max refund amount
+    const maxRefundAmount = order.pricing.total;
+    const finalRequestedAmount = requestedAmount || maxRefundAmount;
+
+    if (finalRequestedAmount > maxRefundAmount) {
+      return res.status(400).json({
+        success: false,
+        message: `จำนวนเงินคืนเกินกว่ายอดออเดอร์ (สูงสุด ฿${maxRefundAmount})`
+      });
+    }
+
+    // Create refund request
+    const refundRequestData = {
+      requestedBy: userId,
+      reason: reason || 'ลูกค้าขอคืนเงิน',
+      requestedAmount: finalRequestedAmount,
+      maxRefundAmount: maxRefundAmount,
+      status: 'pending',
+      requestedAt: new Date(),
+      customerInfo: {
+        email: order.customerInfo.email,
+        firstName: order.customerInfo.firstName,
+        lastName: order.customerInfo.lastName,
+        phone: order.customerInfo.phone
+      }
+    };
+
+    // Update order with refund request
+    const updatedOrder = await Order.findByIdAndUpdate(
+      orderId,
+      { 
+        $set: { 
+          refundRequest: refundRequestData,
+          'refundRequest.id': `REF-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`
+        }
+      },
+      { new: true, runValidators: false, strict: false }
+    ).populate('items.productId');
+
+    console.log(`✅ Refund request created for order ${order.orderNumber}`);
+
+    res.json({
+      success: true,
+      message: 'ส่งคำขอคืนเงินเรียบร้อย รอการพิจารณาจาก Admin',
+      order: updatedOrder,
+      refundRequest: updatedOrder.refundRequest
+    });
+
+  } catch (error) {
+    console.error('Customer refund request error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในการส่งคำขอคืนเงิน',
+      error: error.message
+    });
+  }
+});
+
+// 📋 GET /api/orders/admin/refund-requests - Get all refund requests (Admin)
+router.get('/admin/refund-requests', async (req, res) => {
+  try {
+    const { status = 'all' } = req.query;
+
+    console.log('📋 Getting refund requests for admin, status:', status);
+
+    // Build filter
+    const filter = {};
+    if (status !== 'all') {
+      filter['refundRequest.status'] = status;
+    }
+    
+    // Only get orders that have refund requests
+    filter.refundRequest = { $exists: true, $ne: null };
+
+    const orders = await Order.find(filter)
+      .populate('items.productId')
+      .populate('userId', 'firstName lastName email username')
+      .sort({ 'refundRequest.requestedAt': -1 });
+
+    // Extract refund requests with order info
+    const refundRequests = orders.map(order => ({
+      id: order.refundRequest.id,
+      orderId: order._id,
+      orderNumber: order.orderNumber,
+      customer: {
+        name: `${order.refundRequest.customerInfo.firstName} ${order.refundRequest.customerInfo.lastName}`,
+        email: order.refundRequest.customerInfo.email,
+        phone: order.refundRequest.customerInfo.phone
+      },
+      requestedAmount: order.refundRequest.requestedAmount,
+      maxRefundAmount: order.refundRequest.maxRefundAmount,
+      reason: order.refundRequest.reason,
+      status: order.refundRequest.status,
+      requestedAt: order.refundRequest.requestedAt,
+      processedAt: order.refundRequest.processedAt,
+      processedBy: order.refundRequest.processedBy,
+      adminNotes: order.refundRequest.adminNotes,
+      orderTotal: order.pricing.total,
+      orderStatus: order.status,
+      paymentStatus: order.paymentStatus
+    }));
+
+    res.json({
+      success: true,
+      requests: refundRequests,
+      total: refundRequests.length,
+      statusFilter: status
+    });
+
+  } catch (error) {
+    console.error('Get refund requests error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในการดึงข้อมูลคำขอคืนเงิน'
+    });
+  }
+});
+
+// ✅ PUT /api/orders/admin/refund-requests/:requestId/approve - Approve refund request (Admin)
+router.put('/admin/refund-requests/:requestId/approve', async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { approvedAmount, adminNotes, approvedBy } = req.body;
+
+    console.log('✅ Admin approving refund request:', requestId);
+
+    // Find order with this refund request
+    const order = await Order.findOne({ 'refundRequest.id': requestId })
+      .populate('items.productId');
+
+    if (!order || !order.refundRequest) {
+      return res.status(404).json({
+        success: false,
+        message: 'ไม่พบคำขอคืนเงิน'
+      });
+    }
+
+    if (order.refundRequest.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'คำขอคืนเงินนี้ได้รับการพิจารณาแล้ว'
+      });
+    }
+
+    const finalApprovedAmount = approvedAmount || order.refundRequest.requestedAmount;
+
+    // Process the actual refund (same logic as existing refund API)
+    if (order.status !== 'cancelled') {
+      console.log('🔄 Refund approved - restoring stock...');
+      
+      for (const item of order.items) {
+        try {
+          const product = await Product.findById(item.productId);
+          if (product) {
+            const oldStock = product.stock;
+            product.stock += item.quantity;
+            await product.save();
+            console.log(`📦 Restored stock for ${product.name}: ${oldStock} + ${item.quantity} = ${product.stock}`);
+          }
+        } catch (error) {
+          console.error(`❌ Error restoring stock for product ${item.productId}:`, error);
+        }
+      }
+    }
+
+    // Create refund transaction ID
+    const refundTransactionId = `REFUND-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Update order
+    const updateData = {
+      status: 'cancelled',
+      paymentStatus: 'refunded',
+      'refundRequest.status': 'approved',
+      'refundRequest.processedAt': new Date(),
+      'refundRequest.processedBy': approvedBy || 'admin',
+      'refundRequest.approvedAmount': finalApprovedAmount,
+      'refundRequest.adminNotes': adminNotes,
+      refundInfo: {
+        amount: finalApprovedAmount,
+        reason: order.refundRequest.reason,
+        method: 'admin_approved',
+        processedAt: new Date(),
+        transactionId: refundTransactionId,
+        processedBy: approvedBy || 'admin',
+        originalRequestId: requestId
+      }
+    };
+
+    const updatedOrder = await Order.findByIdAndUpdate(
+      order._id,
+      { $set: updateData },
+      { new: true, runValidators: false, strict: false }
+    ).populate('items.productId');
+
+    console.log(`✅ Refund request approved for order ${order.orderNumber}: ฿${finalApprovedAmount}`);
+
+    res.json({
+      success: true,
+      message: `อนุมัติคืนเงินสำเร็จ ฿${finalApprovedAmount.toLocaleString()} สำหรับออเดอร์ ${order.orderNumber}`,
+      order: updatedOrder,
+      refund: {
+        amount: finalApprovedAmount,
+        transactionId: refundTransactionId,
+        processedAt: new Date()
+      }
+    });
+
+  } catch (error) {
+    console.error('Approve refund request error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในการอนุมัติคืนเงิน',
+      error: error.message
+    });
+  }
+});
+
+// ❌ PUT /api/orders/admin/refund-requests/:requestId/reject - Reject refund request (Admin)
+router.put('/admin/refund-requests/:requestId/reject', async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { rejectionReason, adminNotes, rejectedBy } = req.body;
+
+    console.log('❌ Admin rejecting refund request:', requestId);
+
+    // Find order with this refund request
+    const order = await Order.findOne({ 'refundRequest.id': requestId });
+
+    if (!order || !order.refundRequest) {
+      return res.status(404).json({
+        success: false,
+        message: 'ไม่พบคำขอคืนเงิน'
+      });
+    }
+
+    if (order.refundRequest.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'คำขอคืนเงินนี้ได้รับการพิจารณาแล้ว'
+      });
+    }
+
+    // Update refund request status
+    const updateData = {
+      'refundRequest.status': 'rejected',
+      'refundRequest.processedAt': new Date(),
+      'refundRequest.processedBy': rejectedBy || 'admin',
+      'refundRequest.rejectionReason': rejectionReason || 'Admin rejected the request',
+      'refundRequest.adminNotes': adminNotes
+    };
+
+    const updatedOrder = await Order.findByIdAndUpdate(
+      order._id,
+      { $set: updateData },
+      { new: true, runValidators: false, strict: false }
+    );
+
+    console.log(`❌ Refund request rejected for order ${order.orderNumber}`);
+
+    res.json({
+      success: true,
+      message: `ปฏิเสธคำขอคืนเงินสำหรับออเดอร์ ${order.orderNumber}`,
+      order: updatedOrder,
+      rejection: {
+        reason: rejectionReason,
+        processedAt: new Date(),
+        processedBy: rejectedBy || 'admin'
+      }
+    });
+
+  } catch (error) {
+    console.error('Reject refund request error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในการปฏิเสธคำขอคืนเงิน',
+      error: error.message
+    });
+  }
+});
+
+// 📊 GET /api/orders/admin/refund-requests/stats - Get refund request statistics (Admin)
+router.get('/admin/refund-requests/stats', async (req, res) => {
+  try {
+    const [
+      totalRequests,
+      pendingRequests,
+      approvedRequests,
+      rejectedRequests
+    ] = await Promise.all([
+      Order.countDocuments({ refundRequest: { $exists: true } }),
+      Order.countDocuments({ 'refundRequest.status': 'pending' }),
+      Order.countDocuments({ 'refundRequest.status': 'approved' }),
+      Order.countDocuments({ 'refundRequest.status': 'rejected' })
+    ]);
+
+    res.json({
+      success: true,
+      stats: {
+        totalRequests,
+        pendingRequests,
+        approvedRequests,
+        rejectedRequests
+      }
+    });
+
+  } catch (error) {
+    console.error('Get refund request stats error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในการดึงสถิติคำขอคืนเงิน'
+    });
+  }
+});
+
 
 
 module.exports = router;

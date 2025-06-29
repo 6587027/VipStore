@@ -18,8 +18,35 @@ const CustomerSettings = ({ isOpen, onClose }) => {
   const [profilePicture, setProfilePicture] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentOrderData, setPaymentOrderData] = useState(null);
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [selectedOrderForRefund, setSelectedOrderForRefund] = useState(null);
+  const [refundReason, setRefundReason] = useState('');
+  const [refundAmount, setRefundAmount] = useState('');
+  const [isSubmittingRefund, setIsSubmittingRefund] = useState(false);
 
-
+  const [paymentMethods, setPaymentMethods] = useState([
+  {
+    id: 'pm_1',
+    type: 'credit_card',
+    name: 'Visa ending in 1234',
+    last4: '1234',
+    brand: 'visa',
+    expiryMonth: 12,
+    expiryYear: 2026,
+    isDefault: true,
+    isActive: false // เป็น placeholder
+  },
+  {
+    id: 'pm_2',
+    type: 'bank_transfer',
+    name: 'ธนาคารกสิกรไทย',
+    accountNumber: '***-*-*4567',
+    isDefault: false,
+    isActive: false // เป็น placeholder
+  }
+]);
+const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
+const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('credit_card');
 
 
 // 🆕 New Profile Form State
@@ -59,6 +86,41 @@ const [newProfileData, setNewProfileData] = useState({
   const [orderHistory, setOrderHistory] = useState([]);
   const [orderLoading, setOrderLoading] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+
+  // เพิ่มใน existing functions section
+const canRequestRefund = (order) => {
+  return order.paymentStatus === 'paid' && !order.refundRequest;
+};
+
+const handleRefundRequest = (order) => {
+  setSelectedOrderForRefund(order);
+  setRefundAmount(order.pricing?.total?.toString() || '0');
+  setShowRefundModal(true);
+};
+
+const submitRefundRequest = async () => {
+  if (!refundReason.trim()) {
+    setError('กรุณาระบุเหตุผลในการขอคืนเงิน');
+    return;
+  }
+  
+  setIsSubmittingRefund(true);
+  try {
+    await ordersAPI.requestRefund(selectedOrderForRefund._id, {
+      reason: refundReason,
+      amount: parseFloat(refundAmount)
+    });
+    
+    setSuccess('✅ ส่งคำขอคืนเงินเรียบร้อยแล้ว รอการตรวจสอบจาก Admin');
+    setShowRefundModal(false);
+    setRefundReason('');
+    setRefundAmount('');
+    await fetchOrderHistory(); // Refresh orders
+  } catch (error) {
+    setError('เกิดข้อผิดพลาด: ' + error.message);
+  }
+  setIsSubmittingRefund(false);
+};
 
   // Load user data และ address profiles
   useEffect(() => {
@@ -175,6 +237,8 @@ const [newProfileData, setNewProfileData] = useState({
       setLoading(false);
     }
   };
+
+
 
   // 💳 ฟังก์ชันชำระเงินใหม่ (ใช้ PaymentModal แทน window.prompt)
 const handlePayment = async (orderId, orderNumber, totalAmount) => {
@@ -631,7 +695,7 @@ const handleNewProfileInputChange = (e) => {
       icon: '💳',
       title: 'วิธีชำระเงิน',
       description: 'บัตรเครดิต, โอนธนาคาร, QR Code',
-      badge: '🚧 เร็วๆ นี้'
+      badge: '🚧 DEMO'
     },
     {
       id: 'orders',
@@ -912,6 +976,65 @@ const handleNewProfileInputChange = (e) => {
                         {loading ? '⏳' : '🚫'} {loading ? 'กำลังยกเลิก...' : 'ยกเลิกออเดอร์'}
                       </button>
                     )}
+                    {/* 💰 ปุ่มขอคืนเงิน - เพิ่มหลังปุ่ม Cancel Order */}
+                    {canRequestRefund(order) && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRefundRequest(order);
+                        }}
+                        style={{
+                          marginTop: '8px',
+                          padding: '6px 12px',
+                          background: 'linear-gradient(135deg, #ff6b35, #f7931e)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '6px',
+                          fontSize: '0.8rem',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          minWidth: '90px',
+                          justifyContent: 'center',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.background = 'linear-gradient(135deg, #f7931e, #ea580c)';
+                          e.target.style.transform = 'translateY(-1px)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.background = 'linear-gradient(135deg, #ff6b35, #f7931e)';
+                          e.target.style.transform = 'translateY(0)';
+                        }}
+                      >
+                        💰 ขอคืนเงิน
+                      </button>
+                    )}
+
+                    {/* แสดงสถานะ Refund Request */}
+                    {order.refundRequest && (
+                      <div style={{
+                        marginTop: '8px',
+                        padding: '8px 12px',
+                        background: '#f8f9fa',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem'
+                      }}>
+                        📋 สถานะคำขอคืนเงิน: 
+                        <span style={{
+                          marginLeft: '4px',
+                          fontWeight: 'bold',
+                          color: order.refundRequest.status === 'pending' ? '#ff9800' :
+                                order.refundRequest.status === 'approved' ? '#4caf50' : '#f44336'
+                        }}>
+                          {order.refundRequest.status === 'pending' && '⏳ รอพิจารณา'}
+                          {order.refundRequest.status === 'approved' && '✅ อนุมัติแล้ว'}
+                          {order.refundRequest.status === 'rejected' && '❌ ปฏิเสธ'}
+                        </span>
+                      </div>
+                    )}
                     
                     {/* แสดงข้อความสำหรับออเดอร์ที่ไม่สามารถยกเลิกได้ */}
                     {(order.status === 'processing' || order.status === 'shipped') && (
@@ -1148,8 +1271,6 @@ const handleNewProfileInputChange = (e) => {
           </div>
         </div>
         
-
-        
         {/* User Info */}
         <h2 style={{
           margin: '0 0 8px',
@@ -1216,15 +1337,11 @@ const handleNewProfileInputChange = (e) => {
         <div
           key={item.id}
           onClick={() => {
-            if (item.id === 'payment') {
-              showMessage('info', '💳 ระบบชำระเงินกำลังพัฒนา เร็วๆ นี้!');
-              return;
-            }
             setActiveSection(item.id);
             if (item.id === 'orders') {
-              setActiveTab('orders'); // Set tab to orders for direct access
+              setActiveTab('orders');
             } else {
-              setActiveTab('profile'); // Default tab for profile section
+              setActiveTab('profile');
             }
           }}
           style={{
@@ -3543,6 +3660,356 @@ case 'addresses':
             </div>
           </div>
         );
+        // 🔧 2. เพิ่ม Payment Methods Case ใน renderContent() function
+// เพิ่มใน switch statement ก่อน case 'menu':
+
+case 'payment':
+  return (
+    <div style={{
+      background: 'white',
+      borderRadius: '16px',
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
+      overflow: 'hidden'
+    }}>
+      {/* Header */}
+      <div style={{
+        background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+        color: 'white',
+        padding: '24px 30px',
+        textAlign: 'center',
+        position: 'relative'
+      }}>
+        <button
+          onClick={() => setActiveSection('menu')}
+          style={{
+            position: 'absolute',
+            left: '20px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            background: 'rgba(255,255,255,0.2)',
+            color: 'white',
+            border: '1px solid rgba(255,255,255,0.3)',
+            borderRadius: '8px',
+            padding: '8px 12px',
+            cursor: 'pointer',
+            fontSize: '0.9rem',
+            fontWeight: '600'
+          }}
+        >
+          ← กลับ
+        </button>
+        <h2 style={{ margin: '0 0 8px', fontSize: '1.8rem', fontWeight: '700' }}>
+          💳 วิธีชำระเงิน
+        </h2>
+        <p style={{ margin: 0, opacity: 0.9, fontSize: '1rem' }}>
+          จัดการวิธีการชำระเงินของคุณ
+        </p>
+      </div>
+
+      {/* Content */}
+      <div style={{ padding: '30px' }}>
+        {/* Coming Soon Notice */}
+        <div style={{
+          background: 'linear-gradient(135deg, #fef3c7 0%, #fde047 100%)',
+          padding: '20px',
+          borderRadius: '12px',
+          border: '2px solid #f59e0b',
+          marginBottom: '24px',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🚧</div>
+          <h3 style={{ margin: '0 0 8px', fontSize: '1.2rem', fontWeight: '700', color: '#92400e' }}>
+            ระบบชำระเงินกำลังพัฒนา
+          </h3>
+          <p style={{ margin: 0, color: '#451a03', fontSize: '0.95rem' }}>
+            ขณะนี้ใช้ระบบจำลองเท่านั้น - เร็วๆ นี้จะเชื่อมต่อกับระบบชำระเงินจริง!
+          </p>
+        </div>
+
+        {/* Payment Methods List */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '20px'
+        }}>
+          <h4 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '600', color: '#374151' }}>
+            💳 วิธีชำระเงินที่บันทึกไว้
+          </h4>
+          <button
+            onClick={() => setShowAddPaymentModal(true)}
+            style={{
+              padding: '10px 16px',
+              background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            ➕ เพิ่มวิธีชำระเงิน
+          </button>
+        </div>
+
+        {/* Payment Methods Cards */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {paymentMethods.map((method) => (
+            <div key={method.id} style={{
+              background: 'white',
+              border: method.isDefault ? '2px solid #8b5cf6' : '2px solid #e5e7eb',
+              borderRadius: '16px',
+              padding: '20px',
+              transition: 'all 0.2s ease',
+              opacity: method.isActive ? 1 : 0.6,
+              position: 'relative'
+            }}>
+              {/* Placeholder Badge */}
+              {!method.isActive && (
+                <div style={{
+                  position: 'absolute',
+                  top: '12px',
+                  right: '12px',
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                  color: 'white',
+                  padding: '4px 8px',
+                  borderRadius: '8px',
+                  fontSize: '0.7rem',
+                  fontWeight: '600'
+                }}>
+                  🚧 DEMO
+                </div>
+              )}
+
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: '12px'
+              }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '8px'
+                  }}>
+                    {/* Payment Method Icon */}
+                    <div style={{
+                      width: '48px',
+                      height: '32px',
+                      borderRadius: '6px',
+                      background: method.type === 'credit_card' 
+                        ? 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)'
+                        : 'linear-gradient(135deg, #059669 0%, #10b981 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '1rem',
+                      color: 'white',
+                      fontWeight: '600'
+                    }}>
+                      {method.type === 'credit_card' ? '💳' : '🏦'}
+                    </div>
+
+                    <div>
+                      <h5 style={{
+                        margin: 0,
+                        fontSize: '1.1rem',
+                        fontWeight: '700',
+                        color: '#1f2937'
+                      }}>
+                        {method.name}
+                      </h5>
+                      {method.type === 'credit_card' && (
+                        <p style={{
+                          margin: '4px 0 0',
+                          fontSize: '0.85rem',
+                          color: '#6b7280'
+                        }}>
+                          หมดอายุ {method.expiryMonth}/{method.expiryYear}
+                        </p>
+                      )}
+                      {method.type === 'bank_transfer' && (
+                        <p style={{
+                          margin: '4px 0 0',
+                          fontSize: '0.85rem',
+                          color: '#6b7280'
+                        }}>
+                          บัญชี {method.accountNumber}
+                        </p>
+                      )}
+                    </div>
+
+                    {method.isDefault && (
+                      <span style={{
+                        background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+                        color: 'white',
+                        padding: '4px 12px',
+                        borderRadius: '12px',
+                        fontSize: '0.75rem',
+                        fontWeight: '600'
+                      }}>
+                        ⭐ หลัก
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div style={{
+                  display: 'flex',
+                  gap: '8px',
+                  opacity: method.isActive ? 1 : 0.5
+                }}>
+                  {!method.isDefault && (
+                    <button
+                      disabled={!method.isActive}
+                      style={{
+                        padding: '6px 12px',
+                        background: method.isActive ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' : '#9ca3af',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '0.8rem',
+                        fontWeight: '600',
+                        cursor: method.isActive ? 'pointer' : 'not-allowed'
+                      }}
+                      onClick={() => method.isActive && alert('🚧 ฟีเจอร์นี้กำลังพัฒนา')}
+                    >
+                      ⭐ ตั้งเป็นหลัก
+                    </button>
+                  )}
+                  
+                  <button
+                    disabled={!method.isActive}
+                    style={{
+                      padding: '6px 12px',
+                      background: method.isActive ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : '#9ca3af',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '6px',
+                      fontSize: '0.8rem',
+                      fontWeight: '600',
+                      cursor: method.isActive ? 'pointer' : 'not-allowed'
+                    }}
+                    onClick={() => method.isActive && alert('🚧 ฟีเจอร์นี้กำลังพัฒนา')}
+                  >
+                    🗑️ ลบ
+                  </button>
+                </div>
+              </div>
+
+              {/* Payment Method Details */}
+              <div style={{
+                background: '#f8fafc',
+                padding: '12px',
+                borderRadius: '8px',
+                fontSize: '0.85rem',
+                color: '#6b7280'
+              }}>
+                {method.type === 'credit_card' ? (
+                  <>
+                    💳 บัตรเครดิต/เดบิต • ปลอดภัยด้วยการเข้ารหัส SSL
+                  </>
+                ) : (
+                  <>
+                    🏦 โอนผ่านธนาคาร • ปลอดภัยผ่านระบบ Internet Banking
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Available Payment Methods */}
+        <div style={{ marginTop: '32px' }}>
+          <h4 style={{ margin: '0 0 16px', fontSize: '1.2rem', fontWeight: '600', color: '#374151' }}>
+            💼 วิธีการชำระเงินที่รองรับ
+          </h4>
+          
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+            gap: '16px'
+          }}>
+            {/* Credit Card */}
+            <div style={{
+              background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+              padding: '16px',
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: '8px' }}>💳</div>
+              <h5 style={{ margin: '0 0 4px', fontSize: '1rem', fontWeight: '600' }}>
+                บัตรเครดิต/เดบิต
+              </h5>
+              <p style={{ margin: 0, fontSize: '0.8rem', color: '#6b7280' }}>
+                Visa, Mastercard, JCB
+              </p>
+            </div>
+
+            {/* Bank Transfer */}
+            <div style={{
+              background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+              padding: '16px',
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🏦</div>
+              <h5 style={{ margin: '0 0 4px', fontSize: '1rem', fontWeight: '600' }}>
+                โอนผ่านธนาคาร
+              </h5>
+              <p style={{ margin: 0, fontSize: '0.8rem', color: '#6b7280' }}>
+                ธนาคารชั้นนำทุกแห่ง
+              </p>
+            </div>
+
+            {/* PromptPay */}
+            <div style={{
+              background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+              padding: '16px',
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📱</div>
+              <h5 style={{ margin: '0 0 4px', fontSize: '1rem', fontWeight: '600' }}>
+                พร้อมเพย์
+              </h5>
+              <p style={{ margin: 0, fontSize: '0.8rem', color: '#6b7280' }}>
+                QR Code ชำระทันที
+              </p>
+            </div>
+
+            {/* Cash on Delivery */}
+            <div style={{
+              background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+              padding: '16px',
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '2rem', marginBottom: '8px' }}>💵</div>
+              <h5 style={{ margin: '0 0 4px', fontSize: '1rem', fontWeight: '600' }}>
+                เก็บเงินปลายทาง
+              </h5>
+              <p style={{ margin: 0, fontSize: '0.8rem', color: '#6b7280' }}>
+                ชำระเมื่อได้รับสินค้า
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
       
       case 'menu':
       default:
@@ -3670,14 +4137,385 @@ case 'addresses':
           }
         `}</style>
       </div>
-      {/* 🔥 เพิ่ม PaymentModal ตรงนี้! */}
     <PaymentModal
       isOpen={showPaymentModal}
       onClose={handlePaymentClose}
       orderData={paymentOrderData}
       onPaymentSuccess={handlePaymentSuccess}
     />
+    {/* 💰 Refund Request Modal - เพิ่มก่อน closing </div> สุดท้าย */}
+{showRefundModal && (
+  <div style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0,0,0,0.6)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10000
+  }}>
+    <div style={{
+      background: 'white',
+      borderRadius: '12px',
+      padding: '24px',
+      maxWidth: '500px',
+      width: '90%',
+      maxHeight: '80vh',
+      overflowY: 'auto'
+    }}>
+      <h3 style={{
+        margin: '0 0 20px',
+        fontSize: '1.3rem',
+        fontWeight: '700',
+        color: '#1f2937',
+        textAlign: 'center'
+      }}>
+        💰 ขอคืนเงิน - ออเดอร์ #{selectedOrderForRefund?.orderNumber}
+      </h3>
+      
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div>
+          <label style={{ 
+            display: 'block', 
+            marginBottom: '8px', 
+            fontWeight: '600',
+            color: '#374151'
+          }}>
+            จำนวนเงินที่ขอคืน (฿):
+          </label>
+          <input
+            type="number"
+            value={refundAmount}
+            onChange={(e) => setRefundAmount(e.target.value)}
+            max={selectedOrderForRefund?.pricing?.total || 0}
+            min="1"
+            style={{
+              width: '100%',
+              padding: '12px',
+              border: '2px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '1rem'
+            }}
+          />
+          <small style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+            จำนวนเต็ม: {formatPrice(selectedOrderForRefund?.pricing?.total || 0)}
+          </small>
+        </div>
+        
+        <div>
+          <label style={{ 
+            display: 'block', 
+            marginBottom: '8px', 
+            fontWeight: '600',
+            color: '#374151'
+          }}>
+            เหตุผลในการขอคืนเงิน:
+          </label>
+          <textarea
+            value={refundReason}
+            onChange={(e) => setRefundReason(e.target.value)}
+            placeholder="กรุณาระบุเหตุผล เช่น สินค้าชำรุด, ไม่ตรงตามที่สั่ง, เปลี่ยนใจ"
+            rows="4"
+            style={{
+              width: '100%',
+              padding: '12px',
+              border: '2px solid #e5e7eb',
+              borderRadius: '8px',
+              fontSize: '1rem',
+              resize: 'vertical'
+            }}
+          />
+        </div>
+        
+        <div style={{ 
+          display: 'flex', 
+          gap: '12px', 
+          justifyContent: 'flex-end',
+          marginTop: '20px'
+        }}>
+          <button 
+            onClick={() => setShowRefundModal(false)}
+            disabled={isSubmittingRefund}
+            style={{
+              padding: '12px 20px',
+              background: '#6b7280',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '600'
+            }}
+          >
+            ยกเลิก
+          </button>
+          <button 
+            onClick={submitRefundRequest}
+            disabled={isSubmittingRefund || !refundReason.trim()}
+            style={{
+              padding: '12px 20px',
+              background: isSubmittingRefund || !refundReason.trim() ? '#9ca3af' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: isSubmittingRefund || !refundReason.trim() ? 'not-allowed' : 'pointer',
+              fontWeight: '600'
+            }}
+          >
+            {isSubmittingRefund ? '⏳ กำลังส่ง...' : '📤 ส่งคำขอ'}
+          </button>
+        </div>
+      </div>
     </div>
+  </div>
+)}
+
+{showAddPaymentModal && (
+  <div style={{
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0,0,0,0.6)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10000
+  }}>
+    <div style={{
+      background: 'white',
+      borderRadius: '16px',
+      padding: '24px',
+      maxWidth: '500px',
+      width: '90%',
+      maxHeight: '80vh',
+      overflowY: 'auto'
+    }}>
+      <h3 style={{
+        margin: '0 0 20px',
+        fontSize: '1.3rem',
+        fontWeight: '700',
+        color: '#1f2937',
+        textAlign: 'center'
+      }}>
+        💳 เพิ่มวิธีชำระเงิน
+      </h3>
+
+      {/* Payment Method Selection */}
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{ 
+          display: 'block', 
+          marginBottom: '8px', 
+          fontWeight: '600',
+          color: '#374151'
+        }}>
+          เลือกประเภท:
+        </label>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button
+            onClick={() => setSelectedPaymentMethod('credit_card')}
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: selectedPaymentMethod === 'credit_card' ? '#8b5cf6' : '#f3f4f6',
+              color: selectedPaymentMethod === 'credit_card' ? 'white' : '#374151',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}
+          >
+            💳 บัตรเครดิต
+          </button>
+          <button
+            onClick={() => setSelectedPaymentMethod('bank_transfer')}
+            style={{
+              flex: 1,
+              padding: '12px',
+              background: selectedPaymentMethod === 'bank_transfer' ? '#8b5cf6' : '#f3f4f6',
+              color: selectedPaymentMethod === 'bank_transfer' ? 'white' : '#374151',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}
+          >
+            🏦 โอนธนาคาร
+          </button>
+        </div>
+      </div>
+
+      {/* Demo Form */}
+      <div style={{
+        background: '#fef3c7',
+        padding: '16px',
+        borderRadius: '8px',
+        border: '1px solid #f59e0b',
+        marginBottom: '20px',
+        textAlign: 'center'
+      }}>
+        <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🚧</div>
+        <p style={{ margin: 0, color: '#92400e', fontSize: '0.9rem' }}>
+          <strong>ระบบจำลอง</strong><br />
+          ฟอร์มนี้เป็นการจำลองเท่านั้น ไม่ได้เก็บข้อมูลจริง
+        </p>
+      </div>
+
+      {selectedPaymentMethod === 'credit_card' ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+              หมายเลขบัตร:
+            </label>
+            <input
+              type="text"
+              placeholder="1234 5678 9012 3456"
+              disabled
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                background: '#f9fafb',
+                color: '#9ca3af'
+              }}
+            />
+          </div>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                วันหมดอายุ:
+              </label>
+              <input
+                type="text"
+                placeholder="MM/YY"
+                disabled
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  background: '#f9fafb',
+                  color: '#9ca3af'
+                }}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                CVC:
+              </label>
+              <input
+                type="text"
+                placeholder="123"
+                disabled
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  background: '#f9fafb',
+                  color: '#9ca3af'
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+              เลือกธนาคาร:
+            </label>
+            <select
+              disabled
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                background: '#f9fafb',
+                color: '#9ca3af'
+              }}
+            >
+              <option>ธนาคารกสิกรไทย</option>
+              <option>ธนาคารกรุงเทพ</option>
+              <option>ธนาคารไทยพาณิชย์</option>
+            </select>
+          </div>
+          <div>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+              หมายเลขบัญชี:
+            </label>
+            <input
+              type="text"
+              placeholder="xxx-x-xxxxx-x"
+              disabled
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                fontSize: '1rem',
+                background: '#f9fafb',
+                color: '#9ca3af'
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      <div style={{ 
+        display: 'flex', 
+        gap: '12px', 
+        justifyContent: 'flex-end',
+        marginTop: '20px'
+      }}>
+        <button 
+          onClick={() => setShowAddPaymentModal(false)}
+          style={{
+            padding: '12px 20px',
+            background: '#6b7280',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: '600'
+          }}
+        >
+          ยกเลิก
+        </button>
+        <button 
+          onClick={() => {
+            alert('🚧 ระบบยังไม่พร้อมใช้งาน กำลังพัฒนา!');
+            setShowAddPaymentModal(false);
+          }}
+          style={{
+            padding: '12px 20px',
+            background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: '600'
+          }}
+        >
+          💾 บันทึก (DEMO)
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+    </div>
+    
   );
 };
 

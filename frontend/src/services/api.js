@@ -298,7 +298,6 @@ export const authAPI = {
 };
 
 // Orders API
-// ✅ FIXED: ordersAPI.updatePayment function
 export const ordersAPI = {
   create: (orderData) => api.post('/orders', orderData),
   getMyOrders: (userId) => api.get('/orders/my-orders', { params: { userId } }),
@@ -342,6 +341,19 @@ export const ordersAPI = {
     }
   },
 
+  // 🆕 Customer Refund Request APIs
+  requestRefund: async (orderId, refundData) => {
+    try {
+      console.log('💸 Requesting refund for order:', orderId, refundData);
+      const response = await api.post(`/orders/${orderId}/request-refund`, refundData);
+      console.log('✅ Refund request sent successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Refund request failed:', error.response?.data || error.message);
+      throw error;
+    }
+  },
+
   admin: {
     getAll: (params = {}) => api.get('/orders/admin/all', { params }),
     updateStatus: (id, updateData) => api.put(`/orders/admin/${id}/status`, updateData),
@@ -349,15 +361,66 @@ export const ordersAPI = {
     delete: (orderId) => api.delete(`/orders/admin/${orderId}`),
 
     // 🆕 เพิ่ม Refund APIs
-  processRefund: (orderId, refundData) => {
-    console.log('💰 Processing refund for order:', orderId, refundData);
-    return api.put(`/orders/admin/${orderId}/refund`, refundData);
-  },
-  
-  getRefundInfo: (orderId) => {
-    console.log('📊 Getting refund info for order:', orderId);
-    return api.get(`/orders/admin/${orderId}/refund-info`);
-  }
+    processRefund: (orderId, refundData) => {
+      console.log('💰 Processing refund for order:', orderId, refundData);
+      return api.put(`/orders/admin/${orderId}/refund`, refundData);
+    },
+    
+    getRefundInfo: (orderId) => {
+      console.log('📊 Getting refund info for order:', orderId);
+      return api.get(`/orders/admin/${orderId}/refund-info`);
+    },
+
+    // 🆕 Admin Refund Request Management
+    getRefundRequests: async (status = 'all') => {
+      try {
+        console.log('📋 Getting refund requests, status:', status);
+        const response = await api.get('/orders/admin/refund-requests', { 
+          params: { status } 
+        });
+        console.log('✅ Refund requests loaded:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('❌ Get refund requests failed:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+
+    approveRefundRequest: async (requestId, approvalData) => {
+      try {
+        console.log('✅ Approving refund request:', requestId, approvalData);
+        const response = await api.put(`/orders/admin/refund-requests/${requestId}/approve`, approvalData);
+        console.log('✅ Refund request approved:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('❌ Approve refund request failed:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+
+    rejectRefundRequest: async (requestId, rejectionData) => {
+      try {
+        console.log('❌ Rejecting refund request:', requestId, rejectionData);
+        const response = await api.put(`/orders/admin/refund-requests/${requestId}/reject`, rejectionData);
+        console.log('✅ Refund request rejected:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('❌ Reject refund request failed:', error.response?.data || error.message);
+        throw error;
+      }
+    },
+
+    getRefundRequestStats: async () => {
+      try {
+        console.log('📊 Getting refund request statistics...');
+        const response = await api.get('/orders/admin/refund-requests/stats');
+        console.log('✅ Refund request stats loaded:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('❌ Get refund request stats failed:', error.response?.data || error.message);
+        throw error;
+      }
+    }
   }
 };
 
@@ -428,6 +491,70 @@ export const createOrder = async (orderData) => {
     return {
       success: false,
       message: error.response?.data?.message || 'Failed to create order',
+      error: error.response?.data || error.message
+    };
+  }
+};
+// 🆕 Helper Functions for Refund Requests
+export const requestOrderRefund = async (orderId, refundData) => {
+  try {
+    const response = await ordersAPI.requestRefund(orderId, refundData);
+    return {
+      success: true,
+      data: response
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to request refund',
+      error: error.response?.data || error.message
+    };
+  }
+};
+
+export const getRefundRequests = async (status = 'all') => {
+  try {
+    const response = await ordersAPI.admin.getRefundRequests(status);
+    return {
+      success: true,
+      data: response
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to fetch refund requests',
+      error: error.response?.data || error.message
+    };
+  }
+};
+
+export const approveRefundRequest = async (requestId, approvalData) => {
+  try {
+    const response = await ordersAPI.admin.approveRefundRequest(requestId, approvalData);
+    return {
+      success: true,
+      data: response
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to approve refund request',
+      error: error.response?.data || error.message
+    };
+  }
+};
+
+export const rejectRefundRequest = async (requestId, rejectionData) => {
+  try {
+    const response = await ordersAPI.admin.rejectRefundRequest(requestId, rejectionData);
+    return {
+      success: true,
+      data: response
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || 'Failed to reject refund request',
       error: error.response?.data || error.message
     };
   }
