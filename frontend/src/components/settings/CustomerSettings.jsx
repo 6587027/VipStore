@@ -87,9 +87,154 @@ const [newProfileData, setNewProfileData] = useState({
   const [orderLoading, setOrderLoading] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  // เพิ่มใน existing functions section
 const canRequestRefund = (order) => {
-  return order.paymentStatus === 'paid' && !order.refundRequest;
+  // ✅ Enhanced Debug logging
+  console.log(`🔍 Detailed refund check for ${order.orderNumber}:`, {
+    paymentStatus: order.paymentStatus,
+    status: order.status,
+    refundRequest: order.refundRequest,
+    refundRequestType: typeof order.refundRequest,
+    refundRequestKeys: order.refundRequest ? Object.keys(order.refundRequest) : 'null',
+    hasRefundInfo: !!order.refundInfo,
+    refundInfo: order.refundInfo
+  });
+  
+  // ✅ STRICT CONDITIONS - All must be true
+  const conditions = {
+    isPaid: order.paymentStatus === 'paid',
+    notCancelled: order.status !== 'cancelled',
+    notRefunded: order.paymentStatus !== 'refunded',
+    noRefundRequest: !order.refundRequest || 
+                    (typeof order.refundRequest === 'object' && 
+                     Object.keys(order.refundRequest).length === 0) ||
+                    order.refundRequest === null,
+    noRefundInfo: !order.refundInfo || 
+                  (typeof order.refundInfo === 'object' && 
+                   Object.keys(order.refundInfo).length === 0) ||
+                  order.refundInfo === null
+  };
+  
+  // ✅ Log each condition
+  console.log(`📋 Refund conditions for ${order.orderNumber}:`, conditions);
+  
+  // ✅ Final decision
+  const canRequest = conditions.isPaid && 
+                    conditions.notCancelled && 
+                    conditions.notRefunded && 
+                    conditions.noRefundRequest && 
+                    conditions.noRefundInfo;
+  
+  console.log(`🎯 Final decision for ${order.orderNumber}: ${canRequest ? 'CAN REQUEST' : 'CANNOT REQUEST'}`);
+  
+  // ✅ Show reason if cannot request
+  if (!canRequest) {
+    const reasons = [];
+    if (!conditions.isPaid) reasons.push('ยังไม่ได้ชำระเงิน');
+    if (!conditions.notCancelled) reasons.push('ออเดอร์ถูกยกเลิก');
+    if (!conditions.notRefunded) reasons.push('ได้รับการคืนเงินแล้ว');
+    if (!conditions.noRefundRequest) reasons.push('มีคำขอคืนเงินแล้ว');
+    if (!conditions.noRefundInfo) reasons.push('มีข้อมูลการคืนเงินแล้ว');
+    
+    console.log(`❌ Cannot request refund for ${order.orderNumber}:`, reasons.join(', '));
+  }
+  
+  return canRequest;
+};
+
+// ✅ เพิ่ม helper function เพื่อแสดงเหตุผลที่ไม่สามารถขอคืนเงินได้
+const getRefundNotAvailableReason = (order) => {
+  if (order.paymentStatus !== 'paid') {
+    return 'ยังไม่ได้ชำระเงิน';
+  }
+  if (order.status === 'cancelled') {
+    return 'ออเดอร์ถูกยกเลิกแล้ว';
+  }
+  if (order.paymentStatus === 'refunded') {
+    return 'ได้รับการคืนเงินแล้ว';
+  }
+  if (order.refundRequest) {
+    return `มีคำขอคืนเงินแล้ว (${order.refundRequest.status})`;
+  }
+  return 'ไม่สามารถขอคืนเงินได้';
+};
+
+// ✅ อัปเดต getRefundRequestStatus function ให้แสดงข้อมูลที่ถูกต้อง
+const getRefundRequestStatus = (order) => {
+  if (!order.refundRequest) return null;
+  
+  const status = order.refundRequest.status;
+  const statusConfig = {
+    pending: { 
+      icon: '⏳', 
+      text: 'รอการพิจารณาคืนเงิน', // ✅ เปลี่ยนข้อความให้ชัดเจน
+      color: '#d97706', 
+      bg: '#fef3c7',
+      border: '#f59e0b'
+    },
+    approved: { 
+      icon: '✅', 
+      text: 'อนุมัติคืนเงินแล้ว', 
+      color: '#059669', 
+      bg: '#dcfce7',
+      border: '#10b981'
+    },
+    rejected: { 
+      icon: '❌', 
+      text: 'ปฏิเสธคำขอคืนเงิน', 
+      color: '#dc2626', 
+      bg: '#fee2e2',
+      border: '#ef4444'
+    }
+  };
+  
+  const config = statusConfig[status] || statusConfig.pending;
+  
+  return (
+    <div style={{
+      marginTop: '8px',
+      padding: '8px 12px',
+      background: config.bg,
+      borderRadius: '6px',
+      fontSize: '0.75rem',
+      border: `1px solid ${config.border}`
+    }}>
+      <div style={{ 
+        fontWeight: 'bold', 
+        marginBottom: '2px',
+        color: config.color 
+      }}>
+        {config.icon} {config.text}
+      </div>
+      
+      <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>
+        💰 จำนวนเงิน: {formatPrice(order.refundRequest.requestedAmount || 0)}
+      </div>
+      
+      <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>
+        📝 เหตุผล: {order.refundRequest.reason}
+      </div>
+      
+      {order.refundRequest.requestedAt && (
+        <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>
+          📅 วันที่ขอ: {formatDate(order.refundRequest.requestedAt)}
+        </div>
+      )}
+      
+      {order.refundRequest.adminNotes && (
+        <div style={{ 
+          fontSize: '0.7rem', 
+          color: '#374151',
+          marginTop: '4px',
+          fontStyle: 'italic',
+          background: 'rgba(255,255,255,0.5)',
+          padding: '4px',
+          borderRadius: '4px'
+        }}>
+          💬 หมายเหตุจาก Admin: {order.refundRequest.adminNotes}
+        </div>
+      )}
+    </div>
+  );
 };
 
 const handleRefundRequest = (order) => {
@@ -105,21 +250,107 @@ const submitRefundRequest = async () => {
   }
   
   setIsSubmittingRefund(true);
+  setError(''); // Clear previous errors
+  setSuccess(''); // Clear previous success messages
+  
   try {
-    await ordersAPI.requestRefund(selectedOrderForRefund._id, {
+    console.log('💰 Submitting refund request:', {
+      orderId: selectedOrderForRefund._id,
+      userId: user._id || user.id,
       reason: refundReason,
-      amount: parseFloat(refundAmount)
+      requestedAmount: parseFloat(refundAmount)
     });
     
-    setSuccess('✅ ส่งคำขอคืนเงินเรียบร้อยแล้ว รอการตรวจสอบจาก Admin');
-    setShowRefundModal(false);
-    setRefundReason('');
-    setRefundAmount('');
-    await fetchOrderHistory(); // Refresh orders
+    // ✅ เรียก API
+    const response = await ordersAPI.requestRefund(selectedOrderForRefund._id, {
+      userId: user._id || user.id,
+      reason: refundReason,
+      requestedAmount: parseFloat(refundAmount)
+    });
+    
+    console.log('✅ Refund request response:', response);
+    
+    // ✅ ตรวจสอบ response (API ส่ง response.success หรือ response ตรงๆ)
+    const isSuccess = response.success === true || 
+                     (response.data && response.data.success === true);
+    
+    if (isSuccess) {
+      // ✅ แสดงข้อความสำเร็จ
+      setSuccess('✅ ส่งคำขอคืนเงินเรียบร้อยแล้ว รอการตรวจสอบจาก Admin');
+      
+      // ✅ ปิด Modal
+      setShowRefundModal(false);
+      
+      // ✅ Clear form data
+      setRefundReason('');
+      setRefundAmount('');
+      setSelectedOrderForRefund(null);
+      
+      // ✅ รีเฟรชรายการออเดอร์ (สำคัญ!)
+      console.log('🔄 Refreshing order history...');
+      
+      // ✅ เพิ่มการรอสักครู่ก่อนรีเฟรช
+      setTimeout(async () => {
+        await fetchOrderHistory();
+      }, 500);
+      
+      // ✅ แสดงข้อความสำเร็จ 5 วินาที
+      setTimeout(() => {
+        setSuccess('');
+      }, 5000);
+      
+    } else {
+      // ✅ Handle API success but with error message
+      const errorMessage = response.message || 
+                          (response.data && response.data.message) || 
+                          'ไม่สามารถส่งคำขอคืนเงินได้';
+      console.log('⚠️ API returned success=false:', errorMessage);
+      setError(errorMessage);
+    }
+    
   } catch (error) {
-    setError('เกิดข้อผิดพลาด: ' + error.message);
+    console.error('❌ Refund request error:', error);
+    
+    // ✅ Enhanced error handling
+    if (error.response) {
+      const status = error.response.status;
+      const message = error.response.data?.message || 'เกิดข้อผิดพลาด';
+      
+      console.log(`❌ HTTP Error ${status}:`, message);
+      
+      switch (status) {
+        case 404:
+          setError('ไม่พบออเดอร์นี้ในระบบ');
+          break;
+        case 400:
+          setError(message);
+          break;
+        case 403:
+          setError('ไม่มีสิทธิ์ในการขอคืนเงินสำหรับออเดอร์นี้');
+          break;
+        case 500:
+          setError('เกิดข้อผิดพลาดในเซิร์ฟเวอร์ กรุณาลองใหม่อีกครั้ง');
+          break;
+        default:
+          setError(`เกิดข้อผิดพลาด (${status}): ${message}`);
+      }
+    } else if (error.message) {
+      console.log('❌ Error message:', error.message);
+      
+      if (error.message.includes('Failed to request refund')) {
+        setError('ไม่สามารถส่งคำขอคืนเงินได้ กรุณาลองใหม่อีกครั้ง');
+      } else if (error.message.includes('Network Error')) {
+        setError('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้');
+      } else {
+        setError(error.message);
+      }
+    } else {
+      console.log('❌ Unknown error:', error);
+      setError('เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ กรุณาลองใหม่อีกครั้ง');
+    }
+  } finally {
+    setIsSubmittingRefund(false);
   }
-  setIsSubmittingRefund(false);
 };
 
   // Load user data และ address profiles
@@ -175,29 +406,41 @@ const submitRefundRequest = async () => {
     }
   };
 
-  // 🛒 Load Order History (ย้ายมาจาก UserProfileModal)
   const fetchOrderHistory = async () => {
-    if (!user) return;
+  if (!user) return;
+  
+  setOrderLoading(true);
+  try {
+    console.log('🛒 Fetching orders for user:', user._id || user.id);
+    const response = await ordersAPI.getMyOrders(user._id || user.id);
     
-    setOrderLoading(true);
-    try {
-      console.log('🛒 Fetching orders for user:', user._id || user.id);
-      const response = await ordersAPI.getMyOrders(user._id || user.id);
+    if (response.data.success) {
+      console.log('✅ Orders fetched:', response.data.orders.length);
       
-      if (response.data.success) {
-        console.log('✅ Orders fetched:', response.data.orders.length);
-        setOrderHistory(response.data.orders || []);
-      } else {
-        console.error('Failed to fetch orders:', response.data.message);
-        setOrderHistory([]);
-      }
-    } catch (error) {
-      console.error('Error fetching order history:', error);
+      // ✅ Debug แต่ละ order
+      response.data.orders.forEach(order => {
+        console.log(`📦 Order ${order.orderNumber}:`, {
+          status: order.status,
+          paymentStatus: order.paymentStatus,
+          hasRefundRequest: !!order.refundRequest,
+          refundRequestStatus: order.refundRequest?.status,
+          hasRefundInfo: !!order.refundInfo
+        });
+      });
+      
+      setOrderHistory(response.data.orders || []);
+    } else {
+      console.error('Failed to fetch orders:', response.data.message);
       setOrderHistory([]);
-    } finally {
-      setOrderLoading(false);
     }
-  };
+  } catch (error) {
+    console.error('Error fetching order history:', error);
+    setOrderHistory([]);
+  } finally {
+    setOrderLoading(false);
+  }
+};
+
 
   // 🚫 ฟังก์ชันยกเลิกการสั่งซื้อ (ย้ายมาจาก UserProfileModal)
   const handleCancelOrder = async (orderId, orderNumber) => {
@@ -977,41 +1220,62 @@ const handleNewProfileInputChange = (e) => {
                       </button>
                     )}
                     {/* 💰 ปุ่มขอคืนเงิน - เพิ่มหลังปุ่ม Cancel Order */}
-                    {canRequestRefund(order) && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRefundRequest(order);
-                        }}
-                        style={{
-                          marginTop: '8px',
-                          padding: '6px 12px',
-                          background: 'linear-gradient(135deg, #ff6b35, #f7931e)',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '6px',
-                          fontSize: '0.8rem',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          minWidth: '90px',
-                          justifyContent: 'center',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.background = 'linear-gradient(135deg, #f7931e, #ea580c)';
-                          e.target.style.transform = 'translateY(-1px)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.background = 'linear-gradient(135deg, #ff6b35, #f7931e)';
-                          e.target.style.transform = 'translateY(0)';
-                        }}
-                      >
-                        💰 ขอคืนเงิน
-                      </button>
-                    )}
+                     {(() => {
+  // ✅ Force debug log
+  console.log(`🎯 Rendering decision for ${order.orderNumber}:`, {
+    refundRequest: order.refundRequest,
+    refundRequestExists: !!order.refundRequest && 
+                        order.refundRequest !== null && 
+                        typeof order.refundRequest === 'object' && 
+                        Object.keys(order.refundRequest).length > 0,
+    canRequest: canRequestRefund(order)
+  });
+
+  // ✅ Check if has REAL refund request (not empty object)
+  const hasRealRefundRequest = order.refundRequest && 
+                              order.refundRequest !== null && 
+                              typeof order.refundRequest === 'object' && 
+                              (order.refundRequest.id || order.refundRequest.status || order.refundRequest.requestedBy);
+
+  if (hasRealRefundRequest) {
+    console.log(`📋 Showing refund request status for ${order.orderNumber}`);
+    return getRefundRequestStatus(order);
+  }
+  
+  if (canRequestRefund(order)) {
+    console.log(`💰 Showing refund button for ${order.orderNumber}`);
+    return (
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          handleRefundRequest(order);
+        }}
+        style={{
+          marginTop: '8px',
+          padding: '6px 12px',
+          background: 'linear-gradient(135deg, #ff6b35, #f7931e)',
+          color: 'white',
+          border: 'none',
+          borderRadius: '6px',
+          fontSize: '0.8rem',
+          fontWeight: '600',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
+          minWidth: '90px',
+          justifyContent: 'center',
+          transition: 'all 0.2s ease'
+        }}
+      >
+        💰 ขอคืนเงิน
+      </button>
+    );
+  }
+  
+  console.log(`🚫 No refund action for ${order.orderNumber}`);
+  return null;
+})()}
 
                     {/* แสดงสถานะ Refund Request */}
                     {order.refundRequest && (

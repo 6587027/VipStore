@@ -194,7 +194,7 @@ router.post('/', async (req, res) => {
 router.get('/my-orders', async (req, res) => {
   try {
     const { userId } = req.query;
-
+    
     if (!userId) {
       return res.status(400).json({
         success: false,
@@ -206,14 +206,55 @@ router.get('/my-orders', async (req, res) => {
       .populate('items.productId')
       .sort({ orderDate: -1 });
 
+    // ✅ DEBUG: Log each order's refund status
+    console.log(`📦 Found ${orders.length} orders for user ${userId}`);
+    
+    // ✅ CRITICAL FIX: Clean up refundRequest data
+    const cleanedOrders = orders.map(order => {
+      const orderObj = order.toObject();
+      
+      // ✅ Force refundRequest to be null if it's an empty object
+      if (orderObj.refundRequest && typeof orderObj.refundRequest === 'object') {
+        // Check if refundRequest has any meaningful data
+        const hasRefundData = orderObj.refundRequest.id || 
+                             orderObj.refundRequest.status || 
+                             orderObj.refundRequest.requestedBy;
+        
+        if (!hasRefundData) {
+          orderObj.refundRequest = null;
+        }
+      }
+      
+      // ✅ Same for refundInfo
+      if (orderObj.refundInfo && typeof orderObj.refundInfo === 'object') {
+        const hasRefundInfo = orderObj.refundInfo.amount || 
+                             orderObj.refundInfo.transactionId;
+        
+        if (!hasRefundInfo) {
+          orderObj.refundInfo = null;
+        }
+      }
+      
+      // ✅ Debug log for each order
+      console.log(`📋 Order ${orderObj.orderNumber}:`, {
+        paymentStatus: orderObj.paymentStatus,
+        status: orderObj.status,
+        hasRefundRequest: !!orderObj.refundRequest,
+        refundRequestStatus: orderObj.refundRequest?.status || 'none',
+        hasRefundInfo: !!orderObj.refundInfo
+      });
+      
+      return orderObj;
+    });
+
     res.json({
       success: true,
-      orders,
-      total: orders.length
+      orders: cleanedOrders,
+      total: cleanedOrders.length
     });
 
   } catch (error) {
-    console.error('Get user orders error:', error);
+    console.error('❌ Get user orders error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to fetch orders'
@@ -878,13 +919,17 @@ router.get('/admin/:id/refund-info', async (req, res) => {
 
 // ✅ เพิ่มส่วนนี้ใน backend/routes/orders.js หลัง refund APIs ที่มีอยู่แล้ว
 
-// 🆕 POST /api/orders/:orderId/request-refund - Customer request refund
+// ✅ แก้ไข backend/routes/orders.js - POST /:orderId/request-refund
 router.post('/:orderId/request-refund', async (req, res) => {
   try {
     const { orderId } = req.params;
     const { userId, reason, requestedAmount } = req.body;
 
-    console.log('💸 Customer requesting refund for order:', orderId);
+    console.log('💸 Customer requesting refund for order:', orderId, {
+      userId,
+      reason,
+      requestedAmount
+    });
 
     // Find the order
     const order = await Order.findById(orderId).populate('items.productId');
@@ -894,6 +939,12 @@ router.post('/:orderId/request-refund', async (req, res) => {
         message: 'ไม่พบออเดอร์'
       });
     }
+
+    console.log('📋 Found order:', order.orderNumber, {
+      paymentStatus: order.paymentStatus,
+      status: order.status,
+      hasRefundRequest: !!order.refundRequest
+    });
 
     // Validate customer owns this order
     if (order.userId && order.userId.toString() !== userId) {
@@ -918,8 +969,9 @@ router.post('/:orderId/request-refund', async (req, res) => {
       });
     }
 
-    // Check if already has pending request
-    if (order.refundRequest) {
+    // ✅ FIXED: Check for existing refund request properly
+    if (order.refundRequest && order.refundRequest !== null) {
+      console.log('❌ Existing refund request found:', order.refundRequest);
       return res.status(400).json({
         success: false,
         message: 'มีคำขอคืนเงินอยู่แล้ว รอการพิจารณาจาก Admin'
@@ -937,8 +989,11 @@ router.post('/:orderId/request-refund', async (req, res) => {
       });
     }
 
-    // Create refund request
+    // ✅ FIXED: Create refund request object properly
+    const refundRequestId = `REF-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+    
     const refundRequestData = {
+      id: refundRequestId,
       requestedBy: userId,
       reason: reason || 'ลูกค้าขอคืนเงิน',
       requestedAmount: finalRequestedAmount,
@@ -953,21 +1008,32 @@ router.post('/:orderId/request-refund', async (req, res) => {
       }
     };
 
-    // Update order with refund request
+    console.log('📝 Creating refund request:', refundRequestData);
+
+    // ✅ FIXED: Update order with proper MongoDB syntax
     const updatedOrder = await Order.findByIdAndUpdate(
       orderId,
       { 
-        $set: { 
-          refundRequest: refundRequestData,
-          'refundRequest.id': `REF-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`
-        }
+        refundRequest: refundRequestData // ✅ ตั้งค่าทั้ง object เลย ไม่ใช่ $set nested
       },
-      { new: true, runValidators: false, strict: false }
+      { 
+        new: true, 
+        runValidators: false, 
+        strict: false 
+      }
     ).populate('items.productId');
 
-    console.log(`✅ Refund request created for order ${order.orderNumber}`);
+    if (!updatedOrder) {
+      throw new Error('ไม่สามารถอัพเดตออเดอร์ได้');
+    }
 
-    res.json({
+    console.log(`✅ Refund request created for order ${order.orderNumber}:`, {
+      requestId: refundRequestId,
+      amount: finalRequestedAmount,
+      status: 'pending'
+    });
+
+    res.status(201).json({
       success: true,
       message: 'ส่งคำขอคืนเงินเรียบร้อย รอการพิจารณาจาก Admin',
       order: updatedOrder,
@@ -975,11 +1041,23 @@ router.post('/:orderId/request-refund', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Customer refund request error:', error);
+    console.error('❌ Customer refund request error:', error);
+    
+    // ✅ Enhanced error handling
+    let errorMessage = 'เกิดข้อผิดพลาดในการส่งคำขอคืนเงิน';
+    
+    if (error.message.includes('conflict')) {
+      errorMessage = 'เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง';
+    } else if (error.message.includes('validation')) {
+      errorMessage = 'ข้อมูลไม่ถูกต้อง กรุณาตรวจสอบและลองใหม่';
+    } else if (error.name === 'CastError') {
+      errorMessage = 'รหัสออเดอร์ไม่ถูกต้อง';
+    }
+
     res.status(500).json({
       success: false,
-      message: 'เกิดข้อผิดพลาดในการส่งคำขอคืนเงิน',
-      error: error.message
+      message: errorMessage,
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });

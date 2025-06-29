@@ -1,4 +1,4 @@
-// backend/models/Order.js - FIXED COMPLETE VERSION
+// backend/models/Order.js - COMPLETE FIXED VERSION
 
 const mongoose = require('mongoose');
 
@@ -67,19 +67,57 @@ const orderSchema = new mongoose.Schema({
     default: 'pending'
   },
 
-  // ✅ FIXED: Payment Info - เอาออกจาก schema เพื่อหลีกเลี่ยง validation error
-  // จะเพิ่มทีหลังผ่าน $set operation เมื่อชำระเงินจริง
-  
   // Dates
   orderDate: { type: Date, default: Date.now },
   deliveryDate: { type: Date, default: null },
   
   // Optional Fields
   notes: { type: String, default: '' },
-  trackingNumber: { type: String, default: '' }
+  trackingNumber: { type: String, default: '' },
+
+  // ✅ FIXED: Refund Request (Customer initiated)
+  refundRequest: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null, // ✅ CRITICAL: Default เป็น null ไม่ใช่ empty object
+    validate: {
+      validator: function(value) {
+        // ✅ Allow null or valid refund request object
+        if (value === null || value === undefined) return true;
+        
+        // ✅ If not null, must be valid object with required fields
+        if (typeof value === 'object' && value.id && value.status) {
+          return true;
+        }
+        
+        return false;
+      },
+      message: 'refundRequest must be null or a valid refund request object'
+    }
+  },
+
+  // ✅ FIXED: Refund Info (Admin processed refunds)
+  refundInfo: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null, // ✅ CRITICAL: Default เป็น null ไม่ใช่ empty object
+    validate: {
+      validator: function(value) {
+        // ✅ Allow null or valid refund info object
+        if (value === null || value === undefined) return true;
+        
+        // ✅ If not null, must be valid object with required fields
+        if (typeof value === 'object' && value.amount && value.transactionId) {
+          return true;
+        }
+        
+        return false;
+      },
+      message: 'refundInfo must be null or a valid refund info object'
+    }
+  }
+
 }, {
   timestamps: true,
-  strict: false // ✅ เพิ่ม strict: false เพื่อให้เพิ่ม paymentInfo ได้ทีหลัง
+  strict: false // ✅ Allow dynamic fields like paymentInfo
 });
 
 // ✅ แก้ไข orderNumber generation
@@ -113,13 +151,137 @@ orderSchema.pre('save', async function(next) {
     this.userId = this.userId.toString();
   }
   
+  // ✅ CRITICAL: Clean up refundRequest and refundInfo before save
+  if (this.refundRequest && typeof this.refundRequest === 'object') {
+    // ✅ ถ้าเป็น empty object ให้เปลี่ยนเป็น null
+    const hasRefundData = this.refundRequest.id || 
+                         this.refundRequest.status || 
+                         this.refundRequest.requestedBy;
+    
+    if (!hasRefundData) {
+      this.refundRequest = null;
+    }
+  }
+  
+  if (this.refundInfo && typeof this.refundInfo === 'object') {
+    // ✅ ถ้าเป็น empty object ให้เปลี่ยนเป็น null
+    const hasRefundInfo = this.refundInfo.amount || 
+                         this.refundInfo.transactionId;
+    
+    if (!hasRefundInfo) {
+      this.refundInfo = null;
+    }
+  }
+  
   next();
 });
+
+// ✅ Static method สำหรับสร้าง refund request
+orderSchema.statics.createRefundRequest = function(orderId, refundData) {
+  const refundRequestId = `REF-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+  
+  const refundRequest = {
+    id: refundRequestId,
+    requestedBy: refundData.userId,
+    reason: refundData.reason || 'ลูกค้าขอคืนเงิน',
+    requestedAmount: refundData.requestedAmount,
+    maxRefundAmount: refundData.maxRefundAmount,
+    status: 'pending',
+    requestedAt: new Date(),
+    customerInfo: {
+      email: refundData.customerInfo.email,
+      firstName: refundData.customerInfo.firstName,
+      lastName: refundData.customerInfo.lastName,
+      phone: refundData.customerInfo.phone
+    }
+  };
+  
+  return this.findByIdAndUpdate(
+    orderId,
+    { $set: { refundRequest } },
+    { new: true, runValidators: false, strict: false }
+  );
+};
+
+// ✅ Static method สำหรับ process refund
+orderSchema.statics.processRefund = function(orderId, refundData) {
+  const refundTransactionId = `REFUND-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  
+  const refundInfo = {
+    amount: refundData.amount,
+    reason: refundData.reason || 'Admin processed refund',
+    method: refundData.method || 'original_payment_method',
+    processedAt: new Date(),
+    transactionId: refundTransactionId,
+    processedBy: refundData.processedBy || 'admin',
+    originalRequestId: refundData.originalRequestId
+  };
+  
+  const updateData = {
+    status: 'cancelled',
+    paymentStatus: 'refunded',
+    refundInfo
+  };
+  
+  // ✅ Update refund request status if exists
+  if (refundData.originalRequestId) {
+    updateData['refundRequest.status'] = 'approved';
+    updateData['refundRequest.processedAt'] = new Date();
+    updateData['refundRequest.processedBy'] = refundData.processedBy || 'admin';
+    updateData['refundRequest.approvedAmount'] = refundData.amount;
+    updateData['refundRequest.adminNotes'] = refundData.adminNotes;
+  }
+  
+  return this.findByIdAndUpdate(
+    orderId,
+    { $set: updateData },
+    { new: true, runValidators: false, strict: false }
+  );
+};
+
+// ✅ Instance method เพื่อตรวจสอบสิทธิ์ขอคืนเงิน
+orderSchema.methods.canRequestRefund = function() {
+  return (
+    this.paymentStatus === 'paid' &&
+    this.status !== 'cancelled' &&
+    this.paymentStatus !== 'refunded' &&
+    !this.refundRequest &&
+    !this.refundInfo
+  );
+};
+
+// ✅ Instance method เพื่อดูสถานะคืนเงิน
+orderSchema.methods.getRefundStatus = function() {
+  if (this.refundInfo) {
+    return {
+      type: 'processed',
+      status: 'completed',
+      amount: this.refundInfo.amount,
+      transactionId: this.refundInfo.transactionId,
+      processedAt: this.refundInfo.processedAt
+    };
+  }
+  
+  if (this.refundRequest) {
+    return {
+      type: 'request',
+      status: this.refundRequest.status,
+      requestedAmount: this.refundRequest.requestedAmount,
+      reason: this.refundRequest.reason,
+      requestedAt: this.refundRequest.requestedAt
+    };
+  }
+  
+  return null;
+};
 
 // Indexes for better performance
 orderSchema.index({ orderNumber: 1 });
 orderSchema.index({ userId: 1 });
 orderSchema.index({ status: 1 });
+orderSchema.index({ paymentStatus: 1 });
 orderSchema.index({ orderDate: -1 });
+orderSchema.index({ 'refundRequest.status': 1 });
+orderSchema.index({ 'refundRequest.requestedAt': -1 });
 
 module.exports = mongoose.model('Order', orderSchema);
