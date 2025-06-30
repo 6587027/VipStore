@@ -1,4 +1,5 @@
 // frontend/src/components/admin/ProductManager.jsx
+
 import React, { useState } from 'react';
 import { productsAPI } from '../../services/api';
 import AddProductForm from './AddProductForm';

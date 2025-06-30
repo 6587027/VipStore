@@ -1221,61 +1221,61 @@ const handleNewProfileInputChange = (e) => {
                     )}
                     {/* 💰 ปุ่มขอคืนเงิน - เพิ่มหลังปุ่ม Cancel Order */}
                      {(() => {
-  // ✅ Force debug log
-  console.log(`🎯 Rendering decision for ${order.orderNumber}:`, {
-    refundRequest: order.refundRequest,
-    refundRequestExists: !!order.refundRequest && 
-                        order.refundRequest !== null && 
-                        typeof order.refundRequest === 'object' && 
-                        Object.keys(order.refundRequest).length > 0,
-    canRequest: canRequestRefund(order)
-  });
+                            // ✅ Force debug log
+                            console.log(`🎯 Rendering decision for ${order.orderNumber}:`, {
+                              refundRequest: order.refundRequest,
+                              refundRequestExists: !!order.refundRequest && 
+                                                  order.refundRequest !== null && 
+                                                  typeof order.refundRequest === 'object' && 
+                                                  Object.keys(order.refundRequest).length > 0,
+                              canRequest: canRequestRefund(order)
+                            });
 
-  // ✅ Check if has REAL refund request (not empty object)
-  const hasRealRefundRequest = order.refundRequest && 
-                              order.refundRequest !== null && 
-                              typeof order.refundRequest === 'object' && 
-                              (order.refundRequest.id || order.refundRequest.status || order.refundRequest.requestedBy);
+                            // ✅ Check if has REAL refund request (not empty object)
+                            const hasRealRefundRequest = order.refundRequest && 
+                                                        order.refundRequest !== null && 
+                                                        typeof order.refundRequest === 'object' && 
+                                                        (order.refundRequest.id || order.refundRequest.status || order.refundRequest.requestedBy);
 
-  if (hasRealRefundRequest) {
-    console.log(`📋 Showing refund request status for ${order.orderNumber}`);
-    return getRefundRequestStatus(order);
-  }
-  
-  if (canRequestRefund(order)) {
-    console.log(`💰 Showing refund button for ${order.orderNumber}`);
-    return (
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          handleRefundRequest(order);
-        }}
-        style={{
-          marginTop: '8px',
-          padding: '6px 12px',
-          background: 'linear-gradient(135deg, #ff6b35, #f7931e)',
-          color: 'white',
-          border: 'none',
-          borderRadius: '6px',
-          fontSize: '0.8rem',
-          fontWeight: '600',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-          minWidth: '90px',
-          justifyContent: 'center',
-          transition: 'all 0.2s ease'
-        }}
-      >
-        💰 ขอคืนเงิน
-      </button>
-    );
-  }
-  
-  console.log(`🚫 No refund action for ${order.orderNumber}`);
-  return null;
-})()}
+                            if (hasRealRefundRequest) {
+                              console.log(`📋 Showing refund request status for ${order.orderNumber}`);
+                              return getRefundRequestStatus(order);
+                            }
+                            
+                            if (canRequestRefund(order)) {
+                              console.log(`💰 Showing refund button for ${order.orderNumber}`);
+                              return (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRefundRequest(order);
+                                  }}
+                                  style={{
+                                    marginTop: '8px',
+                                    padding: '6px 12px',
+                                    background: 'linear-gradient(135deg, #ff6b35, #f7931e)',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    fontSize: '0.8rem',
+                                    fontWeight: '600',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    minWidth: '90px',
+                                    justifyContent: 'center',
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                >
+                                  💰 ขอคืนเงิน
+                                </button>
+                              );
+                            }
+                            
+                            console.log(`🚫 No refund action for ${order.orderNumber}`);
+                            return null;
+                          })()}
 
                     {/* แสดงสถานะ Refund Request */}
                     {order.refundRequest && (
@@ -3533,7 +3533,7 @@ case 'addresses':
       </div>
     </div>
   </div>
-)}
+    )}
 
         {/* Manage Profiles Modal */}
         {showManageProfiles && (
@@ -3601,7 +3601,7 @@ case 'addresses':
                 <div style={{
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '16px'
+                  gap: '16px',
                 }}>
                   {addressProfiles.map(profile => (
                     <div 
@@ -3925,7 +3925,7 @@ case 'addresses':
           </div>
         );
         // 🔧 2. เพิ่ม Payment Methods Case ใน renderContent() function
-// เพิ่มใน switch statement ก่อน case 'menu':
+        // เพิ่มใน switch statement ก่อน case 'menu':
 
 case 'payment':
   return (

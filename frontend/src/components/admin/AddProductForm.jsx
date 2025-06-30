@@ -1,6 +1,7 @@
-// frontend/src/components/admin/AddProductForm.jsx
+// frontend/src/components/admin/AddProductForm.jsx - Updated with SimpleShareLinkUpload
 import React, { useState } from 'react';
 import { productsAPI } from '../../services/api';
+import SimpleShareLinkUpload from './SimpleShareLinkUpload';
 
 const AddProductForm = ({ onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -41,6 +42,22 @@ const AddProductForm = ({ onClose, onSuccess }) => {
     }
   };
 
+  // Handle image selection from SimpleShareLinkUpload component
+  const handleImageSelect = (imageUrl) => {
+    setFormData(prev => ({
+      ...prev,
+      image: imageUrl
+    }));
+    
+    // Clear image error
+    if (errors.image) {
+      setErrors(prev => ({
+        ...prev,
+        image: ''
+      }));
+    }
+  };
+
   // Validate form
   const validateForm = () => {
     const newErrors = {};
@@ -58,7 +75,7 @@ const AddProductForm = ({ onClose, onSuccess }) => {
     }
 
     if (!formData.image.trim()) {
-      newErrors.image = 'Image URL is required';
+      newErrors.image = 'Product image is required';
     }
 
     if (!formData.category) {
@@ -91,11 +108,11 @@ const AddProductForm = ({ onClose, onSuccess }) => {
       };
 
       await productsAPI.create(productData);
-      alert('Product added successfully!');
+      alert('✅ Product added successfully!');
       onSuccess();
     } catch (error) {
       console.error('Error adding product:', error);
-      alert('Error adding product. Please try again.');
+      alert('❌ Error adding product. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -120,7 +137,7 @@ const AddProductForm = ({ onClose, onSuccess }) => {
         <form onSubmit={handleSubmit} className="add-product-form">
           {/* Product Name */}
           <div className="form-group">
-            <label htmlFor="name">Product Name *</label>
+            <label htmlFor="name">📝 Product Name *</label>
             <input
               type="text"
               id="name"
@@ -136,7 +153,7 @@ const AddProductForm = ({ onClose, onSuccess }) => {
 
           {/* Description */}
           <div className="form-group">
-            <label htmlFor="description">Description *</label>
+            <label htmlFor="description">📄 Description *</label>
             <textarea
               id="description"
               name="description"
@@ -153,7 +170,7 @@ const AddProductForm = ({ onClose, onSuccess }) => {
           {/* Price and Stock Row */}
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="price">Price (THB) *</label>
+              <label htmlFor="price">💰 Price (THB) *</label>
               <input
                 type="number"
                 id="price"
@@ -170,7 +187,7 @@ const AddProductForm = ({ onClose, onSuccess }) => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="stock">Stock Quantity *</label>
+              <label htmlFor="stock">📦 Stock Quantity *</label>
               <input
                 type="number"
                 id="stock"
@@ -188,7 +205,7 @@ const AddProductForm = ({ onClose, onSuccess }) => {
 
           {/* Category */}
           <div className="form-group">
-            <label htmlFor="category">Category *</label>
+            <label htmlFor="category">🏷️ Category *</label>
             <select
               id="category"
               name="category"
@@ -207,46 +224,45 @@ const AddProductForm = ({ onClose, onSuccess }) => {
             {errors.category && <span className="error-message">{errors.category}</span>}
           </div>
 
-          {/* Image URL */}
+          {/* ShareLink Upload Section */}
           <div className="form-group">
-            <label htmlFor="image">Image URL *</label>
-            <input
-              type="url"
-              id="image"
-              name="image"
-              value={formData.image}
-              onChange={handleChange}
-              placeholder="https://example.com/image.jpg"
-              className={errors.image ? 'error' : ''}
-              disabled={loading}
+            <label>🖼️ Product Image * </label>
+            <SimpleShareLinkUpload
+              onImageSelect={handleImageSelect}
+              currentImage={formData.image}
             />
             {errors.image && <span className="error-message">{errors.image}</span>}
-            
-            {/* Image Preview */}
-            {formData.image && !errors.image && (
-              <div className="image-preview">
-                <img 
-                  src={formData.image} 
-                  alt="Preview"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    setErrors(prev => ({
-                      ...prev,
-                      image: 'Invalid image URL'
-                    }));
-                  }}
-                  onLoad={(e) => {
-                    e.target.style.display = 'block';
-                    if (errors.image === 'Invalid image URL') {
-                      setErrors(prev => ({
-                        ...prev,
-                        image: ''
-                      }));
-                    }
-                  }}
-                />
+          </div>
+
+          {/* New Product Info */}
+          <div className="new-product-info">
+            <h4>📋 New Product Summary</h4>
+            <div className="info-grid">
+              <div className="info-item">
+                <span className="info-label">Product Name:</span>
+                <span className="info-value">{formData.name || 'Not set'}</span>
               </div>
-            )}
+              <div className="info-item">
+                <span className="info-label">Category:</span>
+                <span className="info-value">{formData.category || 'Not selected'}</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Price:</span>
+                <span className="info-value">
+                  {formData.price ? `฿${parseFloat(formData.price).toLocaleString()}` : 'Not set'}
+                </span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Stock:</span>
+                <span className="info-value">{formData.stock || '0'} units</span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Image:</span>
+                <span className="info-value">
+                  {formData.image ? '✅ Ready' : '❌ Not uploaded'}
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Form Actions */}
@@ -257,14 +273,14 @@ const AddProductForm = ({ onClose, onSuccess }) => {
               onClick={onClose}
               disabled={loading}
             >
-              Cancel
+              ❌ Cancel
             </button>
             <button
               type="submit"
               className="btn-primary"
               disabled={loading}
             >
-              {loading ? '⏳ Adding...' : '✅ Add Product'}
+              {loading ? '⏳ Adding Product...' : '✅ Add Product'}
             </button>
           </div>
         </form>

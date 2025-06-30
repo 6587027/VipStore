@@ -1,6 +1,7 @@
-// frontend/src/components/admin/EditProductModal.jsx
+// frontend/src/components/admin/EditProductModal.jsx - ShareLink Version
 import React, { useState, useEffect } from 'react';
 import { productsAPI } from '../../services/api';
+import SimpleShareLinkUpload from './SimpleShareLinkUpload';
 
 const EditProductModal = ({ product, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -55,6 +56,22 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
     }
   };
 
+  // Handle image selection from ShareLinkUpload component
+  const handleImageSelect = (imageUrl) => {
+    setFormData(prev => ({
+      ...prev,
+      image: imageUrl
+    }));
+    
+    // Clear image error
+    if (errors.image) {
+      setErrors(prev => ({
+        ...prev,
+        image: ''
+      }));
+    }
+  };
+
   // Validate form
   const validateForm = () => {
     const newErrors = {};
@@ -72,7 +89,7 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
     }
 
     if (!formData.image.trim()) {
-      newErrors.image = 'Image URL is required';
+      newErrors.image = 'Product image is required';
     }
 
     if (!formData.category) {
@@ -105,11 +122,11 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
       };
 
       await productsAPI.update(product._id, productData);
-      alert('Product updated successfully!');
+      alert('✅ Product updated successfully!');
       onSuccess();
     } catch (error) {
       console.error('Error updating product:', error);
-      alert('Error updating product. Please try again.');
+      alert('❌ Error updating product. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -119,7 +136,7 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content edit-product-modal">
+      <div className="modal-content edit-product-modal sharelink-version">
         {/* Modal Header */}
         <div className="modal-header">
           <h2>✏️ Edit Product</h2>
@@ -136,7 +153,7 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
         <form onSubmit={handleSubmit} className="edit-product-form">
           {/* Product Name */}
           <div className="form-group">
-            <label htmlFor="edit-name">Product Name *</label>
+            <label htmlFor="edit-name">📝 Product Name *</label>
             <input
               type="text"
               id="edit-name"
@@ -152,7 +169,7 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
 
           {/* Description */}
           <div className="form-group">
-            <label htmlFor="edit-description">Description *</label>
+            <label htmlFor="edit-description">📄 Description *</label>
             <textarea
               id="edit-description"
               name="description"
@@ -169,7 +186,7 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
           {/* Price and Stock Row */}
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="edit-price">Price (THB) *</label>
+              <label htmlFor="edit-price">💰 Price (THB) *</label>
               <input
                 type="number"
                 id="edit-price"
@@ -186,7 +203,7 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="edit-stock">Stock Quantity *</label>
+              <label htmlFor="edit-stock">📦 Stock Quantity *</label>
               <input
                 type="number"
                 id="edit-stock"
@@ -204,7 +221,7 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
 
           {/* Category */}
           <div className="form-group">
-            <label htmlFor="edit-category">Category *</label>
+            <label htmlFor="edit-category">🏷️ Category *</label>
             <select
               id="edit-category"
               name="category"
@@ -223,46 +240,14 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
             {errors.category && <span className="error-message">{errors.category}</span>}
           </div>
 
-          {/* Image URL */}
+          {/* Simple ShareLink Upload Section */}
           <div className="form-group">
-            <label htmlFor="edit-image">Image URL *</label>
-            <input
-              type="url"
-              id="edit-image"
-              name="image"
-              value={formData.image}
-              onChange={handleChange}
-              placeholder="https://example.com/image.jpg"
-              className={errors.image ? 'error' : ''}
-              disabled={loading}
+            <label>🖼️ Product Image *</label>
+            <SimpleShareLinkUpload
+              onImageSelect={handleImageSelect}
+              currentImage={formData.image}
             />
             {errors.image && <span className="error-message">{errors.image}</span>}
-            
-            {/* Image Preview */}
-            {formData.image && !errors.image && (
-              <div className="image-preview">
-                <img 
-                  src={formData.image} 
-                  alt="Preview"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    setErrors(prev => ({
-                      ...prev,
-                      image: 'Invalid image URL'
-                    }));
-                  }}
-                  onLoad={(e) => {
-                    e.target.style.display = 'block';
-                    if (errors.image === 'Invalid image URL') {
-                      setErrors(prev => ({
-                        ...prev,
-                        image: ''
-                      }));
-                    }
-                  }}
-                />
-              </div>
-            )}
           </div>
 
           {/* Current vs Updated Info */}
@@ -276,14 +261,18 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
               <div className="info-item">
                 <span className="info-label">Created:</span>
                 <span className="info-value">
-                  {new Date(product.createdAt).toLocaleDateString()}
+                  {new Date(product.createdAt).toLocaleDateString('th-TH')}
                 </span>
               </div>
               <div className="info-item">
                 <span className="info-label">Last Updated:</span>
                 <span className="info-value">
-                  {new Date(product.updatedAt).toLocaleDateString()}
+                  {new Date(product.updatedAt).toLocaleDateString('th-TH')}
                 </span>
+              </div>
+              <div className="info-item">
+                <span className="info-label">Image Storage:</span>
+                <span className="info-value">☁️ Cloud Storage</span>
               </div>
             </div>
           </div>
@@ -296,7 +285,7 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
               onClick={onClose}
               disabled={loading}
             >
-              Cancel
+              ❌ Cancel
             </button>
             <button
               type="submit"
