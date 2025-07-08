@@ -3,6 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { authAPI, ordersAPI } from '../../services/api';
 import PaymentModal from '../payment/PaymentModal'; 
+import { socketManager, chatSocket, socketUtils } from '../../services/socketClient';
+
+
 // ✅ Use Environment Variable or Fallback to Production URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com/api';
 
@@ -23,6 +26,16 @@ const CustomerSettings = ({ isOpen, onClose }) => {
   const [refundReason, setRefundReason] = useState('');
   const [refundAmount, setRefundAmount] = useState('');
   const [isSubmittingRefund, setIsSubmittingRefund] = useState(false);
+
+  // 🚀 2. เพิ่ม states สำหรับ Chat (ในส่วน useState declarations)
+const [chatConnected, setChatConnected] = useState(false);
+const [chatMessages, setChatMessages] = useState([]);
+const [chatMessage, setChatMessage] = useState('');
+const [isTyping, setIsTyping] = useState(false);
+const [adminTyping, setAdminTyping] = useState(false);
+const [chatRoomId, setChatRoomId] = useState(null);
+const [connectionStatus, setConnectionStatus] = useState('disconnected'); // disconnected, connecting, connected
+
 
   const [paymentMethods, setPaymentMethods] = useState([
   {
@@ -47,6 +60,185 @@ const CustomerSettings = ({ isOpen, onClose }) => {
 ]);
 const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
 const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('credit_card');
+
+// 🚀 3. เพิ่ม Chat functions
+const connectToChat = async () => {
+  if (!user) {
+    setError('กรุณาเข้าสู่ระบบก่อนใช้งานแชท');
+    return;
+  }
+
+  try {
+    setConnectionStatus('connecting');
+    
+    // ✅ เตรียมข้อมูล user ที่ครบถ้วน
+    const userData = {
+      userId: user._id || user.id,
+      userType: 'customer',
+      userName: user.firstName || user.username || 'Customer',
+      userEmail: user.email || 'customer@example.com',
+      // 🆕 เพิ่มข้อมูลที่ Backend ต้องการ
+      firstName: user.firstName || 'Test',
+      lastName: user.lastName || 'Customer',
+      customerName: `${user.firstName || 'Test'} ${user.lastName || 'Customer'}`,
+      customerEmail: user.email || 'customer@example.com'
+    };
+
+    console.log('🔌 Connecting to chat with user data:', userData);
+
+    // Connect to Socket.IO
+    await socketManager.connect(userData);
+
+    // Setup event listeners
+    setupChatEventListeners();
+    
+    // ✅ Join customer chat with complete data
+    chatSocket.joinCustomerChat(userData);
+
+    setChatConnected(true);
+    setConnectionStatus('connected');
+    setSuccess('🟢 เชื่อมต่อแชทสำเร็จ!');
+    
+    setTimeout(() => setSuccess(''), 3000);
+
+  } catch (error) {
+    console.error('❌ Chat connection failed:', error);
+    setError('ไม่สามารถเชื่อมต่อแชทได้ กรุณาลองใหม่อีกครั้ง');
+    setConnectionStatus('disconnected');
+    
+    setTimeout(() => setError(''), 5000);
+  }
+};
+
+const setupChatEventListeners = () => {
+  // 📩 Receive new messages
+  chatSocket.onNewMessage((data) => {
+    console.log('📩 New message received:', data);
+    setChatMessages(prev => [...prev, {
+      id: data.messageId || Date.now(),
+      message: data.message,
+      senderType: data.senderType,
+      senderName: data.senderName,
+      timestamp: new Date(data.timestamp || Date.now()),
+      isRead: data.senderType === 'customer' // Mark own messages as read
+    }]);
+  });
+
+  // ✅ Join success
+  chatSocket.onJoinSuccess((data) => {
+    console.log('✅ Joined chat room:', data);
+    setChatRoomId(data.roomId);
+    
+    // Load message history if available
+    if (data.messages && data.messages.length > 0) {
+      setChatMessages(data.messages.map(msg => ({
+        id: msg._id || msg.messageId,
+        message: msg.message,
+        senderType: msg.senderType,
+        senderName: msg.senderName,
+        timestamp: new Date(msg.timestamp),
+        isRead: true
+      })));
+    }
+  });
+
+  // ❌ Join error
+  chatSocket.onJoinError((error) => {
+    console.error('❌ Chat join error:', error);
+    setError(`ไม่สามารถเข้าห้องแชทได้: ${error.message}`);
+    setConnectionStatus('disconnected');
+  });
+
+  // ⌨️ Typing indicators
+  chatSocket.onUserTyping((data) => {
+    if (data.userType === 'admin') {
+      setAdminTyping(true);
+      // Auto hide typing indicator after 3 seconds
+      setTimeout(() => setAdminTyping(false), 3000);
+    }
+  });
+
+  chatSocket.onUserStopTyping((data) => {
+    if (data.userType === 'admin') {
+      setAdminTyping(false);
+    }
+  });
+
+  // 📧 Message errors
+  chatSocket.onMessageError((error) => {
+    console.error('📧 Message error:', error);
+    setError(`ไม่สามารถส่งข้อความได้: ${error.message}`);
+  });
+};
+
+const sendMessage = () => {
+  if (!chatMessage.trim() || !chatConnected || !chatRoomId) {
+    if (!chatConnected) {
+      setError('กรุณาเชื่อมต่อแชทก่อนส่งข้อความ');
+    }
+    return;
+  }
+
+  console.log('📤 Sending message:', chatMessage);
+
+  // Send via Socket.IO
+  const success = chatSocket.sendMessage(chatRoomId, chatMessage.trim());
+  
+  if (success) {
+    // ❌ ลบส่วนนี้ออก - อย่าเพิ่มข้อความใน local state ทันที
+    /*
+    const newMessage = {
+      id: Date.now(),
+      message: chatMessage.trim(),
+      senderType: 'customer',
+      senderName: user.firstName || user.username,
+      timestamp: new Date(),
+      isRead: true
+    };
+    
+    setChatMessages(prev => [...prev, newMessage]);
+    */
+    
+    // ✅ แค่ clear input และ stop typing
+    setChatMessage('');
+    
+    // Stop typing indicator
+    if (isTyping) {
+      chatSocket.stopTyping(chatRoomId);
+      setIsTyping(false);
+    }
+  } else {
+    setError('ไม่สามารถส่งข้อความได้ กรุณาตรวจสอบการเชื่อมต่อ');
+  }
+};
+
+const handleTyping = (value) => {
+  setChatMessage(value);
+  
+  if (chatConnected && chatRoomId) {
+    if (value.trim() && !isTyping) {
+      chatSocket.startTyping(chatRoomId);
+      setIsTyping(true);
+    } else if (!value.trim() && isTyping) {
+      chatSocket.stopTyping(chatRoomId);
+      setIsTyping(false);
+    }
+  }
+};
+
+const disconnectChat = () => {
+  if (chatConnected) {
+    socketManager.disconnect();
+    setChatConnected(false);
+    setChatMessages([]);
+    setChatRoomId(null);
+    setConnectionStatus('disconnected');
+    setAdminTyping(false);
+    setIsTyping(false);
+    setSuccess('🔴 ตัดการเชื่อมต่อแชทแล้ว');
+    setTimeout(() => setSuccess(''), 3000);
+  }
+};
 
 
 // 🆕 New Profile Form State
@@ -954,6 +1146,14 @@ const handleNewProfileInputChange = (e) => {
     //   description: 'เปลี่ยนรหัสผ่าน, ประวัติการเข้าสู่ระบบ',
     //   badge: null
     // }
+
+    {
+  id: 'chat',
+  icon: '💬',
+  title: 'Chat With Admin',
+  description: 'แชทสอบถามกับทีมสนับสนุน',
+  badge: '🟢 Online'
+  },
   ];
 
   
@@ -4273,8 +4473,418 @@ case 'payment':
       </div>
     </div>
   );
+  case 'chat':
+  return (
+    <div style={{
+      background: 'white',
+      borderRadius: '16px',
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
+      overflow: 'hidden'
+    }}>
+      {/* Header */}
+      <div style={{
+        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+        color: 'white',
+        padding: '24px 30px',
+        textAlign: 'center',
+        position: 'relative'
+      }}>
+        <button
+          onClick={() => setActiveSection('menu')}
+          style={{
+            position: 'absolute',
+            left: '20px',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            background: 'rgba(255,255,255,0.2)',
+            color: 'white',
+            border: '1px solid rgba(255,255,255,0.3)',
+            borderRadius: '8px',
+            padding: '8px 12px',
+            cursor: 'pointer',
+            fontSize: '0.9rem',
+            fontWeight: '600'
+          }}
+        >
+          ← กลับ
+        </button>
+        
+        {/* Real-time Connection Status */}
+        <div style={{
+          position: 'absolute',
+          right: '20px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <div style={{
+            width: '8px',
+            height: '8px',
+            borderRadius: '50%',
+            background: connectionStatus === 'connected' ? '#22c55e' : 
+                       connectionStatus === 'connecting' ? '#f59e0b' : '#ef4444',
+            animation: connectionStatus === 'connecting' ? 'pulse 1s infinite' : 'none'
+          }}></div>
+          <span style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+            {connectionStatus === 'connected' && '🟢 เชื่อมต่อแล้ว'}
+            {connectionStatus === 'connecting' && '🟡 กำลังเชื่อมต่อ...'}
+            {connectionStatus === 'disconnected' && '🔴 ไม่ได้เชื่อมต่อ'}
+          </span>
+        </div>
 
-      
+        <h2 style={{ margin: '0 0 8px', fontSize: '1.8rem', fontWeight: '700' }}>
+          💬 Chat With Admin
+        </h2>
+        <p style={{ margin: 0, opacity: 0.9, fontSize: '1rem' }}>
+          แชทสอบถามกับทีมสนับสนุน 24/7
+        </p>
+      </div>
+
+      {/* Chat Content */}
+      <div style={{ padding: '30px' }}>
+        {/* Connection Control */}
+        <div style={{
+          background: chatConnected 
+            ? 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)'
+            : 'linear-gradient(135deg, #fef3c7 0%, #fde047 100%)',
+          padding: '16px 20px',
+          borderRadius: '12px',
+          border: `1px solid ${chatConnected ? '#10b981' : '#f59e0b'}`,
+          marginBottom: '24px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '12px',
+              height: '12px',
+              borderRadius: '50%',
+              background: chatConnected ? '#10b981' : '#f59e0b',
+              animation: chatConnected ? 'pulse 2s infinite' : 'none'
+            }}></div>
+            <div>
+              <div style={{ 
+                fontWeight: '600', 
+                color: chatConnected ? '#166534' : '#92400e', 
+                marginBottom: '4px' 
+              }}>
+                {chatConnected ? '🟢 เชื่อมต่อแชทแล้ว' : '🟡 พร้อมเชื่อมต่อแชท'}
+              </div>
+              <div style={{ 
+                fontSize: '0.9rem', 
+                color: chatConnected ? '#059669' : '#451a03' 
+              }}>
+                {chatConnected 
+                  ? 'สามารถส่งข้อความถึง Admin ได้แล้ว'
+                  : 'กดปุ่มเชื่อมต่อเพื่อเริ่มแชท'
+                }
+              </div>
+            </div>
+          </div>
+          
+          <button
+            onClick={chatConnected ? disconnectChat : connectToChat}
+            disabled={connectionStatus === 'connecting'}
+            style={{
+              padding: '10px 20px',
+              background: chatConnected 
+                ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: connectionStatus === 'connecting' ? 'not-allowed' : 'pointer',
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              opacity: connectionStatus === 'connecting' ? 0.7 : 1
+            }}
+          >
+            {connectionStatus === 'connecting' && '⏳ กำลังเชื่อมต่อ...'}
+            {connectionStatus === 'connected' && '🔴 ตัดการเชื่อมต่อ'}
+            {connectionStatus === 'disconnected' && '🔌 เชื่อมต่อแชท'}
+          </button>
+        </div>
+
+        {/* Chat Interface */}
+        <div style={{
+          border: '2px solid #e5e7eb',
+          borderRadius: '16px',
+          overflow: 'hidden',
+          minHeight: '500px',
+          display: 'flex',
+          flexDirection: 'column',
+          opacity: chatConnected ? 1 : 0.6
+        }}>
+          {/* Chat Header */}
+          <div style={{
+            background: '#f8fafc',
+            padding: '16px 20px',
+            borderBottom: '1px solid #e5e7eb',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px'
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '1.2rem'
+            }}>
+              👨‍💼
+            </div>
+            <div>
+              <div style={{ fontWeight: '600', color: '#1f2937' }}>
+                VipStore Support Team
+              </div>
+              <div style={{ 
+                fontSize: '0.8rem', 
+                color: chatConnected ? '#10b981' : '#6b7280',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                {chatConnected ? '🟢 Online • พร้อมตอบ' : '🔴 ไม่ได้เชื่อมต่อ'}
+                {adminTyping && ' • กำลังพิมพ์...'}
+              </div>
+            </div>
+          </div>
+
+          {/* Chat Messages Area */}
+          <div style={{
+            flex: 1,
+            padding: '20px',
+            background: '#ffffff',
+            minHeight: '350px',
+            maxHeight: '400px',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px'
+          }}>
+            {/* Welcome Message */}
+            {chatMessages.length === 0 && (
+              <div style={{
+                textAlign: 'center',
+                color: '#6b7280',
+                padding: '40px 20px'
+              }}>
+                <div style={{ fontSize: '3rem', marginBottom: '16px' }}>💬</div>
+                <h3 style={{ margin: '0 0 8px', fontSize: '1.2rem', color: '#374151' }}>
+                  {chatConnected ? 'เริ่มการสนทนา' : 'เชื่อมต่อเพื่อเริ่มแชท'}
+                </h3>
+                <p style={{ margin: '0 0 20px', fontSize: '1rem' }}>
+                  สวัสดี {user?.firstName || user?.username}! <br />
+                  {chatConnected 
+                    ? 'ส่งข้อความเพื่อเริ่มการสนทนากับทีมงาน'
+                    : 'เชื่อมต่อแชทเพื่อสอบถามข้อมูล'
+                  }
+                </p>
+              </div>
+            )}
+
+            {/* Real Messages */}
+            {chatMessages.map((msg) => (
+              <div
+                key={msg.id}
+                style={{
+                  display: 'flex',
+                  justifyContent: msg.senderType === 'customer' ? 'flex-end' : 'flex-start',
+                  alignItems: 'flex-end',
+                  gap: '8px'
+                }}
+              >
+                {msg.senderType === 'admin' && (
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.9rem',
+                    flexShrink: 0
+                  }}>
+                    👨‍💼
+                  </div>
+                )}
+                
+                <div style={{
+                  maxWidth: '70%',
+                  background: msg.senderType === 'customer' 
+                    ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                    : '#f1f5f9',
+                  color: msg.senderType === 'customer' ? 'white' : '#1f2937',
+                  padding: '12px 16px',
+                  borderRadius: msg.senderType === 'customer' 
+                    ? '18px 18px 4px 18px'
+                    : '18px 18px 18px 4px',
+                  wordBreak: 'break-word'
+                }}>
+                  <div style={{ fontSize: '0.95rem', lineHeight: 1.4 }}>
+                    {msg.message}
+                  </div>
+                  <div style={{
+                    fontSize: '0.75rem',
+                    opacity: 0.8,
+                    marginTop: '4px',
+                    textAlign: msg.senderType === 'customer' ? 'right' : 'left'
+                  }}>
+                    {new Date(msg.timestamp).toLocaleTimeString('th-TH', {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                    {msg.senderType === 'customer' && msg.isRead && ' ✓✓'}
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Typing Indicator */}
+            {adminTyping && (
+              <div style={{
+                display: 'flex',
+                justifyContent: 'flex-start',
+                alignItems: 'flex-end',
+                gap: '8px'
+              }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.9rem'
+                }}>
+                  👨‍💼
+                </div>
+                <div style={{
+                  background: '#f1f5f9',
+                  padding: '12px 16px',
+                  borderRadius: '18px 18px 18px 4px',
+                  fontSize: '0.9rem',
+                  color: '#6b7280',
+                  fontStyle: 'italic'
+                }}>
+                  กำลังพิมพ์... <span style={{ animation: 'blink 1s infinite' }}>●</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Chat Input */}
+          <div style={{
+            padding: '16px 20px',
+            borderTop: '1px solid #e5e7eb',
+            background: '#f8fafc'
+          }}>
+            <div style={{
+              display: 'flex',
+              gap: '12px',
+              alignItems: 'center'
+            }}>
+              <input
+                type="text"
+                placeholder={chatConnected ? "พิมพ์ข้อความของคุณ..." : "เชื่อมต่อแชทก่อนส่งข้อความ"}
+                value={chatMessage}
+                onChange={(e) => handleTyping(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+                disabled={!chatConnected}
+                style={{
+                  flex: 1,
+                  padding: '12px 16px',
+                  border: '2px solid #e5e7eb',
+                  borderRadius: '25px',
+                  fontSize: '1rem',
+                  outline: 'none',
+                  transition: 'border-color 0.2s ease',
+                  opacity: chatConnected ? 1 : 0.5
+                }}
+                onFocus={(e) => chatConnected && (e.target.style.borderColor = '#10b981')}
+                onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+              />
+              <button 
+                onClick={sendMessage}
+                disabled={!chatConnected || !chatMessage.trim()}
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  border: 'none',
+                  background: (!chatConnected || !chatMessage.trim()) 
+                    ? '#9ca3af' 
+                    : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: 'white',
+                  fontSize: '1.2rem',
+                  cursor: (!chatConnected || !chatMessage.trim()) ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  if (chatConnected && chatMessage.trim()) {
+                    e.target.style.transform = 'scale(1.05)';
+                    e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.boxShadow = 'none';
+                }}
+              >
+                📤
+              </button>
+            </div>
+            
+            <div style={{
+              marginTop: '8px',
+              fontSize: '0.8rem',
+              color: '#6b7280',
+              textAlign: 'center'
+            }}>
+              💡 กด Enter เพื่อส่งข้อความ • Shift+Enter สำหรับขึ้นบรรทัดใหม่
+              {chatRoomId && (
+                <span style={{ marginLeft: '8px', color: '#10b981' }}>
+                  • ห้อง: {chatRoomId.slice(-8)}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Chat Debug Info */}
+        {chatConnected && (
+          <div style={{
+            marginTop: '16px',
+            padding: '12px',
+            background: '#f0f8ff',
+            borderRadius: '8px',
+            border: '1px solid #3b82f6',
+            fontSize: '0.8rem',
+            color: '#1e40af'
+          }}>
+            🔧 Debug: Socket ID: {socketManager.getSocket()?.id || 'N/A'} | 
+            Room: {chatRoomId || 'N/A'} | 
+            Messages: {chatMessages.length}
+          </div>
+        )}
+      </div>
+    </div>
+  );
       case 'menu':
       default:
         return (

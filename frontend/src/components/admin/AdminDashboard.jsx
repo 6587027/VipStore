@@ -7,6 +7,7 @@ import AdminStats from './AdminStats';
 import UserManager from './UserManager';
 import OrderManager from './OrderManager'; 
 import ReportsManager from './ReportsManager'; 
+import AdminChatTab from "../chat/AdminChatTab";
 
 const AdminDashboard = () => {
   const { user, isAdmin } = useAuth();
@@ -129,13 +130,41 @@ const AdminDashboard = () => {
           >
             👥 Users 
           </button>
-          {/* 🆕 เพิ่มปุ่ม Reports */}
           <button 
             className={`admin-tab ${activeTab === 'reports' ? 'active' : ''}`}
             onClick={() => setActiveTab('reports')}
           >
             📊 Reports 
           </button>
+          {/* 🆕 เพิ่ม Chat Tab */}
+      <button 
+        className={`admin-tab ${activeTab === 'chat' ? 'active' : ''}`}
+        onClick={() => setActiveTab('chat')}
+        style={{ position: 'relative' }}
+      >
+        💬 Live Chat
+        {/* Real-time notification badge */}
+        <span style={{
+          position: 'absolute',
+          top: '-4px',
+          right: '-4px',
+          background: '#ef4444',
+          color: 'white',
+          fontSize: '0.7rem',
+          fontWeight: '600',
+          padding: '2px 6px',
+          borderRadius: '10px',
+          minWidth: '18px',
+          height: '18px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+          animation: 'pulse 2s infinite'
+        }}>
+          🔥
+        </span>
+      </button>
         </div>
 
         {/* Content Area */}
@@ -222,6 +251,9 @@ const AdminDashboard = () => {
           
           {activeTab === 'reports' && (
             <ReportsManager />
+          )}
+          {activeTab === 'chat' && (
+            <AdminChatTab />
           )}
         </div>
       </div>

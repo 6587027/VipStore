@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import { productsAPI } from '../services/api';
+// import ChatButton from './chat/ChatButton';
 
 const ProductList = ({ onProductClick }) => {
   const [products, setProducts] = useState([]);
@@ -19,6 +20,7 @@ const ProductList = ({ onProductClick }) => {
   const [lastReloadTime, setLastReloadTime] = useState(null);
   const [reloadCount, setReloadCount] = useState(0);
   const [autoReloadEnabled, setAutoReloadEnabled] = useState(true);
+
 
   // ✅ Search & Filter States
   const [searchTerm, setSearchTerm] = useState('');

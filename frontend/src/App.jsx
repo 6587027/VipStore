@@ -13,6 +13,7 @@ import CustomerSettings from './components/settings/CustomerSettings'; // ðŸ”¥ à
 import WelcomeAnimation from './components/WelcomeAnimation'; // Welcome Animation
 import { useCart } from './context/CartContext';
 import { useAuth } from './context/AuthContext';
+// import ChatButton from './components/chat/ChatButton';
 
 // Import Admin Panel CSS
 import './styles/AdminPanel.css';
