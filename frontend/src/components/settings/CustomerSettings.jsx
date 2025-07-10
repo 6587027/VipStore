@@ -27,14 +27,20 @@ const CustomerSettings = ({ isOpen, onClose }) => {
   const [refundAmount, setRefundAmount] = useState('');
   const [isSubmittingRefund, setIsSubmittingRefund] = useState(false);
 
-  // 🚀 2. เพิ่ม states สำหรับ Chat (ในส่วน useState declarations)
+// 🆕 เพิ่ม States เหล่านี้ (ใส่ร่วมกับ States เดิม)
 const [chatConnected, setChatConnected] = useState(false);
+const [connectionStatus, setConnectionStatus] = useState('disconnected');
 const [chatMessages, setChatMessages] = useState([]);
 const [chatMessage, setChatMessage] = useState('');
-const [isTyping, setIsTyping] = useState(false);
-const [adminTyping, setAdminTyping] = useState(false);
 const [chatRoomId, setChatRoomId] = useState(null);
-const [connectionStatus, setConnectionStatus] = useState('disconnected'); // disconnected, connecting, connected
+const [adminTyping, setAdminTyping] = useState(false);
+const [unreadCount, setUnreadCount] = useState(0);
+const [lastRefresh, setLastRefresh] = useState(null);
+
+// 🔧 เพิ่ม States สำหรับแก้ Bug
+const [isTyping, setIsTyping] = useState(false); // 🆕 ป้องกัน typing spam
+const [typingTimeout, setTypingTimeout] = useState(null); // 🆕 Timeout control
+const [eventListenersSetup, setEventListenersSetup] = useState(false); // 🆕 ป้องกัน listener ซ้อน
 
 
   const [paymentMethods, setPaymentMethods] = useState([
@@ -61,99 +67,175 @@ const [connectionStatus, setConnectionStatus] = useState('disconnected'); // dis
 const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
 const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('credit_card');
 
-// 🚀 3. เพิ่ม Chat functions
+// 🔌 Connect to Chat - แก้ไข Version
 const connectToChat = async () => {
-  if (!user) {
-    setError('กรุณาเข้าสู่ระบบก่อนใช้งานแชท');
-    return;
-  }
-
   try {
     setConnectionStatus('connecting');
-    
-    // ✅ เตรียมข้อมูล user ที่ครบถ้วน
-    const userData = {
-      userId: user._id || user.id,
-      userType: 'customer',
-      userName: user.firstName || user.username || 'Customer',
-      userEmail: user.email || 'customer@example.com',
-      // 🆕 เพิ่มข้อมูลที่ Backend ต้องการ
-      firstName: user.firstName || 'Test',
-      lastName: user.lastName || 'Customer',
-      customerName: `${user.firstName || 'Test'} ${user.lastName || 'Customer'}`,
-      customerEmail: user.email || 'customer@example.com'
-    };
+    console.log('🔌 Customer connecting to chat...', user);
 
-    console.log('🔌 Connecting to chat with user data:', userData);
+    // ตรวจสอบว่าเชื่อมต่ออยู่แล้วหรือไม่
+    if (socketManager.isConnected() && chatConnected) {
+      console.log('✅ Already connected, skipping...');
+      setConnectionStatus('connected');
+      return;
+    }
+
+    // Disconnect old connection first
+    if (socketManager.isConnected()) {
+      console.log('🔄 Disconnecting old connection...');
+      socketManager.disconnect();
+      setEventListenersSetup(false);
+    }
 
     // Connect to Socket.IO
-    await socketManager.connect(userData);
+    await socketManager.connect({
+      userId: user._id || user.id,
+      userType: 'customer',
+      userName: user.firstName || user.username,
+      userEmail: user.email,
+      role: 'customer'
+    });
 
-    // Setup event listeners
-    setupChatEventListeners();
-    
-    // ✅ Join customer chat with complete data
-    chatSocket.joinCustomerChat(userData);
+    // Setup event listeners only once
+    if (!eventListenersSetup) {
+      setupChatEventListeners();
+      setEventListenersSetup(true);
+    }
+
+    // Join customer chat
+    chatSocket.joinCustomerChat({
+      userId: user._id || user.id,
+      userType: 'customer',
+      userName: user.firstName || user.username,
+      userEmail: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      customerName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username,
+      customerEmail: user.email
+    });
 
     setChatConnected(true);
     setConnectionStatus('connected');
-    setSuccess('🟢 เชื่อมต่อแชทสำเร็จ!');
-    
-    setTimeout(() => setSuccess(''), 3000);
+    console.log('✅ Customer chat connected successfully');
 
   } catch (error) {
-    console.error('❌ Chat connection failed:', error);
-    setError('ไม่สามารถเชื่อมต่อแชทได้ กรุณาลองใหม่อีกครั้ง');
+    console.error('❌ Customer chat connection failed:', error);
     setConnectionStatus('disconnected');
-    
-    setTimeout(() => setError(''), 5000);
+    setChatConnected(false);
   }
 };
 
+// 📴 Disconnect from Chat - แก้ไข Version
+const disconnectChat = () => {
+  console.log('📴 Customer disconnecting from chat...');
+  
+  // Clear typing timeout
+  if (typingTimeout) {
+    clearTimeout(typingTimeout);
+    setTypingTimeout(null);
+  }
+  
+  // Disconnect socket
+  socketManager.disconnect();
+  
+  // Reset all states
+  setChatConnected(false);
+  setConnectionStatus('disconnected');
+  setChatMessages([]);
+  setChatRoomId(null);
+  setUnreadCount(0);
+  setIsTyping(false);
+  setEventListenersSetup(false);
+  
+  console.log('✅ Chat disconnected and states reset');
+};
+
+// 🎧 Setup Event Listeners - แก้ไข Version (ป้องกัน duplicate)
 const setupChatEventListeners = () => {
-  // 📩 Receive new messages
-  chatSocket.onNewMessage((data) => {
-    console.log('📩 New message received:', data);
-    setChatMessages(prev => [...prev, {
-      id: data.messageId || Date.now(),
-      message: data.message,
-      senderType: data.senderType,
-      senderName: data.senderName,
-      timestamp: new Date(data.timestamp || Date.now()),
-      isRead: data.senderType === 'customer' // Mark own messages as read
-    }]);
+  console.log('🎧 Customer setting up chat event listeners...');
+
+  // ตรวจสอบว่าเคยตั้งค่าแล้วหรือไม่
+  if (eventListenersSetup) {
+    console.log('⚠️ Event listeners already setup, skipping...');
+    return;
+  }
+
+  // 📩 New message received - แก้ไข duplication
+  chatSocket.onNewMessage((messageData) => {
+    console.log('📩 Customer received new message:', messageData);
+    
+    // ป้องกัน duplicate messages
+    setChatMessages(prev => {
+      // ตรวจสอบว่ามี message นี้แล้วหรือไม่
+      const existingMessage = prev.find(msg => 
+        msg.id === messageData._id || 
+        (msg.message === messageData.message && 
+         msg.senderType === messageData.senderType &&
+         Math.abs(new Date(msg.timestamp) - new Date(messageData.createdAt || Date.now())) < 1000)
+      );
+      
+      if (existingMessage) {
+        console.log('⚠️ Duplicate message detected, ignoring...');
+        return prev;
+      }
+
+      // เพิ่มข้อความใหม่
+      const newMessage = {
+        id: messageData._id || `${Date.now()}_${Math.random()}`,
+        message: messageData.message,
+        senderType: messageData.senderType,
+        senderName: messageData.senderName,
+        timestamp: new Date(messageData.createdAt || Date.now()),
+        isRead: false
+      };
+
+      return [...prev, newMessage];
+    });
+    
+    // เพิ่ม unread count ถ้าเป็นข้อความจาก admin
+    if (messageData.senderType === 'admin') {
+      setUnreadCount(prev => prev + 1);
+      console.log('🔔 New message from admin, unread count increased');
+    }
   });
 
   // ✅ Join success
   chatSocket.onJoinSuccess((data) => {
-    console.log('✅ Joined chat room:', data);
-    setChatRoomId(data.roomId);
-    
-    // Load message history if available
-    if (data.messages && data.messages.length > 0) {
-      setChatMessages(data.messages.map(msg => ({
-        id: msg._id || msg.messageId,
-        message: msg.message,
-        senderType: msg.senderType,
-        senderName: msg.senderName,
-        timestamp: new Date(msg.timestamp),
-        isRead: true
-      })));
+    console.log('✅ Customer joined successfully:', data);
+    if (data.roomId) {
+      setChatRoomId(data.roomId);
+      console.log('🏠 Customer room ID set:', data.roomId);
     }
   });
 
   // ❌ Join error
-  chatSocket.onJoinError((error) => {
-    console.error('❌ Chat join error:', error);
-    setError(`ไม่สามารถเข้าห้องแชทได้: ${error.message}`);
+  chatSocket.onJoinError((data) => {
+    console.error('❌ Customer join error:', data);
     setConnectionStatus('disconnected');
+    setChatConnected(false);
   });
 
-  // ⌨️ Typing indicators
+  // 📦 Room messages (ประวัติข้อความ)
+  chatSocket.onRoomMessages((data) => {
+    console.log('📦 Customer received room messages:', data);
+    if (data.messages && Array.isArray(data.messages)) {
+      const messages = data.messages.map((msg, index) => ({
+        id: msg._id || `history_${index}_${Date.now()}`,
+        message: msg.message,
+        senderType: msg.senderType,
+        senderName: msg.senderName,
+        timestamp: new Date(msg.createdAt || msg.timestamp),
+        isRead: msg.isRead || false
+      }));
+      setChatMessages(messages);
+    }
+  });
+
+  // ⌨️ Admin typing - แก้ไขการจัดการ
   chatSocket.onUserTyping((data) => {
     if (data.userType === 'admin') {
       setAdminTyping(true);
-      // Auto hide typing indicator after 3 seconds
+      // Auto-clear typing after 3 seconds
       setTimeout(() => setAdminTyping(false), 3000);
     }
   });
@@ -164,81 +246,227 @@ const setupChatEventListeners = () => {
     }
   });
 
-  // 📧 Message errors
-  chatSocket.onMessageError((error) => {
-    console.error('📧 Message error:', error);
-    setError(`ไม่สามารถส่งข้อความได้: ${error.message}`);
-  });
+  console.log('✅ Customer event listeners setup complete');
 };
 
+// 📤 Send Message - แก้ไข Version (ป้องกัน duplication)
 const sendMessage = () => {
   if (!chatMessage.trim() || !chatConnected || !chatRoomId) {
-    if (!chatConnected) {
-      setError('กรุณาเชื่อมต่อแชทก่อนส่งข้อความ');
-    }
+    console.log('⚠️ Cannot send message:', {
+      hasMessage: !!chatMessage.trim(),
+      connected: chatConnected,
+      roomId: chatRoomId
+    });
     return;
   }
 
-  console.log('📤 Sending message:', chatMessage);
+  console.log('📤 Customer sending message:', chatMessage);
 
+  // สร้าง unique message ID
+  const messageId = `customer_${Date.now()}_${Math.random()}`;
+  const messageText = chatMessage.trim();
+
+  // เพิ่มข้อความของตัวเองทันที (Optimistic UI)
+  const myMessage = {
+    id: messageId,
+    message: messageText,
+    senderType: 'customer',
+    senderName: user.firstName || user.username,
+    timestamp: new Date(),
+    isRead: false,
+    sending: true // 🆕 แสดงสถานะกำลังส่ง
+  };
+  
+  setChatMessages(prev => [...prev, myMessage]);
+  setChatMessage(''); // เคลียร์ input ทันที
+  
   // Send via Socket.IO
-  const success = chatSocket.sendMessage(chatRoomId, chatMessage.trim());
+  const success = chatSocket.sendMessage(chatRoomId, messageText);
   
   if (success) {
-    // ❌ ลบส่วนนี้ออก - อย่าเพิ่มข้อความใน local state ทันที
-    /*
-    const newMessage = {
-      id: Date.now(),
-      message: chatMessage.trim(),
-      senderType: 'customer',
-      senderName: user.firstName || user.username,
-      timestamp: new Date(),
-      isRead: true
-    };
+    // อัปเดตสถานะข้อความเป็นส่งแล้ว
+    setTimeout(() => {
+      setChatMessages(prev => 
+        prev.map(msg => 
+          msg.id === messageId 
+            ? { ...msg, sending: false, sent: true }
+            : msg
+        )
+      );
+    }, 500);
     
-    setChatMessages(prev => [...prev, newMessage]);
-    */
+    // รีเซ็ต unread count เมื่อส่งข้อความ
+    setUnreadCount(0);
     
-    // ✅ แค่ clear input และ stop typing
-    setChatMessage('');
-    
-    // Stop typing indicator
+    // หยุด typing indicator
     if (isTyping) {
       chatSocket.stopTyping(chatRoomId);
       setIsTyping(false);
     }
   } else {
-    setError('ไม่สามารถส่งข้อความได้ กรุณาตรวจสอบการเชื่อมต่อ');
+    // ถ้าส่งไม่สำเร็จ ลบข้อความออก
+    setChatMessages(prev => prev.filter(msg => msg.id !== messageId));
+    setChatMessage(messageText); // คืนข้อความใน input
   }
 };
 
+// ⌨️ Handle Typing - แก้ไข Version (ป้องกัน spam)
 const handleTyping = (value) => {
   setChatMessage(value);
   
-  if (chatConnected && chatRoomId) {
-    if (value.trim() && !isTyping) {
-      chatSocket.startTyping(chatRoomId);
-      setIsTyping(true);
-    } else if (!value.trim() && isTyping) {
-      chatSocket.stopTyping(chatRoomId);
+  if (!chatConnected || !chatRoomId) return;
+  
+  // ถ้ามีข้อความและยังไม่ได้ส่ง typing
+  if (value.trim() && !isTyping) {
+    setIsTyping(true);
+    chatSocket.startTyping(chatRoomId);
+    console.log('⌨️ Started typing indicator');
+  }
+  
+  // Clear previous timeout
+  if (typingTimeout) {
+    clearTimeout(typingTimeout);
+  }
+  
+  // Set new timeout
+  const timeout = setTimeout(() => {
+    if (isTyping) {
       setIsTyping(false);
+      chatSocket.stopTyping(chatRoomId);
+      console.log('⌨️ Stopped typing indicator (timeout)');
     }
+  }, 1000); // หยุด typing หลัง 1 วินาที
+  
+  setTypingTimeout(timeout);
+  
+  // ถ้าไม่มีข้อความแล้ว หยุด typing ทันที
+  if (!value.trim() && isTyping) {
+    setIsTyping(false);
+    chatSocket.stopTyping(chatRoomId);
+    console.log('⌨️ Stopped typing indicator (empty)');
   }
 };
 
-const disconnectChat = () => {
-  if (chatConnected) {
-    socketManager.disconnect();
-    setChatConnected(false);
-    setChatMessages([]);
-    setChatRoomId(null);
-    setConnectionStatus('disconnected');
-    setAdminTyping(false);
-    setIsTyping(false);
-    setSuccess('🔴 ตัดการเชื่อมต่อแชทแล้ว');
-    setTimeout(() => setSuccess(''), 3000);
+// 🔄 Manual Refresh Chat - เหมือนเดิม
+const refreshChat = async () => {
+  if (!chatConnected) {
+    console.log('⚠️ Not connected, cannot refresh');
+    return;
+  }
+
+  try {
+    console.log('🔄 Manual refresh requested by customer...');
+    
+    chatSocket.joinCustomerChat({
+      userId: user._id || user.id,
+      userType: 'customer',
+      userName: user.firstName || user.username,
+      userEmail: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      customerName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username,
+      customerEmail: user.email
+    });
+
+    setLastRefresh(new Date());
+    console.log('✅ Chat refreshed successfully');
+
+  } catch (error) {
+    console.error('❌ Manual refresh failed:', error);
   }
 };
+
+// 🧹 Cleanup useEffect - แก้ไข Version
+useEffect(() => {
+  return () => {
+    // Cleanup เมื่อออกจากหน้า
+    if (typingTimeout) {
+      clearTimeout(typingTimeout);
+    }
+    
+    if (chatConnected) {
+      // หยุด typing ก่อน disconnect
+      if (isTyping && chatRoomId) {
+        chatSocket.stopTyping(chatRoomId);
+      }
+      
+      disconnectChat();
+    }
+  };
+}, []); // Empty dependency เพื่อให้ทำงานแค่ครั้งเดียว
+
+// 🆕 Reset unread count เมื่อดูหน้าแชท
+useEffect(() => {
+  if (activeSection === 'chat' && unreadCount > 0) {
+    setUnreadCount(0);
+  }
+}, [activeSection]);
+
+// 🆕 Enhanced message display with sending status
+const renderMessage = (msg) => (
+  <div
+    key={msg.id}
+    style={{
+      display: 'flex',
+      justifyContent: msg.senderType === 'customer' ? 'flex-end' : 'flex-start',
+      alignItems: 'flex-end',
+      gap: '8px',
+      opacity: msg.sending ? 0.7 : 1 // 🆕 แสดงสถานะกำลังส่ง
+    }}
+  >
+    {msg.senderType === 'admin' && (
+      <div style={{
+        width: '32px',
+        height: '32px',
+        borderRadius: '50%',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '0.9rem',
+        flexShrink: 0
+      }}>
+        👨‍💼
+      </div>
+    )}
+    
+    <div style={{
+      maxWidth: '70%',
+      background: msg.senderType === 'customer' 
+        ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+        : '#f1f5f9',
+      color: msg.senderType === 'customer' ? 'white' : '#1f2937',
+      padding: '12px 16px',
+      borderRadius: msg.senderType === 'customer' 
+        ? '18px 18px 4px 18px'
+        : '18px 18px 18px 4px',
+      wordBreak: 'break-word',
+      border: msg.senderType === 'admin' && !msg.isRead ? '2px solid #ef4444' : 'none'
+    }}>
+      <div style={{ fontSize: '0.95rem', lineHeight: 1.4 }}>
+        {msg.message}
+      </div>
+      <div style={{
+        fontSize: '0.75rem',
+        opacity: 0.8,
+        marginTop: '4px',
+        textAlign: msg.senderType === 'customer' ? 'right' : 'left'
+      }}>
+        {new Date(msg.timestamp).toLocaleTimeString('th-TH', {
+          hour: '2-digit',
+          minute: '2-digit'
+        })}
+        {msg.senderType === 'customer' && (
+          <>
+            {msg.sending && ' ⏳'}
+            {msg.sent && ' ✓'}
+            {msg.isRead && ' ✓✓'}
+          </>
+        )}
+      </div>
+    </div>
+  </div>
+);
 
 
 // 🆕 New Profile Form State
@@ -4473,6 +4701,7 @@ case 'payment':
       </div>
     </div>
   );
+
   case 'chat':
   return (
     <div style={{
@@ -4536,6 +4765,26 @@ case 'payment':
 
         <h2 style={{ margin: '0 0 8px', fontSize: '1.8rem', fontWeight: '700' }}>
           💬 Chat With Admin
+          {/* 🆕 Unread Badge */}
+          {unreadCount > 0 && (
+            <span style={{
+              marginLeft: '12px',
+              background: '#ef4444',
+              color: 'white',
+              fontSize: '0.8rem',
+              fontWeight: '600',
+              padding: '4px 8px',
+              borderRadius: '12px',
+              minWidth: '20px',
+              height: '20px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              animation: 'pulse 2s infinite'
+            }}>
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
         </h2>
         <p style={{ margin: 0, opacity: 0.9, fontSize: '1rem' }}>
           แชทสอบถามกับทีมสนับสนุน 24/7
@@ -4583,31 +4832,58 @@ case 'payment':
                   ? 'สามารถส่งข้อความถึง Admin ได้แล้ว'
                   : 'กดปุ่มเชื่อมต่อเพื่อเริ่มแชท'
                 }
+                {lastRefresh && (
+                  <span style={{ marginLeft: '8px', fontSize: '0.8rem' }}>
+                    • รีเฟรชล่าสุด: {lastRefresh.toLocaleTimeString('th-TH')}
+                  </span>
+                )}
               </div>
             </div>
           </div>
           
-          <button
-            onClick={chatConnected ? disconnectChat : connectToChat}
-            disabled={connectionStatus === 'connecting'}
-            style={{
-              padding: '10px 20px',
-              background: chatConnected 
-                ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
-                : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: connectionStatus === 'connecting' ? 'not-allowed' : 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: '600',
-              opacity: connectionStatus === 'connecting' ? 0.7 : 1
-            }}
-          >
-            {connectionStatus === 'connecting' && '⏳ กำลังเชื่อมต่อ...'}
-            {connectionStatus === 'connected' && '🔴 ตัดการเชื่อมต่อ'}
-            {connectionStatus === 'disconnected' && '🔌 เชื่อมต่อแชท'}
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {/* 🆕 Manual Refresh Button */}
+            {chatConnected && (
+              <button
+                onClick={refreshChat}
+                style={{
+                  padding: '8px 16px',
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '0.8rem',
+                  fontWeight: '600'
+                }}
+              >
+                🔄 รีเฟรชแชท
+              </button>
+            )}
+            
+            {/* Connect/Disconnect Button */}
+            <button
+              onClick={chatConnected ? disconnectChat : connectToChat}
+              disabled={connectionStatus === 'connecting'}
+              style={{
+                padding: '10px 20px',
+                background: chatConnected 
+                  ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+                  : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: connectionStatus === 'connecting' ? 'not-allowed' : 'pointer',
+                fontSize: '0.9rem',
+                fontWeight: '600',
+                opacity: connectionStatus === 'connecting' ? 0.7 : 1
+              }}
+            >
+              {connectionStatus === 'connecting' && '⏳ กำลังเชื่อมต่อ...'}
+              {connectionStatus === 'connected' && '🔴 ตัดการเชื่อมต่อ'}
+              {connectionStatus === 'disconnected' && '🔌 เชื่อมต่อแชท'}
+            </button>
+          </div>
         </div>
 
         {/* Chat Interface */}
@@ -4644,6 +4920,25 @@ case 'payment':
             <div>
               <div style={{ fontWeight: '600', color: '#1f2937' }}>
                 VipStore Support Team
+                {/* 🆕 New message indicator */}
+                {unreadCount > 0 && (
+                  <span style={{
+                    marginLeft: '8px',
+                    background: '#ef4444',
+                    color: 'white',
+                    fontSize: '0.7rem',
+                    fontWeight: '600',
+                    padding: '2px 6px',
+                    borderRadius: '10px',
+                    minWidth: '16px',
+                    height: '16px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    {unreadCount}
+                  </span>
+                )}
               </div>
               <div style={{ 
                 fontSize: '0.8rem', 
@@ -4728,7 +5023,8 @@ case 'payment':
                   borderRadius: msg.senderType === 'customer' 
                     ? '18px 18px 4px 18px'
                     : '18px 18px 18px 4px',
-                  wordBreak: 'break-word'
+                  wordBreak: 'break-word',
+                  boxShadow: msg.senderType === 'admin' && !msg.isRead ? '0 0 0 2px #ef4444' : 'none'
                 }}>
                   <div style={{ fontSize: '0.95rem', lineHeight: 1.4 }}>
                     {msg.message}
@@ -4877,14 +5173,82 @@ case 'payment':
             fontSize: '0.8rem',
             color: '#1e40af'
           }}>
-            🔧 Debug: Socket ID: {socketManager.getSocket()?.id || 'N/A'} | 
-            Room: {chatRoomId || 'N/A'} | 
-            Messages: {chatMessages.length}
+            🔧 Debug: Socket ID: {socketManager.getSocket()?.id?.slice(-8) || 'N/A'} | 
+            Room: {chatRoomId?.slice(-8) || 'N/A'} | 
+            Messages: {chatMessages.length} | 
+            Unread: {unreadCount}
           </div>
         )}
+
+        {/* 🆕 Chat Statistics */}
+        <div style={{
+          marginTop: '16px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+          gap: '12px'
+        }}>
+          <div style={{
+            padding: '12px',
+            background: 'linear-gradient(135deg, #ddd6fe 0%, #c4b5fd 100%)',
+            borderRadius: '8px',
+            textAlign: 'center',
+            border: '1px solid #8b5cf6'
+          }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#6b21a8' }}>
+              {chatMessages.length}
+            </div>
+            <div style={{ fontSize: '0.8rem', color: '#7c3aed' }}>
+              ข้อความทั้งหมด
+            </div>
+          </div>
+          
+          <div style={{
+            padding: '12px',
+            background: 'linear-gradient(135deg, #fed7d7 0%, #fbb6ce 100%)',
+            borderRadius: '8px',
+            textAlign: 'center',
+            border: '1px solid #f56565'
+          }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#c53030' }}>
+              {unreadCount}
+            </div>
+            <div style={{ fontSize: '0.8rem', color: '#e53e3e' }}>
+              ยังไม่ได้อ่าน
+            </div>
+          </div>
+          
+          <div style={{
+            padding: '12px',
+            background: 'linear-gradient(135deg, #bee3f8 0%, #90cdf4 100%)',
+            borderRadius: '8px',
+            textAlign: 'center',
+            border: '1px solid #4299e1'
+          }}>
+            <div style={{ fontSize: '1.2rem', fontWeight: '700', color: '#2b6cb0' }}>
+              {chatConnected ? 'ON' : 'OFF'}
+            </div>
+            <div style={{ fontSize: '0.8rem', color: '#3182ce' }}>
+              สถานะการเชื่อมต่อ
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Add CSS for animations */}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        
+        @keyframes blink {
+          0%, 50% { opacity: 1; }
+          51%, 100% { opacity: 0.3; }
+        }
+      `}</style>
     </div>
   );
+
       case 'menu':
       default:
         return (

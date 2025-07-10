@@ -1,9 +1,12 @@
 // frontend/src/services/socketClient.js
+
 import { io } from 'socket.io-client';
 
 // 🔗 API URL Configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com';
-const SOCKET_URL = API_BASE_URL.replace('/api', ''); // Remove /api for socket connection
+const SOCKET_URL = 'https://vipstore-backend.onrender.com'; 
+
+// const SOCKET_URL = API_BASE_URL.replace('/api', ''); // Remove /api for socket connection
 
 // const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 // const SOCKET_URL = 'http://localhost:3001'; // ✅ Socket server URL
@@ -16,7 +19,7 @@ const socketConfig = {
   transports: ['websocket', 'polling'],
   autoConnect: false, // Manual connection control
   reconnection: true,
-  reconnectionDelay: 1000,
+  reconnectionDelay: 100000,
   reconnectionAttempts: 5,
   timeout: 10000,
   forceNew: true
@@ -65,11 +68,12 @@ export const socketManager = {
 
           // Join chat with user info
           if (userInfo) {
+            console.log('🔥 Emitting join_chat event:', userInfo);
             socket.emit('join_chat', {
               userId: userInfo.userId || userInfo._id,
-              userType: userInfo.role || userInfo.userType,
-              userName: userInfo.firstName || userInfo.username,
-              userEmail: userInfo.email
+              userType: userInfo.userType || userInfo.role,
+              userName: userInfo.userName || userInfo.firstName || userInfo.username,
+              userEmail: userInfo.userEmail || userInfo.email
             });
           }
 
@@ -162,6 +166,7 @@ export const socketManager = {
       return false;
     }
     
+    console.log(`📤 Emitting event: ${event}`, data);
     socket.emit(event, data);
     return true;
   },
@@ -195,6 +200,7 @@ export const chatSocket = {
   
   // 💬 Send Message
   sendMessage: (roomId, message) => {
+    console.log(`💬 Sending message to room ${roomId}:`, message);
     return socketManager.emit('send_message', {
       roomId,
       message: message.trim()
@@ -203,32 +209,34 @@ export const chatSocket = {
 
   // 📩 Join Chat Room (Customer)
   joinCustomerChat: (userInfo) => {
-  console.log('📩 Customer joining chat with data:', userInfo);
-  return socketManager.emit('join_chat', {
-    userId: userInfo.userId || userInfo._id,
-    userType: 'customer',
-    userName: userInfo.userName || userInfo.firstName || userInfo.username,
-    userEmail: userInfo.userEmail || userInfo.email,
-    // 🆕 เพิ่มข้อมูลสำหรับ Backend
-    firstName: userInfo.firstName,
-    lastName: userInfo.lastName,
-    customerName: userInfo.customerName,
-    customerEmail: userInfo.customerEmail
-  });
-},
+    console.log('📩 Customer joining chat with data:', userInfo);
+    return socketManager.emit('join_chat', {
+      userId: userInfo.userId || userInfo._id,
+      userType: 'customer',
+      userName: userInfo.userName || userInfo.firstName || userInfo.username,
+      userEmail: userInfo.userEmail || userInfo.email,
+      // 🆕 เพิ่มข้อมูลสำหรับ Backend
+      firstName: userInfo.firstName,
+      lastName: userInfo.lastName,
+      customerName: userInfo.customerName || `${userInfo.firstName || ''} ${userInfo.lastName || ''}`.trim(),
+      customerEmail: userInfo.customerEmail || userInfo.email
+    });
+  },
 
-  // 👨‍💼 Join Admin Dashboard
+  // 👨‍💼 Join Admin Dashboard - แก้ไขให้ทำงานได้ดี
   joinAdminDashboard: (userInfo) => {
+    console.log('👨‍💼 Admin joining dashboard with data:', userInfo);
     return socketManager.emit('join_chat', {
       userId: userInfo.userId || userInfo._id,
       userType: 'admin',
-      userName: userInfo.firstName || userInfo.username,
-      userEmail: userInfo.email
+      userName: userInfo.userName || userInfo.firstName || userInfo.username,
+      userEmail: userInfo.userEmail || userInfo.email
     });
   },
 
   // 👨‍💼 Admin Join Specific Room
   adminJoinRoom: (roomId) => {
+    console.log(`👨‍💼 Admin joining room: ${roomId}`);
     return socketManager.emit('admin_join_room', { roomId });
   },
 
@@ -243,15 +251,27 @@ export const chatSocket = {
 
   // 📧 Message Event Handlers
   onNewMessage: (callback) => {
-    socketManager.on('new_message', callback);
+    console.log('🎧 Setting up onNewMessage listener');
+    socketManager.on('new_message', (data) => {
+      console.log('📨 Received new_message event:', data);
+      callback(data);
+    });
   },
 
   onJoinSuccess: (callback) => {
-    socketManager.on('join_success', callback);
+    console.log('🎧 Setting up onJoinSuccess listener');
+    socketManager.on('join_success', (data) => {
+      console.log('✅ Received join_success event:', data);
+      callback(data);
+    });
   },
 
   onJoinError: (callback) => {
-    socketManager.on('join_error', callback);
+    console.log('🎧 Setting up onJoinError listener');
+    socketManager.on('join_error', (data) => {
+      console.log('❌ Received join_error event:', data);
+      callback(data);
+    });
   },
 
   onMessageError: (callback) => {
@@ -266,25 +286,45 @@ export const chatSocket = {
     socketManager.on('user_stop_typing', callback);
   },
 
-  // 👨‍💼 Admin Event Handlers
+  // 👨‍💼 Admin Event Handlers - สำคัญมาก!
   onChatRoomsUpdated: (callback) => {
-    socketManager.on('chat_rooms_updated', callback);
+    console.log('🎧 Setting up onChatRoomsUpdated listener');
+    socketManager.on('chat_rooms_updated', (data) => {
+      console.log('📋 Received chat_rooms_updated event:', data);
+      callback(data);
+    });
   },
 
   onRoomUpdated: (callback) => {
-    socketManager.on('room_updated', callback);
+    console.log('🎧 Setting up onRoomUpdated listener');
+    socketManager.on('room_updated', (data) => {
+      console.log('🔄 Received room_updated event:', data);
+      callback(data);
+    });
   },
 
   onRoomMessages: (callback) => {
-    socketManager.on('room_messages', callback);
+    console.log('🎧 Setting up onRoomMessages listener');
+    socketManager.on('room_messages', (data) => {
+      console.log('📦 Received room_messages event:', data);
+      callback(data);
+    });
   },
 
   onCustomerOnline: (callback) => {
-    socketManager.on('customer_online', callback);
+    console.log('🎧 Setting up onCustomerOnline listener');
+    socketManager.on('customer_online', (data) => {
+      console.log('🟢 Received customer_online event:', data);
+      callback(data);
+    });
   },
 
   onCustomerOffline: (callback) => {
-    socketManager.on('customer_offline', callback);
+    console.log('🎧 Setting up onCustomerOffline listener');
+    socketManager.on('customer_offline', (data) => {
+      console.log('🔴 Received customer_offline event:', data);
+      callback(data);
+    });
   }
 };
 

@@ -1,4 +1,4 @@
-// backend/socket/chatSocket.js
+// backend/socket/chatSocket.js - แก้ไขส่วน Room Management
 
 const ChatRoom = require('../models/ChatRoom');
 const ChatMessage = require('../models/ChatMessage');
@@ -8,12 +8,14 @@ const chatSocketHandler = (io) => {
   const chatNamespace = io.of('/chat');
 
   chatNamespace.on('connection', (socket) => {
-    console.log(`👤 User connected: ${socket.id}`);
+    console.log(`🔌 User connected: ${socket.id}`);
 
     // 🔐 User joins chat (customer or admin)
     socket.on('join_chat', async (data) => {
       try {
         const { userId, userType, userName, userEmail } = data;
+        
+        console.log(`👤 ${userType} joining:`, { userId, userName, socketId: socket.id });
         
         // Store user info in socket
         socket.userId = userId;
@@ -25,6 +27,7 @@ const chatSocketHandler = (io) => {
           let room = await ChatRoom.findOne({ customerId: userId });
           
           if (!room) {
+            console.log('🆕 Creating new chat room for customer:', userName);
             room = new ChatRoom({
               customerId: userId,
               customerName: userName,
@@ -37,13 +40,20 @@ const chatSocketHandler = (io) => {
           socket.chatRoomId = room._id.toString();
           socket.join(`room_${room._id}`);
           
-          console.log(`👤 Customer ${userName} joined room: ${room._id}`);
+          console.log(`🏠 Customer ${userName} joined room: ${room._id}`);
 
-          // Notify admins about customer online
+          // 🔥 ส่งข้อมูลไป Admin Dashboard ทันที
           socket.to('admin_dashboard').emit('customer_online', {
             roomId: room._id,
             customerName: userName,
-            customerId: userId
+            customerId: userId,
+            room: room // ส่งข้อมูล room ทั้งหมด
+          });
+
+          // 🔥 อัปเดต chat rooms ใน Admin Dashboard
+          const allRooms = await ChatRoom.find().sort({ lastMessageTime: -1 });
+          chatNamespace.to('admin_dashboard').emit('chat_rooms_updated', {
+            chatRooms: allRooms
           });
 
         } else if (userType === 'admin') {
@@ -51,9 +61,13 @@ const chatSocketHandler = (io) => {
           socket.join('admin_dashboard');
           console.log(`👨‍💼 Admin ${userName} joined dashboard`);
 
-          // Send current chat rooms to admin
+          // 🔥 ส่งข้อมูล chat rooms ทั้งหมดทันที
           const rooms = await ChatRoom.find().sort({ lastMessageTime: -1 });
-          socket.emit('chat_rooms_updated', rooms);
+          socket.emit('chat_rooms_updated', {
+            chatRooms: rooms
+          });
+          
+          console.log(`📊 Sent ${rooms.length} chat rooms to admin`);
         }
 
         socket.emit('join_success', {
@@ -62,12 +76,12 @@ const chatSocketHandler = (io) => {
         });
 
       } catch (error) {
-        console.error('Error joining chat:', error);
+        console.error('❌ Error joining chat:', error);
         socket.emit('join_error', { message: 'Failed to join chat' });
       }
     });
 
-    // 💬 Send message
+    // 💬 Send message - แก้ไขให้ส่งข้อมูลครบ
     socket.on('send_message', async (data) => {
       try {
         const { roomId, message } = data;
@@ -77,6 +91,8 @@ const chatSocketHandler = (io) => {
           socket.emit('message_error', { message: 'Invalid message data' });
           return;
         }
+
+        console.log(`💬 ${userType} sending message:`, { userName, message: message.substring(0, 50) });
 
         // Create message in database
         const newMessage = new ChatMessage({
@@ -114,43 +130,24 @@ const chatSocketHandler = (io) => {
           isRead: false
         };
 
-        // Send to room participants
+        // 🔥 ส่งไปทุก participants ในห้อง
         chatNamespace.to(`room_${roomId}`).emit('new_message', messageData);
 
-        // Send to admin dashboard for real-time updates
-        socket.to('admin_dashboard').emit('room_updated', {
-          roomId,
-          lastMessage: message.trim(),
-          lastMessageTime: new Date(),
-          unreadCount: room?.unreadCount || 0
+        // 🔥 อัปเดต Admin Dashboard แบบ real-time
+        const updatedRooms = await ChatRoom.find().sort({ lastMessageTime: -1 });
+        chatNamespace.to('admin_dashboard').emit('chat_rooms_updated', {
+          chatRooms: updatedRooms
         });
 
-        console.log(`💬 Message sent in room ${roomId} by ${userName}`);
+        console.log(`✅ Message broadcasted to room_${roomId} and admin dashboard`);
 
       } catch (error) {
-        console.error('Error sending message:', error);
+        console.error('❌ Error sending message:', error);
         socket.emit('message_error', { message: 'Failed to send message' });
       }
     });
 
-    // ⌨️ Typing indicator
-    socket.on('typing_start', (data) => {
-      const { roomId } = data;
-      socket.to(`room_${roomId}`).emit('user_typing', {
-        userId: socket.userId,
-        userName: socket.userName,
-        userType: socket.userType
-      });
-    });
-
-    socket.on('typing_stop', (data) => {
-      const { roomId } = data;
-      socket.to(`room_${roomId}`).emit('user_stop_typing', {
-        userId: socket.userId
-      });
-    });
-
-    // 👨‍💼 Admin joins specific chat room
+    // 👨‍💼 Admin joins specific chat room - แก้ไขให้ทำงานได้ดี
     socket.on('admin_join_room', async (data) => {
       try {
         const { roomId } = data;
@@ -159,6 +156,8 @@ const chatSocketHandler = (io) => {
           socket.emit('join_error', { message: 'Unauthorized' });
           return;
         }
+
+        console.log(`👨‍💼 Admin joining room: ${roomId}`);
 
         // Leave previous room if any
         if (socket.currentRoomId) {
@@ -188,17 +187,17 @@ const chatSocketHandler = (io) => {
           messages: messages.reverse()
         });
 
-        console.log(`👨‍💼 Admin joined room: ${roomId}`);
+        console.log(`✅ Admin joined room ${roomId}, sent ${messages.length} messages`);
 
       } catch (error) {
-        console.error('Error admin joining room:', error);
+        console.error('❌ Error admin joining room:', error);
         socket.emit('join_error', { message: 'Failed to join room' });
       }
     });
 
     // 📱 Disconnect handling
     socket.on('disconnect', () => {
-      console.log(`👋 User disconnected: ${socket.id}`);
+      console.log(`👋 User disconnected: ${socket.id} (${socket.userType}: ${socket.userName})`);
       
       if (socket.userType === 'customer' && socket.chatRoomId) {
         // Notify admins about customer offline
