@@ -416,22 +416,22 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
           )}
 
           {/* User Actions */}
-          <div className="user-actions">
+          {/* <div className="user-actions">
             <button className="action-btn secondary">
               ❤️ เพิ่มลงรายการโปรด (กำลังพัฒนา)
             </button>
             <button className="action-btn secondary">
               📤 แชร์สินค้า (กำลังพัฒนา)
             </button>
-          </div>
+          </div> */}
         </div>
       </div>
 
       {/* Related Products Placeholder */}
-      <div className="related-products-section">
+      {/* <div className="related-products-section">
         <h3>🔗 สินค้าที่เกี่ยวข้อง</h3>
         <p className="coming-soon">🚧 ฟีเจอร์นี้กำลังพัฒนา</p>
-      </div>
+      </div> */}
     </div>
   );
 };

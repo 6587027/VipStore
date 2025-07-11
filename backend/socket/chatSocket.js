@@ -41,6 +41,17 @@ const chatSocketHandler = (io) => {
           socket.join(`room_${room._id}`);
           
           console.log(`🏠 Customer ${userName} joined room: ${room._id}`);
+          console.log(`📦 Loading chat history for customer ${userName}...`);
+          const messages = await ChatMessage.find({ chatRoomId: room._id })
+            .sort({ createdAt: -1 })
+            .limit(100);
+
+          socket.emit('room_messages', {
+            roomId: room._id,
+            messages: messages.reverse()
+          });
+
+          console.log(`✅ Sent ${messages.length} chat history messages to customer`);
 
           // 🔥 ส่งข้อมูลไป Admin Dashboard ทันที
           socket.to('admin_dashboard').emit('customer_online', {
@@ -147,7 +158,7 @@ const chatSocketHandler = (io) => {
       }
     });
 
-    // 👨‍💼 Admin joins specific chat room - แก้ไขให้ทำงานได้ดี
+    // 👨‍💼 Admin joins specific chat room 
     socket.on('admin_join_room', async (data) => {
       try {
         const { roomId } = data;
@@ -177,10 +188,10 @@ const chatSocketHandler = (io) => {
         // Reset unread count
         await ChatRoom.findByIdAndUpdate(roomId, { unreadCount: 0 });
 
-        // Get recent messages
+        // Get recent messages Admin
         const messages = await ChatMessage.find({ chatRoomId: roomId })
           .sort({ createdAt: -1 })
-          .limit(50);
+          .limit(100);
 
         socket.emit('room_messages', {
           roomId,

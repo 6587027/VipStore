@@ -603,7 +603,7 @@ const ReportsManager = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {reportData.sales.salesData.slice(0, 10).map((day, index) => (
+                        {reportData.sales.salesData.slice(0, 10000).map((day, index) => (
                           <tr key={index} style={{ borderBottom: '1px solid #f3f4f6' }}>
                             <td style={{ padding: '12px' }}>
                               {day._id.day}/{day._id.month}/{day._id.year}

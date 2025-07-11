@@ -1,5 +1,5 @@
 // frontend/src/components/settings/CustomerSettings.jsx - เพิ่ม Order History จาก UserProfileModal
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect , useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { authAPI, ordersAPI } from '../../services/api';
 import PaymentModal from '../payment/PaymentModal'; 
@@ -36,6 +36,7 @@ const [chatRoomId, setChatRoomId] = useState(null);
 const [adminTyping, setAdminTyping] = useState(false);
 const [unreadCount, setUnreadCount] = useState(0);
 const [lastRefresh, setLastRefresh] = useState(null);
+const messagesEndRef = useRef(null); // 🆕 ใช้สำหรับ scroll ไปยังข้อความล่าสุด
 
 // 🔧 เพิ่ม States สำหรับแก้ Bug
 const [isTyping, setIsTyping] = useState(false); // 🆕 ป้องกัน typing spam
@@ -66,6 +67,45 @@ const [eventListenersSetup, setEventListenersSetup] = useState(false); // 🆕 �
 ]);
 const [showAddPaymentModal, setShowAddPaymentModal] = useState(false);
 const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('credit_card');
+
+// 🆕 เพิ่มฟังก์ชันนี้ก่อน return statement
+const scrollToBottomManual = () => {
+  console.log('🔽 === MANUAL SCROLL TRIGGERED ===');
+  
+  try {
+    // วิธีที่ 1: หาด้วย parent ของปุ่ม
+    const scrollButton = document.querySelector('[title="ไปยังข้อความล่าสุด"]');
+    if (scrollButton && scrollButton.parentElement) {
+      const chatArea = scrollButton.parentElement;
+      console.log('✅ Found chat area via button parent');
+      
+      chatArea.scrollTop = chatArea.scrollHeight;
+      console.log(`📜 Scrolled to: ${chatArea.scrollTop}/${chatArea.scrollHeight}`);
+      return;
+    }
+    
+    // วิธีที่ 2: หาทุก div ที่มี scroll
+    const allDivs = document.querySelectorAll('div');
+    for (let div of allDivs) {
+      // ถ้ามี scrollHeight > clientHeight และ มี gap: 16px (เป็น messages container)
+      const style = div.getAttribute('style') || '';
+      if (div.scrollHeight > div.clientHeight && 
+          style.includes('gap: 16px') && 
+          style.includes('flexDirection: column')) {
+        
+        console.log('✅ Found scrollable chat area');
+        div.scrollTop = div.scrollHeight;
+        console.log(`📜 Scrolled to bottom: ${div.scrollTop}`);
+        return;
+      }
+    }
+    
+    console.log('❌ No chat area found');
+    
+  } catch (error) {
+    console.error('❌ Scroll error:', error);
+  }
+};
 
 // 🔌 Connect to Chat - แก้ไข Version
 const connectToChat = async () => {
@@ -150,7 +190,7 @@ const disconnectChat = () => {
   console.log('✅ Chat disconnected and states reset');
 };
 
-// 🎧 Setup Event Listeners - แก้ไข Version (ป้องกัน duplicate)
+// 🎧 Setup Event Listeners 
 const setupChatEventListeners = () => {
   console.log('🎧 Customer setting up chat event listeners...');
 
@@ -160,13 +200,55 @@ const setupChatEventListeners = () => {
     return;
   }
 
-  // 📩 New message received - แก้ไข duplication
+  // ✅ Join success - แก้ไขให้โหลดประวัติ
+  chatSocket.onJoinSuccess((data) => {
+    console.log('✅ Customer joined successfully:', data);
+    if (data.roomId) {
+      setChatRoomId(data.roomId);
+      console.log('🏠 Customer room ID set:', data.roomId);
+      
+      // 🆕 โหลดประวัติข้อความทันทีหลัง join success!
+      console.log('📦 Loading chat history for customer...');
+      // Admin จะส่งประวัติข้อความมาให้ผ่าน room_messages event
+    }
+  });
+
+  // 📦 Room messages (ประวัติข้อความ) - แก้ไขให้ใช้งานได้
+  chatSocket.onRoomMessages((data) => {
+    console.log('📦 Customer received room messages:', data);
+    if (data.messages && Array.isArray(data.messages)) {
+      const messages = data.messages.map((msg, index) => ({
+        id: msg._id || `history_${index}_${Date.now()}`,
+        message: msg.message,
+        senderType: msg.senderType,
+        senderName: msg.senderName,
+        timestamp: new Date(msg.createdAt || msg.timestamp),
+        isRead: msg.isRead || (msg.senderType === 'customer') // Customer ข้อความถือว่าอ่านแล้ว
+      }));
+      
+      // 📋 ตั้งค่าประวัติข้อความ
+      setChatMessages(messages);
+      
+      // 🔔 นับข้อความที่ยังไม่ได้อ่านจาก Admin
+      const unreadFromAdmin = messages.filter(msg => 
+        msg.senderType === 'admin' && !msg.isRead
+      ).length;
+      setUnreadCount(unreadFromAdmin);
+      
+      console.log(`✅ Loaded ${messages.length} chat history messages, ${unreadFromAdmin} unread from admin`);
+      // 🆕 Auto-scroll ไปข้อความล่าสุด!
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100);
+    }
+  });
+
+  // 📩 New message received 
   chatSocket.onNewMessage((messageData) => {
     console.log('📩 Customer received new message:', messageData);
     
     // ป้องกัน duplicate messages
     setChatMessages(prev => {
-      // ตรวจสอบว่ามี message นี้แล้วหรือไม่
       const existingMessage = prev.find(msg => 
         msg.id === messageData._id || 
         (msg.message === messageData.message && 
@@ -179,7 +261,6 @@ const setupChatEventListeners = () => {
         return prev;
       }
 
-      // เพิ่มข้อความใหม่
       const newMessage = {
         id: messageData._id || `${Date.now()}_${Math.random()}`,
         message: messageData.message,
@@ -188,6 +269,11 @@ const setupChatEventListeners = () => {
         timestamp: new Date(messageData.createdAt || Date.now()),
         isRead: false
       };
+
+      // 🆕 Auto-scroll เมื่อมีข้อความใหม่
+    setTimeout(() => {
+      scrollToBottom();
+    }, 50);
 
       return [...prev, newMessage];
     });
@@ -199,43 +285,17 @@ const setupChatEventListeners = () => {
     }
   });
 
-  // ✅ Join success
-  chatSocket.onJoinSuccess((data) => {
-    console.log('✅ Customer joined successfully:', data);
-    if (data.roomId) {
-      setChatRoomId(data.roomId);
-      console.log('🏠 Customer room ID set:', data.roomId);
-    }
-  });
-
-  // ❌ Join error
+  // ❌ Join error - เหมือนเดิม
   chatSocket.onJoinError((data) => {
     console.error('❌ Customer join error:', data);
     setConnectionStatus('disconnected');
     setChatConnected(false);
   });
 
-  // 📦 Room messages (ประวัติข้อความ)
-  chatSocket.onRoomMessages((data) => {
-    console.log('📦 Customer received room messages:', data);
-    if (data.messages && Array.isArray(data.messages)) {
-      const messages = data.messages.map((msg, index) => ({
-        id: msg._id || `history_${index}_${Date.now()}`,
-        message: msg.message,
-        senderType: msg.senderType,
-        senderName: msg.senderName,
-        timestamp: new Date(msg.createdAt || msg.timestamp),
-        isRead: msg.isRead || false
-      }));
-      setChatMessages(messages);
-    }
-  });
-
-  // ⌨️ Admin typing - แก้ไขการจัดการ
+  // ⌨️ Admin typing - เหมือนเดิม
   chatSocket.onUserTyping((data) => {
     if (data.userType === 'admin') {
       setAdminTyping(true);
-      // Auto-clear typing after 3 seconds
       setTimeout(() => setAdminTyping(false), 3000);
     }
   });
@@ -246,7 +306,7 @@ const setupChatEventListeners = () => {
     }
   });
 
-  console.log('✅ Customer event listeners setup complete');
+  console.log('✅ Customer event listeners setup complete with history loading');
 };
 
 // 📤 Send Message - แก้ไข Version (ป้องกัน duplication)
@@ -279,6 +339,11 @@ const sendMessage = () => {
   
   setChatMessages(prev => [...prev, myMessage]);
   setChatMessage(''); // เคลียร์ input ทันที
+
+  // 🆕 Auto-scroll หลังส่งข้อความ
+  setTimeout(() => {
+    scrollToBottom();
+  }, 50);
   
   // Send via Socket.IO
   const success = chatSocket.sendMessage(chatRoomId, messageText);
@@ -347,7 +412,7 @@ const handleTyping = (value) => {
   }
 };
 
-// 🔄 Manual Refresh Chat - เหมือนเดิม
+// 🔄 Manual Refresh Chat - แก้ไขให้โหลดประวัติใหม่
 const refreshChat = async () => {
   if (!chatConnected) {
     console.log('⚠️ Not connected, cannot refresh');
@@ -357,6 +422,11 @@ const refreshChat = async () => {
   try {
     console.log('🔄 Manual refresh requested by customer...');
     
+    // 🆕 เคลียร์ข้อความเก่าก่อนโหลดใหม่
+    setChatMessages([]);
+    setUnreadCount(0);
+    
+    // Join ใหม่เพื่อโหลดประวัติใหม่
     chatSocket.joinCustomerChat({
       userId: user._id || user.id,
       userType: 'customer',
@@ -369,7 +439,7 @@ const refreshChat = async () => {
     });
 
     setLastRefresh(new Date());
-    console.log('✅ Chat refreshed successfully');
+    console.log('✅ Chat refreshed successfully - history will reload automatically');
 
   } catch (error) {
     console.error('❌ Manual refresh failed:', error);
@@ -4954,130 +5024,169 @@ case 'payment':
           </div>
 
           {/* Chat Messages Area */}
-          <div style={{
-            flex: 1,
-            padding: '20px',
-            background: '#ffffff',
-            minHeight: '350px',
-            maxHeight: '400px',
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px'
-          }}>
-            {/* Welcome Message */}
-            {chatMessages.length === 0 && (
-              <div style={{
-                textAlign: 'center',
-                color: '#6b7280',
-                padding: '40px 20px'
-              }}>
-                <div style={{ fontSize: '3rem', marginBottom: '16px' }}>💬</div>
-                <h3 style={{ margin: '0 0 8px', fontSize: '1.2rem', color: '#374151' }}>
-                  {chatConnected ? 'เริ่มการสนทนา' : 'เชื่อมต่อเพื่อเริ่มแชท'}
-                </h3>
-                <p style={{ margin: '0 0 20px', fontSize: '1rem' }}>
-                  สวัสดี {user?.firstName || user?.username}! <br />
-                  {chatConnected 
-                    ? 'ส่งข้อความเพื่อเริ่มการสนทนากับทีมงาน'
-                    : 'เชื่อมต่อแชทเพื่อสอบถามข้อมูล'
-                  }
-                </p>
-              </div>
-            )}
+<div style={{
+  flex: 1,
+  padding: '20px',
+  background: '#ffffff',
+  minHeight: '350px',
+  maxHeight: '400px',
+  overflowY: 'auto',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '16px',
+  position: 'relative' // 🔧 เพิ่ม comma ตรงนี้!
+}}>
+  {/* Welcome Message */}
+  {chatMessages.length === 0 && (
+    <div style={{
+      textAlign: 'center',
+      color: '#6b7280',
+      padding: '40px 20px'
+    }}>
+      <div style={{ fontSize: '3rem', marginBottom: '16px' }}>💬</div>
+      <h3 style={{ margin: '0 0 8px', fontSize: '1.2rem', color: '#374151' }}>
+        {chatConnected ? 'เริ่มการสนทนา' : 'เชื่อมต่อเพื่อเริ่มแชท'}
+      </h3>
+      <p style={{ margin: '0 0 20px', fontSize: '1rem' }}>
+        สวัสดี {user?.firstName || user?.username}! <br />
+        {chatConnected 
+          ? 'ส่งข้อความเพื่อเริ่มการสนทนากับทีมงาน'
+          : 'เชื่อมต่อแชทเพื่อสอบถามข้อมูล'
+        }
+      </p>
+    </div>
+  )}
 
-            {/* Real Messages */}
-            {chatMessages.map((msg) => (
-              <div
-                key={msg.id}
-                style={{
-                  display: 'flex',
-                  justifyContent: msg.senderType === 'customer' ? 'flex-end' : 'flex-start',
-                  alignItems: 'flex-end',
-                  gap: '8px'
-                }}
-              >
-                {msg.senderType === 'admin' && (
-                  <div style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '0.9rem',
-                    flexShrink: 0
-                  }}>
-                    👨‍💼
-                  </div>
-                )}
-                
-                <div style={{
-                  maxWidth: '70%',
-                  background: msg.senderType === 'customer' 
-                    ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                    : '#f1f5f9',
-                  color: msg.senderType === 'customer' ? 'white' : '#1f2937',
-                  padding: '12px 16px',
-                  borderRadius: msg.senderType === 'customer' 
-                    ? '18px 18px 4px 18px'
-                    : '18px 18px 18px 4px',
-                  wordBreak: 'break-word',
-                  boxShadow: msg.senderType === 'admin' && !msg.isRead ? '0 0 0 2px #ef4444' : 'none'
-                }}>
-                  <div style={{ fontSize: '0.95rem', lineHeight: 1.4 }}>
-                    {msg.message}
-                  </div>
-                  <div style={{
-                    fontSize: '0.75rem',
-                    opacity: 0.8,
-                    marginTop: '4px',
-                    textAlign: msg.senderType === 'customer' ? 'right' : 'left'
-                  }}>
-                    {new Date(msg.timestamp).toLocaleTimeString('th-TH', {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                    {msg.senderType === 'customer' && msg.isRead && ' ✓✓'}
-                  </div>
-                </div>
-              </div>
-            ))}
+  {/* Real Messages */}
+  {chatMessages.map((msg) => (
+    <div
+      key={msg.id}
+      style={{
+        display: 'flex',
+        justifyContent: msg.senderType === 'customer' ? 'flex-end' : 'flex-start',
+        alignItems: 'flex-end',
+        gap: '8px'
+      }}
+    >
+      {msg.senderType === 'admin' && (
+        <div style={{
+          width: '32px',
+          height: '32px',
+          borderRadius: '50%',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '0.9rem',
+          flexShrink: 0
+        }}>
+          👨‍💼
+        </div>
+      )}
+      
+      <div style={{
+        maxWidth: '70%',
+        background: msg.senderType === 'customer' 
+          ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+          : '#f1f5f9',
+        color: msg.senderType === 'customer' ? 'white' : '#1f2937',
+        padding: '12px 16px',
+        borderRadius: msg.senderType === 'customer' 
+          ? '18px 18px 4px 18px'
+          : '18px 18px 18px 4px',
+        wordBreak: 'break-word',
+        boxShadow: msg.senderType === 'admin' && !msg.isRead ? '0 0 0 2px #ef4444' : 'none'
+      }}>
+        <div style={{ fontSize: '0.95rem', lineHeight: 1.4 }}>
+          {msg.message}
+        </div>
+        <div style={{
+          fontSize: '0.75rem',
+          opacity: 0.8,
+          marginTop: '4px',
+          textAlign: msg.senderType === 'customer' ? 'right' : 'left'
+        }}>
+          {new Date(msg.timestamp).toLocaleTimeString('th-TH', {
+            hour: '2-digit',
+            minute: '2-digit'
+          })}
+          {msg.senderType === 'customer' && msg.isRead && ' ✓✓'}
+        </div>
+      </div>
+    </div>
+  ))}
 
-            {/* Typing Indicator */}
-            {adminTyping && (
-              <div style={{
-                display: 'flex',
-                justifyContent: 'flex-start',
-                alignItems: 'flex-end',
-                gap: '8px'
-              }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.9rem'
-                }}>
-                  👨‍💼
-                </div>
-                <div style={{
-                  background: '#f1f5f9',
-                  padding: '12px 16px',
-                  borderRadius: '18px 18px 18px 4px',
-                  fontSize: '0.9rem',
-                  color: '#6b7280',
-                  fontStyle: 'italic'
-                }}>
-                  กำลังพิมพ์... <span style={{ animation: 'blink 1s infinite' }}>●</span>
-                </div>
-              </div>
-            )}
-          </div>
+  {/* Typing Indicator */}
+  {adminTyping && (
+    <div style={{
+      display: 'flex',
+      justifyContent: 'flex-start',
+      alignItems: 'flex-end',
+      gap: '8px'
+    }}>
+      <div style={{
+        width: '32px',
+        height: '32px',
+        borderRadius: '50%',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '0.9rem'
+      }}>
+        👨‍💼
+      </div>
+      <div style={{
+        background: '#f1f5f9',
+        padding: '12px 16px',
+        borderRadius: '18px 18px 18px 4px',
+        fontSize: '0.9rem',
+        color: '#6b7280',
+        fontStyle: 'italic'
+      }}>
+        กำลังพิมพ์... <span style={{ animation: 'blink 1s infinite' }}>●</span>
+      </div>
+    </div>
+  )}
+
+  {/* 🆕 ปุ่มลูกศรลง - Scroll to Bottom */}
+  {chatMessages.length > 5 && (
+    <button
+      onClick={scrollToBottomManual}
+      style={{
+        position: 'absolute',
+        bottom: '20px',
+        right: '20px',
+        width: '40px',
+        height: '40px',
+        borderRadius: '50%',
+        background: 'linear-gradient(135deg, #ff6b6b 0%, #ffa500 25%, #ffeb3b 50%, #4ecdc4 75%, #45b7d1 100%)', // 🌈 Rainbow
+boxShadow: '0 4px 12px rgba(255, 107, 107, 0.6)',
+        color: 'white',
+        border: 'none',
+        cursor: 'pointer',
+        fontSize: '1.2rem',
+        
+        zIndex: 10,
+        transition: 'all 0.3s ease',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
+      onMouseEnter={(e) => {
+        e.target.style.transform = 'scale(1.1)';
+        e.target.style.boxShadow = '0 6px 20px rgba(255, 107, 107, 0.8)';
+      }}
+      onMouseLeave={(e) => {
+        e.target.style.transform = 'scale(1)';
+       e.target.style.boxShadow = '0 6px 20px rgba(255, 107, 107, 0.8)';
+      }}
+      title="ไปยังข้อความล่าสุด"
+    >
+      ⬇
+    </button>
+  )}
+</div>
 
           {/* Chat Input */}
           <div style={{
@@ -5248,6 +5357,8 @@ case 'payment':
       `}</style>
     </div>
   );
+
+
 
       case 'menu':
       default:
