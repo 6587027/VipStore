@@ -5272,7 +5272,7 @@ boxShadow: '0 4px 12px rgba(255, 107, 107, 0.6)',
         </div>
 
         {/* Chat Debug Info */}
-        {chatConnected && (
+        {/* {chatConnected && (
           <div style={{
             marginTop: '16px',
             padding: '12px',
@@ -5287,7 +5287,7 @@ boxShadow: '0 4px 12px rgba(255, 107, 107, 0.6)',
             Messages: {chatMessages.length} | 
             Unread: {unreadCount}
           </div>
-        )}
+        )} */}
 
         {/* 🆕 Chat Statistics */}
         <div style={{

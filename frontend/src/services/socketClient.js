@@ -14,6 +14,7 @@ const SOCKET_URL = 'https://vipstore-backend.onrender.com';
 
 console.log('🔌 Socket connecting to:', SOCKET_URL);
 
+
 // 🔌 Socket.IO Client Configuration
 const socketConfig = {
   transports: ['websocket', 'polling'],
@@ -58,7 +59,7 @@ export const socketManager = {
         // Create new socket connection
         socket = io(`${SOCKET_URL}/chat`, socketConfig);
 
-        // 🔗 Connection Events
+        // Connection Events
         socket.on('connect', () => {
           console.log('🔗 Socket connected:', socket.id);
           connectionState.isConnected = true;
