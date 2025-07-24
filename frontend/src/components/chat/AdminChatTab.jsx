@@ -656,9 +656,9 @@ const AdminChatTab = () => {
                   <div className="customer-info">
                     <h4>{selectedChatRoom.customerName || 'ลูกค้า'}</h4>
                     <p>{selectedChatRoom.customerEmail || 'ไม่ระบุอีเมล'}</p>
-                    <span className="customer-status">
+                    {/* <span className="customer-status">
                       {selectedChatRoom.isOnline ? '🟢 ออนไลน์' : '🔴 ออฟไลน์'}
-                    </span>
+                    </span> */}
                   </div>
                 </div>
                 

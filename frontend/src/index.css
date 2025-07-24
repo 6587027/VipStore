@@ -19,7 +19,7 @@ body {
 
 /* ===== CONTAINER - MOBILE FIRST ===== */
 .container {
-  max-width: 1200px;
+  /* max-width: 1200px; */
   margin: 0 auto;
   padding: 0 16px; /* 📱 Mobile: เริ่มที่ 16px */
 }

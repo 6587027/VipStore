@@ -3,7 +3,7 @@
 .admin-chat-container {
   background: #f8fafc;
   min-height: 100vh;
-  padding: 20px;
+  /* padding: 20px; */
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -12,7 +12,7 @@
   background: white;
   border-radius: 16px;
   padding: 24px;
-  margin-bottom: 20px;
+  margin-bottom: 20px; 
   box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
   display: flex;
   justify-content: space-between;
@@ -486,12 +486,12 @@
 }
 
 .chat-window-header-improved {
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  padding: 20px 24px;
-  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  padding: 10px 10px;
+  /* border-bottom: 1px solid #e2e8f0; */
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  /* align-items: center; */
 }
 
 .selected-customer {
@@ -504,15 +504,22 @@
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #288063 16%, #059669 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-weight: 700;
   font-size: 1.2rem;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 12px #10b9814d;
   border: 3px solid white;
+}
+
+.customer-info {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 2px solid #08a370a8;
+  border-radius: 12px;
+  padding: 5px 20px;
 }
 
 .customer-info h4 {
@@ -523,7 +530,7 @@
 }
 
 .customer-info p {
-  margin: 0 0 4px;
+  margin: 0 0 4px; /* แก้จาก "0px" เป็น "4px" */
   font-size: 0.85rem;
   color: #64748b;
 }
@@ -660,8 +667,8 @@
 }
 
 .message-content {
-  max-width: 75%;
-  padding: 14px 18px;
+  max-width: 100%;
+  padding: 6px 18px;
   border-radius: 20px;
   word-break: break-word;
   position: relative;
@@ -1076,5 +1083,3 @@
     font-size: 1.2rem;
   }
 }
-
-/* สวยแล้วครับวิป! 🔥✨ */

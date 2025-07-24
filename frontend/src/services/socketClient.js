@@ -224,7 +224,7 @@ export const chatSocket = {
     });
   },
 
-  // 👨‍💼 Join Admin Dashboard - แก้ไขให้ทำงานได้ดี
+  // 👨‍💼 Join Admin Dashboard แก้ไขให้ทำงานได้ดี
   joinAdminDashboard: (userInfo) => {
     console.log('👨‍💼 Admin joining dashboard with data:', userInfo);
     return socketManager.emit('join_chat', {
