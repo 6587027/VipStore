@@ -435,12 +435,11 @@ This project is created for **educational purposes** and portfolio development. 
 
 ## 📞 Contact & Links
 
-```
-- **👨‍💻 Developer**: วิป (Phatra Wongsapsakul) - Student ID: 6587027
+- **👨‍💻 Developer**: วิป (Phatra Wongsapsakul) 
 - **🎓 Institution**: Mahidol University - ICT Program (Year 3 → 4)
 - **🌐 Portfolio**: [vippersonalwebsite.vercel.app](https://vippersonalwebsite.vercel.app/)
 - **🛒 Live Project**: [vipstore-sigma.vercel.app](https://vipstore-sigma.vercel.app)
-```
+
 
 ## 🙏 Acknowledgments
 
