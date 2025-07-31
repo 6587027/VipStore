@@ -187,7 +187,7 @@ npm run dev
 **For demo access, please contact the developer:**
 
 **👨‍💻 Developer Contact**: วิป (Phatra Wongsapsakul)  
-**📧 Contact Form**: [https://vpppersonalwebsite.vercal.app/contact](https://vpppersonalwebsite.vercal.app/contact)  
+**📧 Contact Form**: [https://vippersonalwebsite.vercel.app/contact](https://vippersonalwebsite.vercel.app/contact)  
 **Note**: Please use Gmail accounts only for contact requests
 
 *Demo accounts are provided upon request for legitimate testing and evaluation purposes.*
@@ -435,14 +435,12 @@ This project is created for **educational purposes** and portfolio development. 
 
 ## 📞 Contact & Links
 
+```
 - **👨‍💻 Developer**: วิป (Phatra Wongsapsakul) - Student ID: 6587027
 - **🎓 Institution**: Mahidol University - ICT Program (Year 3 → 4)
 - **🌐 Portfolio**: [vippersonalwebsite.vercel.app](https://vippersonalwebsite.vercel.app/)
-- **📧 Contact**: [https://vpppersonalwebsite.vercal.app/contact](https://vpppersonalwebsite.vercal.app/contact)
-<!-- - **📱 GitHub**: [@6587027](https://github.com/6587027) -->
 - **🛒 Live Project**: [vipstore-sigma.vercel.app](https://vipstore-sigma.vercel.app)
-
-*Please use Gmail accounts only when contacting via the contact form*
+```
 
 ## 🙏 Acknowledgments
 
