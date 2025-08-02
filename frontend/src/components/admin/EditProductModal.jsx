@@ -22,6 +22,8 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
     'Home',
     'Sports',
     'Beauty',
+    'Toys',
+    'Watches',
     'Other'
   ];
 

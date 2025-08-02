@@ -164,7 +164,8 @@ const Header = ({
                 {showProductBackButton && (
                   <button 
                     className="btn-secondary btn-product-back"
-                    onClick={handleProductBackClick}
+                    // onClick={handleProductBackClick}
+                    onClick={onBackToHome}
                   >
                     🏠 กลับไปหน้าหลัก
                   </button>

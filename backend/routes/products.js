@@ -5,7 +5,7 @@ const Product = require('../models/Product');
 // GET /api/products - ดึงสินค้าทั้งหมด
 router.get('/', async (req, res) => {
   try {
-    const { category, search, limit = 100 } = req.query;
+    const { category, search, limit = 200 } = req.query;
     
     let filter = { isActive: true };
     

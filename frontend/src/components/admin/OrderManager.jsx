@@ -17,7 +17,7 @@ const OrderManager = () => {
     status: 'all',
     searchTerm: '',
     page: 1,
-    limit: 500 // Limit to 500 for admin view
+    limit: 500 
   });
   const [showOrderDetails, setShowOrderDetails] = useState(null);
   const [selectedOrders, setSelectedOrders] = useState([]);
@@ -1872,7 +1872,7 @@ const deleteOrder = async (orderId, orderNumber) => {
         gap: '12px',
         marginBottom: '20px'
       }}>
-        <div style={{
+        {/* <div style={{
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           color: 'white',
           padding: '16px',
@@ -1885,7 +1885,7 @@ const deleteOrder = async (orderId, orderNumber) => {
           <div style={{ fontSize: '0.8rem', opacity: '0.9' }}>
             คำขอทั้งหมด
           </div>
-        </div>
+        </div> */}
 
         <div style={{
           background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',

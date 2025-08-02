@@ -31,7 +31,7 @@ const AdminDashboard = () => {
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const response = await productsAPI.getAll({ limit: 100 });
+      const response = await productsAPI.getAll({ limit: 1000 });
       const productData = response.data.data;
       setProducts(productData);
       calculateStats(productData);

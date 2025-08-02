@@ -1,16 +1,14 @@
-// src/components/ProductList.jsx   NEW FILE
+// src/components/ProductList.jsx  
 
 import React, { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import { productsAPI } from '../services/api';
 // import ChatButton from './chat/ChatButton';
 
-const ProductList = ({ onProductClick }) => {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [retryCount, setRetryCount] = useState(0);
+const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = true }) => {
+  const [products, setProducts] = useState(savedState?.products || []);
+  const [loading, setLoading] = useState(savedState?.loading !== undefined ? savedState.loading : true);
+  const [selectedCategory, setSelectedCategory] = useState(savedState?.selectedCategory || '');
 
   const [loadingPhase, setLoadingPhase] = useState('initializing');
   const [serverWakeAttempts, setServerWakeAttempts] = useState(0);
@@ -20,26 +18,61 @@ const ProductList = ({ onProductClick }) => {
   const [lastReloadTime, setLastReloadTime] = useState(null);
   const [reloadCount, setReloadCount] = useState(0);
   const [autoReloadEnabled, setAutoReloadEnabled] = useState(true);
+  const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
 
 
-  // ✅ Search & Filter States
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filteredProducts, setFilteredProducts] = useState([]);
-  
-  // 🆕 Advanced Filter States
-  const [priceRange, setPriceRange] = useState({ min: 0, max: 3000000 });
-  const [sortOption, setSortOption] = useState('');
+  // ✅ Search & Filter States and 🆕 Advanced Filter States
+  const [searchTerm, setSearchTerm] = useState(savedState?.searchTerm || '');
+  const [filteredProducts, setFilteredProducts] = useState(savedState?.filteredProducts || []);
+  const [priceRange, setPriceRange] = useState(savedState?.priceRange || { min: 0, max: 3000000 });
+  const [sortOption, setSortOption] = useState(savedState?.sortOption || '');
   
   // 🆕 Unified Dropdown State
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
+
+  // --------------------------------------------------------------------------------
+
+
   // 🛠️ Maintenance Mode Toggle
   // const MAINTENANCE_MODE = true;
 
+
+  // ---------------------------------------------------------------------------------
+
+
+
   // ดึงข้อมูลสินค้าจาก API
   useEffect(() => {
+  if (shouldFetch && (isInitialLoad || !products.length)) {
+    console.log('📡 Fetching products...');
     fetchProducts();
-  }, [selectedCategory]);
+  } else if (savedState?.products?.length && !shouldFetch) {
+    console.log('✅ Using saved product data, no fetch needed');
+  }
+}, [shouldFetch, selectedCategory]);
+
+  // เพิ่มตรงนี้หลัง useState ทั้งหมด:
+useEffect(() => {
+  if (onStateUpdate) {
+    onStateUpdate({
+      products,
+      loading,
+      selectedCategory,
+      searchTerm,
+      filteredProducts,
+      priceRange,
+      sortOption,
+      retryCount,
+      loadingPhase,
+      serverWakeAttempts,
+      showRealError,
+      isInitialLoad
+    });
+  }
+}, [products, loading, selectedCategory, searchTerm, filteredProducts, priceRange, sortOption]);
+
 
   // ✅ Enhanced Filter Effect
   useEffect(() => {
@@ -120,13 +153,37 @@ const ProductList = ({ onProductClick }) => {
   };
 
   const handleProductClick = (productId) => {
-    console.log('🖱️ ProductList - handleProductClick called with ID:', productId);
-    if (onProductClick) {
-      onProductClick(productId);
-    } else {
-      console.warn('⚠️ onProductClick prop not provided');
-    }
-  };
+  console.log('🖱️ ProductList - handleProductClick called with ID:', productId);
+  
+  // 💾 Save scroll position ก่อนไป ProductPreview
+  const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+  
+  // Update parent state with scroll position
+  if (onStateUpdate) {
+    onStateUpdate({
+      products,
+      loading,
+      selectedCategory,
+      searchTerm,
+      filteredProducts,
+      priceRange,
+      sortOption,
+      retryCount,
+      loadingPhase,
+      serverWakeAttempts,
+      showRealError,
+      isInitialLoad,
+      scrollPosition: currentScrollPosition 
+    });
+  }
+  
+  if (onProductClick) {
+    const productData = products.find(p => p._id === productId);
+    onProductClick(productId, productData);
+  } else {
+    console.warn('⚠️ onProductClick prop not provided');
+  }
+};
 
   const fetchProducts = async () => {
     try {
@@ -204,7 +261,7 @@ const ProductList = ({ onProductClick }) => {
     }
   };
 
-  const categories = ['Electronics', 'Clothing', 'Books', 'Home', 'Sports', 'Beauty', 'Other'];
+  const categories = ['Electronics', 'Clothing', 'Books', 'Home', 'Sports', 'Beauty', 'Toys', 'Watches', 'Other'];
   const priceStats = getPriceStats();
 
 // Maintenance Mode Check
@@ -1385,7 +1442,7 @@ if (loading && !showRealError) {
               >
                 🗑️ ล้างตัวกรองทั้งหมด
               </button>
-
+             
               <button
                 onClick={() => setShowFilterDropdown(false)}
                 style={{
