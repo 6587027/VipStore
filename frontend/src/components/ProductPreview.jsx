@@ -5,6 +5,8 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import './ProductPreview.css';
 
+import { Search, Filter, Package, DollarSign, BarChart3, RotateCcw, Sparkles, ChevronDown , Package2Icon , File, ShoppingCartIcon } from 'lucide-react';
+
 const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
   console.log('🔍 ProductPreview rendered with productId:', productId);
   
@@ -329,7 +331,10 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
 
           {/* Description */}
           <div className="description-section">
-            <h3>📝 รายละเอียดสินค้า</h3>
+            <h3 className="flex items-center gap-2">
+              <File size={20} strokeWidth={2.5} /> รายละเอียดสินค้า
+            </h3>
+
             <div className={`description-text ${showFullDescription ? 'expanded' : ''}`}>
               {product.description || 'ไม่มีรายละเอียดสินค้า'}
             </div>
@@ -345,7 +350,9 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
 
           {/* Product Specifications */}
           <div className="specifications-section">
-            <h3>📊 ข้อมูลสินค้า</h3>
+            <h3 className="flex items-center gap-2">
+              <BarChart3 size={20} strokeWidth={2.5} /> ข้อมูลสินค้า
+            </h3>
             <div className="specs-grid">
               <div className="spec-item">
                 <span className="spec-label">หมวดหมู่:</span>
@@ -398,7 +405,7 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
                 onClick={handleAddToCart}
                 disabled={isOutOfStock || quantity > availableStock || availableStock <= 0}
               >
-                🛒 เพิ่มลงตะกร้า ({quantity} ชิ้น)
+                <ShoppingCartIcon /> เพิ่มลงตะกร้า ({quantity} ชิ้น)
               </button>
             </div>
           )}
