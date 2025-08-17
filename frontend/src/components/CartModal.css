@@ -46,7 +46,7 @@
 
 /* Header */
 .cart-modal-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #34da7c 0%, #2886c0 100%);
   color: white;
   padding: 20px;
   display: flex;
@@ -2022,6 +2022,46 @@
   border-color: rgba(59, 130, 246, 0.3);
   transition: all 0.2s ease;
 }
+
+/* Payment Later Button */
+.payment-later-btn {
+  background: linear-gradient(135deg, #6B7280, #9CA3AF);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.payment-later-btn:hover {
+  background: linear-gradient(135deg, #4B5563, #6B7280);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+}
+
+/* Mobile responsive for 3-button layout */
+@media (max-width: 768px) {
+  .cart-modal-footer {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .payment-later-btn,
+  .back-btn,
+  .checkout-btn,
+  .confirm-order-btn {
+    width: 100%;
+  }
+}
+
 
 /* ===============================================
    🆕 DARK MODE SUPPORT (Optional)

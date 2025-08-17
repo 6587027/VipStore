@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import { productsAPI } from '../services/api';
+import { Search, Filter, Package, DollarSign, BarChart3, RotateCcw, Sparkles, ChevronDown } from 'lucide-react';
+import { Settings, RefreshCw, Clock, User, Code } from 'lucide-react';
 // import ChatButton from './chat/ChatButton';
 
 const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = true }) => {
@@ -27,10 +29,8 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
   const [filteredProducts, setFilteredProducts] = useState(savedState?.filteredProducts || []);
   const [priceRange, setPriceRange] = useState(savedState?.priceRange || { min: 0, max: 3000000 });
   const [sortOption, setSortOption] = useState(savedState?.sortOption || '');
+  const [showFilters, setShowFilters] = useState(true);
   
-  // 🆕 Unified Dropdown State
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-
 
   // --------------------------------------------------------------------------------
 
@@ -270,525 +270,173 @@ if (typeof MAINTENANCE_MODE !== 'undefined' && MAINTENANCE_MODE) {
   return (
     <div className="container">
       <div style={{
+        minHeight: '100vh',
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '600px',
-        padding: '40px 20px',
-        background: 'linear-gradient(135deg, #fff7ed 0%, #fed7aa 30%, #fb923c 70%, #ea580c 100%)',
-        borderRadius: '25px',
-        boxShadow: '0 25px 50px rgba(0, 0, 0, 0.15)',
-        position: 'relative',
-        overflow: 'hidden',
-        border: '1px solid rgba(251, 146, 60, 0.2)'
+        padding: '20px',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        margin: '-20px',
+        borderRadius: '0'
       }}>
-        {/* Enhanced Background Animation */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          opacity: 0.1,
-          backgroundImage: `
-            radial-gradient(circle at 20% 30%, rgba(255,255,255,0.4) 3px, transparent 3px),
-            radial-gradient(circle at 70% 70%, rgba(255,255,255,0.3) 2px, transparent 2px),
-            radial-gradient(circle at 40% 80%, rgba(255,255,255,0.2) 4px, transparent 4px),
-            linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.1) 50%, transparent 70%)
-          `,
-          backgroundSize: '80px 80px, 60px 60px, 100px 100px, 200px 200px',
-          animation: 'floatingPattern 15s ease-in-out infinite'
-        }} />
-
-        {/* Decorative Corner Elements */}
-        <div style={{
-          position: 'absolute',
-          top: '20px',
-          left: '20px',
-          fontSize: '2rem',
-          opacity: 0.3,
-          animation: 'gentleRotate 8s ease-in-out infinite'
-        }}>⚙️</div>
         
+        {/* Simple Card */}
         <div style={{
-          position: 'absolute',
-          top: '20px',
-          right: '20px',
-          fontSize: '2rem',
-          opacity: 0.3,
-          animation: 'gentleRotate 8s ease-in-out infinite reverse'
-        }}>🔧</div>
-
-        <div style={{
-          position: 'absolute',
-          bottom: '20px',
-          left: '20px',
-          fontSize: '1.5rem',
-          opacity: 0.3,
-          animation: 'float 6s ease-in-out infinite'
-        }}>✨</div>
-
-        <div style={{
-          position: 'absolute',
-          bottom: '20px',
-          right: '20px',
-          fontSize: '1.5rem',
-          opacity: 0.3,
-          animation: 'float 6s ease-in-out infinite 3s'
-        }}>🌟</div>
-
-        {/* Main Icon Group with Enhanced Animation */}
-        <div style={{
-          fontSize: '4.5rem',
-          marginBottom: '32px',
-          animation: 'maintenanceBounce 2.5s ease-in-out infinite',
-          filter: 'drop-shadow(0 8px 16px rgba(0, 0, 0, 0.1))'
-        }}>
-          <span style={{ 
-            display: 'inline-block',
-            animation: 'wiggle 3s ease-in-out infinite',
-            marginRight: '10px'
-          }}>🛠️</span>
-          <span style={{ 
-            display: 'inline-block',
-            animation: 'spin 4s linear infinite',
-            margin: '0 10px'
-          }}>⚙️</span>
-          <span style={{ 
-            display: 'inline-block',
-            animation: 'wiggle 3s ease-in-out infinite 1s'
-          }}>🔧</span>
-        </div>
-
-        {/* Enhanced Main Title */}
-        <h1 style={{
-          color: '#c2410c',
-          fontSize: '2.8rem',
-          fontWeight: '800',
-          marginBottom: '20px',
-          textAlign: 'center',
-          animation: 'titleSlideIn 1s ease-out',
-          textShadow: '0 4px 8px rgba(194, 65, 12, 0.2)',
-          letterSpacing: '0.5px'
-        }}>
-          🔄 กำลังปรับปรุงระบบ
-        </h1>
-
-        {/* Subtitle */}
-        <p style={{
-          color: '#9a3412',
-          fontSize: '1.3rem',
-          fontWeight: '500',
-          marginBottom: '32px',
-          textAlign: 'center',
-          animation: 'fadeInUp 1.2s ease-out',
-          opacity: 0.9
-        }}>
-          เพื่อประสบการณ์ที่ดีกว่าเดิม ✨
-        </p>
-
-        {/* Enhanced Message Card */}
-        <div style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-          padding: '32px',
+          background: 'white',
           borderRadius: '20px',
-          border: '2px solid rgba(251, 146, 60, 0.3)',
-          marginBottom: '32px',
-          maxWidth: '650px',
+          padding: '40px 30px',
+          maxWidth: '400px',
+          width: '100%',
           textAlign: 'center',
-          animation: 'cardSlideUp 1.4s ease-out',
-          boxShadow: '0 15px 35px rgba(0, 0, 0, 0.1)',
-          backdropFilter: 'blur(10px)'
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)'
         }}>
-          <h3 style={{ 
-            color: '#c2410c', 
-            margin: '0 0 20px',
-            fontSize: '1.4rem',
-            fontWeight: '700'
-          }}>
-            🎯 เรากำลังอัพเกรดระบบให้คุณ!
-          </h3>
           
-          <p style={{ 
-            color: '#9a3412', 
-            margin: '0 0 20px',
-            fontSize: '1.1rem',
-            lineHeight: '1.7',
-            fontWeight: '500'
+          {/* Simple Icon */}
+          <div style={{
+            marginBottom: '20px',
+            display: 'flex',
+            justifyContent: 'center'
           }}>
-            นักพัฒนากำลังทำงานหนักเพื่อปรับปรุงระบบให้มีประสิทธิภาพดีขึ้น<br/>
-            <strong>ขอบคุณที่รอคอยและให้ความเชื่อมั่นกับระบบของเรานะ</strong> 🙏
+            <div style={{
+              animation: 'spin 3s linear infinite'
+            }}>
+              <Settings size={60} color="#667eea" />
+            </div>
+          </div>
+
+          {/* Title */}
+          <h1 style={{
+            color: '#4c63d2',
+            fontSize: '2rem',
+            fontWeight: '700',
+            margin: '0 0 16px 0'
+          }}>
+            ระบบปรับปรุง
+          </h1>
+
+          {/* Message */}
+          <p style={{
+            color: '#6b7280',
+            fontSize: '1.1rem',
+            margin: '0 0 24px 0',
+            lineHeight: '1.6'
+          }}>
+            กำลังอัพเดทระบบให้ดีขึ้น<br/>
+            ขอบคุณที่รอคอย
           </p>
 
-          {/* Enhanced Progress Section */}
+          {/* Time */}
           <div style={{
-            background: 'linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%)',
-            padding: '20px',
-            borderRadius: '15px',
-            border: '1px solid rgba(251, 146, 60, 0.2)',
-            marginBottom: '20px'
+            background: '#f3f4f6',
+            padding: '16px',
+            borderRadius: '12px',
+            margin: '0 0 24px 0',
+            border: '1px solid #e5e7eb'
           }}>
             <div style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '12px',
-              marginBottom: '12px'
+              gap: '8px',
+              marginBottom: '8px'
             }}>
-              <span style={{ fontSize: '1.5rem' }}>⏱️</span>
-              <span style={{ 
-                color: '#92400e', 
-                fontSize: '1rem',
+              <Clock size={20} color="#667eea" />
+              <span style={{
+                color: '#4c63d2',
                 fontWeight: '600'
               }}>
-                เวลาที่คาดการณ์: 1 ชั่วโมง หรือมากกว่า
+                เวลาที่คาดการณ์
               </span>
             </div>
-
-            {/* Enhanced Progress Bar */}
-            <div style={{
-              width: '100%',
-              height: '12px',
-              backgroundColor: 'rgba(194, 65, 12, 0.1)',
-              borderRadius: '10px',
-              overflow: 'hidden',
-              border: '1px solid rgba(194, 65, 12, 0.2)'
+            <p style={{
+              color: '#6b7280',
+              margin: '0',
+              fontSize: '0.9rem'
             }}>
-              <div style={{
-                height: '100%',
-                background: 'linear-gradient(90deg, #fb923c, #ea580c, #fb923c)',
-                borderRadius: '10px',
-                animation: 'progressGlow 2.5s ease-in-out infinite',
-                boxShadow: '0 0 10px rgba(251, 146, 60, 0.4)'
-              }} />
-            </div>
-          </div>
-
-          {/* Status Updates */}
-          <div style={{
-            background: 'rgba(251, 146, 60, 0.1)',
-            padding: '16px',
-            borderRadius: '12px',
-            border: '1px solid rgba(251, 146, 60, 0.2)'
-          }}>
-            <p style={{ 
-              color: '#9a3412', 
-              margin: 0,
-              fontSize: '0.95rem',
-              fontWeight: '500'
-            }}>
-              📋 <strong>กำลังดำเนินการ:</strong> อัพเดทฐานข้อมูล, ปรับปรุง UI, เพิ่มฟีเจอร์ใหม่
+              1-2 ชั่วโมง
             </p>
           </div>
-        </div>
 
-        {/* Enhanced Action Buttons */}
-        <div style={{
-          display: 'flex',
-          gap: '20px',
-          flexWrap: 'wrap',
-          justifyContent: 'center',
-          marginBottom: '32px',
-          zIndex: 10,
-          position: 'relative'
-        }}>
-          <button 
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('🔄 Refresh button clicked!');
-              window.location.reload();
-            }}
-            style={{
-              background: 'linear-gradient(135deg, #fb923c 0%, #ea580c 100%)',
-              border: 'none',
-              padding: '16px 32px',
-              fontSize: '1.2rem',
-              fontWeight: '700',
-              borderRadius: '15px',
-              color: 'white',
-              boxShadow: '0 8px 25px rgba(251, 146, 60, 0.4)',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              zIndex: 100,
-              position: 'relative',
-              userSelect: 'none',
-              outline: 'none',
-              animation: 'buttonPulse 3s ease-in-out infinite'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.transform = 'translateY(-4px) scale(1.05)';
-              e.target.style.boxShadow = '0 12px 35px rgba(251, 146, 60, 0.5)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0) scale(1)';
-              e.target.style.boxShadow = '0 8px 25px rgba(251, 146, 60, 0.4)';
-            }}
-            onMouseDown={(e) => {
-              e.target.style.transform = 'translateY(-1px) scale(0.98)';
-            }}
-            onMouseUp={(e) => {
-              e.target.style.transform = 'translateY(-4px) scale(1.05)';
-            }}
-          >
-            🔄 ตรวจสอบสถานะใหม่
-          </button>
-
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              console.log('📞 Contact button clicked!');
-              window.open('https://vippersonalwebsite.vercel.app/contact', '_blank');
-            }}
-            style={{
-              background: 'rgba(255, 255, 255, 0.95)',
-              border: '3px solid #fb923c',
-              padding: '16px 32px',
-              fontSize: '1.2rem',
-              fontWeight: '700',
-              borderRadius: '15px',
-              color: '#c2410c',
-              cursor: 'pointer',
-              transition: 'all 0.3s ease',
-              zIndex: 100,
-              position: 'relative',
-              userSelect: 'none',
-              outline: 'none'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = '#fff7ed';
-              e.target.style.transform = 'translateY(-4px) scale(1.05)';
-              e.target.style.borderColor = '#ea580c';
-              e.target.style.boxShadow = '0 12px 35px rgba(251, 146, 60, 0.3)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
-              e.target.style.transform = 'translateY(0) scale(1)';
-              e.target.style.borderColor = '#fb923c';
-              e.target.style.boxShadow = 'none';
-            }}
-            onMouseDown={(e) => {
-              e.target.style.transform = 'translateY(-1px) scale(0.98)';
-            }}
-            onMouseUp={(e) => {
-              e.target.style.transform = 'translateY(-4px) scale(1.05)';
-            }}
-          >
-            📞 ติดต่อผู้ดูแลระบบ
-          </button>
-        </div>
-
-        {/* Enhanced Status Indicator */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px',
-          padding: '16px 24px',
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
-          borderRadius: '30px',
-          border: '2px solid rgba(251, 146, 60, 0.3)',
-          boxShadow: '0 8px 20px rgba(0, 0, 0, 0.1)',
-          marginBottom: '24px'
-        }}>
+          {/* Buttons */}
           <div style={{
-            width: '16px',
-            height: '16px',
-            background: 'linear-gradient(45deg, #fb923c, #ea580c)',
-            borderRadius: '50%',
-            animation: 'statusGlow 2s infinite',
-            boxShadow: '0 0 10px rgba(251, 146, 60, 0.6)'
-          }}></div>
-          <span style={{ 
-            color: '#c2410c', 
-            fontSize: '1rem',
-            fontWeight: '600'
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '12px'
           }}>
-            🔧 สถานะ: กำลังปรับปรุงระบบ
-          </span>
-          <div style={{
-            fontSize: '1.2rem',
-            animation: 'bounce 2s infinite'
-          }}>⚡</div>
-        </div>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                background: '#667eea',
+                color: 'white',
+                border: 'none',
+                padding: '14px 24px',
+                fontSize: '1rem',
+                fontWeight: '600',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                width: '100%'
+              }}
+            >
+              <RefreshCw size={18} />
+              ตรวจสอบอีกครั้ง
+            </button>
 
-        {/* Enhanced Contact Information */}
-        <div style={{
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-          padding: '20px',
-          borderRadius: '16px',
-          border: '2px solid rgba(251, 146, 60, 0.2)',
-          maxWidth: '450px',
-          animation: 'contactSlideIn 1.8s ease-out',
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)'
-        }}>
-          <h4 style={{ 
-            color: '#c2410c', 
-            margin: '0 0 12px',
-            fontSize: '1.1rem',
-            fontWeight: '700',
-            textAlign: 'center'
+            <button
+              onClick={() => window.open('https://vippersonalwebsite.vercel.app/contact', '_blank')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                background: 'white',
+                color: '#667eea',
+                border: '2px solid #667eea',
+                padding: '12px 24px',
+                fontSize: '0.9rem',
+                fontWeight: '600',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                width: '100%'
+              }}
+            >
+              <User size={16} />
+              ติดต่อนักพัฒนา
+            </button>
+          </div>
+
+          {/* Contact Info */}
+          <div style={{
+            marginTop: '24px',
+            padding: '16px',
+            background: '#f8fafc',
+            borderRadius: '12px',
+            fontSize: '0.85rem',
+            color: '#6b7280'
           }}>
-            💬 ต้องการสอบถามข้อมูลเพิ่มเติม? กับนักพัฒนาระบบนี้
-          </h4>
-          <div style={{ 
-            color: '#9a3412', 
-            fontSize: '0.9rem',
-            lineHeight: '1.8',
-            textAlign: 'center'
-          }}>
-            <div style={{ marginBottom: '8px', fontWeight: '600' }}>
-              👨‍💻 <strong>วิป (Phatra Wongsapsakul)</strong>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              marginBottom: '4px',
+              fontWeight: '600'
+            }}>
+              <Code size={14} />
+              วิป (Phatra Wongsapsakul)
             </div>
-            <div style={{ marginBottom: '8px' }}>
-              🌐 Website: <a 
-                href="https://vippersonalwebsite.vercel.app/" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  console.log('🌐 Website link clicked!');
-                  window.open('https://vippersonalwebsite.vercel.app/contact', '_blank');
-                }}
-                style={{ 
-                  color: '#ea580c', 
-                  textDecoration: 'underline',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  zIndex: 1000,
-                  position: 'relative',
-                  padding: '2px 4px',
-                  borderRadius: '4px',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = 'rgba(234, 88, 12, 0.1)';
-                  e.target.style.color = '#c2410c';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = 'transparent';
-                  e.target.style.color = '#ea580c';
-                }}
-              >
-                Vip Personal Website
-              </a>
-            </div>
-            <div style={{ fontSize: '0.8rem', color: '#92400e', fontStyle: 'italic' }}>
-              🎓 นักศึกษา ICT มหาวิทยาลัยมหิดล
-            </div>
+            <div>นักศึกษา ICT มหาวิทยาลัยมหิดล</div>
           </div>
         </div>
 
-        {/* CSS Animations for Enhanced Maintenance */}
+        {/* Simple CSS */}
         <style jsx>{`
-          @keyframes floatingPattern {
-            0%, 100% { transform: translateY(0px) rotate(0deg); }
-            25% { transform: translateY(-10px) rotate(1deg); }
-            50% { transform: translateY(-5px) rotate(0deg); }
-            75% { transform: translateY(-8px) rotate(-1deg); }
-          }
-          
-          @keyframes maintenanceBounce {
-            0%, 100% { transform: translateY(0px) scale(1); }
-            50% { transform: translateY(-15px) scale(1.05); }
-          }
-          
-          @keyframes gentleRotate {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            50% { transform: rotate(180deg) scale(1.1); }
-          }
-          
-          @keyframes wiggle {
-            0%, 100% { transform: rotate(0deg); }
-            25% { transform: rotate(-5deg); }
-            75% { transform: rotate(5deg); }
-          }
-          
           @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
-          }
-          
-          @keyframes progressGlow {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(400px); }
-          }
-          
-          @keyframes statusGlow {
-            0%, 100% { 
-              opacity: 1; 
-              box-shadow: 0 0 10px rgba(251, 146, 60, 0.6);
-            }
-            50% { 
-              opacity: 0.6; 
-              box-shadow: 0 0 20px rgba(251, 146, 60, 0.8);
-            }
-          }
-          
-          @keyframes buttonPulse {
-            0%, 100% {
-              box-shadow: 0 8px 25px rgba(251, 146, 60, 0.4);
-            }
-            50% {
-              box-shadow: 0 8px 35px rgba(251, 146, 60, 0.6);
-            }
-          }
-          
-          @keyframes titleSlideIn {
-            from {
-              opacity: 0;
-              transform: translateY(-30px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-          
-          @keyframes fadeInUp {
-            from {
-              opacity: 0;
-              transform: translateY(20px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-          
-          @keyframes cardSlideUp {
-            from {
-              opacity: 0;
-              transform: translateY(40px) scale(0.95);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0) scale(1);
-            }
-          }
-          
-          @keyframes contactSlideIn {
-            from {
-              opacity: 0;
-              transform: translateX(-30px);
-            }
-            to {
-              opacity: 1;
-              transform: translateX(0);
-            }
-          }
-          
-          @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-          }
-          
-          @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-            40% { transform: translateY(-10px); }
-            60% { transform: translateY(-5px); }
           }
         `}</style>
       </div>
@@ -802,7 +450,6 @@ if (typeof MAINTENANCE_MODE !== 'undefined' && MAINTENANCE_MODE) {
 // 🚀 VipStore Enhanced Loading State
 
 if (loading && !showRealError) {
-  // 🆕 Enhanced Loading แค่ตอน initial load
   if (isInitialLoad) {
     return (
       <div className="container">
@@ -812,161 +459,278 @@ if (loading && !showRealError) {
           alignItems: 'center',
           justifyContent: 'center',
           minHeight: '500px',
-          gap: '20px', // เดิม: 24px → ใหม่: 20px
-          padding: '40px 20px'
+          padding: '40px 20px',
+          background: 'white',
+          borderRadius: '20px',
+          position: 'relative',
+          overflow: 'hidden',
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
         }}>
           
-          {/* 🔄 FASTER Loading Icon */}
+          {/* Background Animation */}
           <div style={{
-            width: '70px', // เดิม: 80px → ใหม่: 70px (เล็กลง = เร็วขึ้น)
-            height: '70px',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            opacity: 0.05,
+            backgroundImage: `
+              radial-gradient(circle at 20% 20%, rgba(102, 126, 234, 0.3) 2px, transparent 2px),
+              radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.2) 3px, transparent 3px),
+              radial-gradient(circle at 40% 60%, rgba(102, 126, 234, 0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '60px 60px, 100px 100px, 40px 40px',
+            animation: 'floatingDots 20s linear infinite'
+          }} />
+
+          {/* Main Loading Animation */}
+          <div style={{
             position: 'relative',
-            marginBottom: '16px' // เดิม: 20px → ใหม่: 16px
+            marginBottom: '32px'
           }}>
-            {/* Outer Ring - FASTER */}
-            <div style={{
-              width: '100%',
-              height: '100%',
-              border: '3px solid #f3f4f6', // เดิม: 4px → ใหม่: 3px
-              borderTop: '3px solid #667eea',
-              borderRadius: '50%',
-              animation: 'fastSpin 0.8s linear infinite' // เดิม: 1.5s → ใหม่: 0.8s
-            }}></div>
             
-            {/* Inner Ring - FASTER */}
+            {/* Outer Rotating Ring */}
             <div style={{
-              position: 'absolute',
-              top: '17px', // ปรับตามขนาดใหม่
-              left: '17px',
-              width: '36px', // ปรับตามขนาดใหม่
-              height: '36px',
-              border: '2px solid #e5e7eb', // เดิม: 3px → ใหม่: 2px
-              borderRight: '2px solid #10b981',
+              width: '120px',
+              height: '120px',
+              border: '4px solid rgba(102, 126, 234, 0.1)',
+              borderTop: '4px solid rgba(102, 126, 234, 0.8)',
               borderRadius: '50%',
-              animation: 'fastSpin 0.6s linear infinite reverse' // เดิม: 1s → ใหม่: 0.6s
-            }}></div>
-            
-            {/* Center Icon - FASTER Pulse */}
-            <div style={{
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              fontSize: '1.3rem', // เดิม: 1.5rem → ใหม่: 1.3rem
-              animation: 'fastPulse 1.2s infinite' // เดิม: 2s → ใหม่: 1.2s
+              animation: 'smoothSpin 2s linear infinite',
+              position: 'relative'
             }}>
-              {loadingPhase === 'connecting' && '🔗'}
-              {loadingPhase === 'fetching' && '📦'}
-              {loadingPhase === 'retrying' && '☕'}
-            </div>
-          </div>
-
-          {/* 📝 Faster Loading Messages */}
-          <div style={{ textAlign: 'center', maxWidth: '380px' }}> {/* เดิม: 400px → ใหม่: 380px */}
-            <h2 style={{
-              color: '#374151',
-              fontSize: '1.4rem', // เดิม: 1.5rem → ใหม่: 1.4rem
-              fontWeight: '600',
-              marginBottom: '10px', // เดิม: 12px → ใหม่: 10px
-              animation: 'fastFadeInUp 0.4s ease-out' // เดิม: 0.6s → ใหม่: 0.4s
-            }}>
-              {loadingPhase === 'connecting' && '🔗 เชื่อมต่อเซิร์ฟเวอร์...'}
-              {loadingPhase === 'fetching' && '📦 โหลดข้อมูลสินค้า...'}
-              {loadingPhase === 'retrying' && '☕ เซิร์ฟเวอร์อยู่ระหว่างเตรียมความพร้อม...'}
-            </h2>
-
-            {/* 💡 Compact Tips */}
-            <div style={{
-              background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-              padding: '12px 16px', // เดิม: 16px → ใหม่: 12px 16px
-              borderRadius: '10px', // เดิม: 12px → ใหม่: 10px
-              border: '1px solid #bae6fd',
-              marginTop: '16px' // เดิม: 20px → ใหม่: 16px
-            }}>
-              <p style={{
-                color: '#0369a1',
-                fontSize: '0.85rem', // เดิม: 0.9rem → ใหม่: 0.85rem
-                margin: 0,
-                fontWeight: '500'
+              
+              {/* Inner Pulsing Circle */}
+              <div style={{
+                position: 'absolute',
+                top: '20px',
+                left: '20px',
+                width: '72px',
+                height: '72px',
+                background: 'rgba(102, 126, 234, 0.1)',
+                borderRadius: '50%',
+                animation: 'pulse 2s ease-in-out infinite',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}>
-                {loadingPhase === 'connecting' && '💡 กำลังติดต่อกับเซิร์ฟเวอร์'}
-                {loadingPhase === 'fetching' && '💡 กำลังโหลดสินค้าทั้งหมดให้คุณ'}
-                {loadingPhase === 'retrying' && serverWakeAttempts <= 5 && '💡 เซิร์ฟเวอร์อาจกำลังหลับ กำลังปลุกให้ตื่น'}
-                {loadingPhase === 'retrying' && serverWakeAttempts > 7 && serverWakeAttempts <= 10 && '💡 เซิร์ฟเวอร์กำลังอุ่นเครื่อง กรุณารอสักครู่'}
-                {loadingPhase === 'retrying' && serverWakeAttempts > 10 && '💡 กำลังพยายามเชื่อมต่อ'}
-              </p>
+                
+                {/* Dynamic Icon */}
+                <div style={{
+                  fontSize: '2rem',
+                  animation: 'iconFloat 3s ease-in-out infinite',
+                  filter: 'drop-shadow(0 2px 8px rgba(102, 126, 234, 0.3))'
+                }}>
+                  {loadingPhase === 'connecting' && (
+                    <div style={{ color: '#667eea' }}>🌐</div>
+                  )}
+                  {loadingPhase === 'fetching' && (
+                    <div style={{ color: '#10b981' }}>📦</div>
+                  )}
+                  {loadingPhase === 'retrying' && (
+                    <div style={{ color: '#f59e0b' }}>⚡</div>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* 🎭 FASTER Loading Dots */}
-          <div style={{
-            display: 'flex',
-            gap: '6px', // เดิม: 8px → ใหม่: 6px
-            marginTop: '16px' // เดิม: 20px → ใหม่: 16px
-          }}>
-            {[1, 2, 3, 4, 5].map(dot => (
+            {/* Floating Particles */}
+            {[...Array(6)].map((_, i) => (
               <div
-                key={dot}
+                key={i}
                 style={{
-                  width: '10px', // เดิม: 12px → ใหม่: 10px
-                  height: '10px',
-                  backgroundColor: '#667eea',
+                  position: 'absolute',
+                  width: '8px',
+                  height: '8px',
+                  background: 'rgba(102, 126, 234, 0.4)',
                   borderRadius: '50%',
-                  animation: `fastBounce 1.2s infinite ease-in-out`, // เดิม: 1.8s → ใหม่: 1.2s
-                  animationDelay: `${dot * 0.15}s` // เดิม: 0.2s → ใหม่: 0.15s
+                  top: `${Math.sin(i * Math.PI / 3) * 80 + 60}px`,
+                  left: `${Math.cos(i * Math.PI / 3) * 80 + 60}px`,
+                  animation: `particle${i} 3s ease-in-out infinite`,
+                  animationDelay: `${i * 0.5}s`
                 }}
-              ></div>
+              />
             ))}
           </div>
 
-          {/* OPTIMIZED CSS Animations */}
+          {/* Loading Text with Modern Styling */}
+          <div style={{ textAlign: 'center', zIndex: 10 }}>
+            <h2 style={{
+              color: '#334155',
+              fontSize: '1.8rem',
+              fontWeight: '700',
+              marginBottom: '16px',
+              textShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+              animation: 'textGlow 2s ease-in-out infinite alternate'
+            }}>
+              {loadingPhase === 'connecting' && 'เชื่อมต่อระบบ'}
+              {loadingPhase === 'fetching' && 'กำลังโหลดสินค้า'}
+              {loadingPhase === 'retrying' && 'กำลังเตรียมข้อมูล'}
+            </h2>
+
+            <p style={{
+              color: '#64748b',
+              fontSize: '1.1rem',
+              margin: '0 0 24px',
+              fontWeight: '500'
+            }}>
+              {loadingPhase === 'connecting' && 'กำลังติดต่อเซิร์ฟเวอร์...'}
+              {loadingPhase === 'fetching' && 'โหลดข้อมูลสินค้าทั้งหมด...'}
+              {loadingPhase === 'retrying' && serverWakeAttempts <= 5 && 'เซิร์ฟเวอร์กำลังเตรียมตัว...'}
+              {loadingPhase === 'retrying' && serverWakeAttempts > 5 && 'กำลังพยายามเชื่อมต่อ...'}
+            </p>
+
+            {/* Progress Indicator */}
+            <div style={{
+              width: '200px',
+              height: '4px',
+              background: 'rgba(102, 126, 234, 0.1)',
+              borderRadius: '4px',
+              overflow: 'hidden',
+              margin: '0 auto 24px'
+            }}>
+              <div style={{
+                height: '100%',
+                background: 'linear-gradient(90deg, #667eea, #10b981, #f59e0b)',
+                borderRadius: '4px',
+                animation: 'progressFlow 2s ease-in-out infinite',
+                boxShadow: '0 0 8px rgba(102, 126, 234, 0.3)'
+              }} />
+            </div>
+
+            {/* Animated Dots */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '8px'
+            }}>
+              {[1, 2, 3, 4].map(dot => (
+                <div
+                  key={dot}
+                  style={{
+                    width: '12px',
+                    height: '12px',
+                    background: '#667eea',
+                    borderRadius: '50%',
+                    animation: `waveDots 1.5s ease-in-out infinite`,
+                    animationDelay: `${dot * 0.2}s`,
+                    boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Advanced CSS Animations */}
           <style jsx>{`
-            @keyframes fastSpin {
+            @keyframes smoothSpin {
               0% { transform: rotate(0deg); }
               100% { transform: rotate(360deg); }
             }
             
-            @keyframes fastPulse {
+            @keyframes pulse {
               0%, 100% { 
-                opacity: 1; 
-                transform: translate(-50%, -50%) scale(1); 
+                transform: scale(1);
+                opacity: 0.8;
               }
               50% { 
-                opacity: 0.7; 
-                transform: translate(-50%, -50%) scale(1.08); 
-              }
-            }
-            
-            @keyframes fastBounce {
-              0%, 80%, 100% {
-                transform: scale(0);
-                opacity: 0.6;
-              }
-              40% {
-                transform: scale(1);
+                transform: scale(1.1);
                 opacity: 1;
               }
             }
             
-            @keyframes fastFadeInUp {
-              from {
-                opacity: 0;
-                transform: translateY(15px);
+            @keyframes iconFloat {
+              0%, 100% { 
+                transform: translateY(0px) rotate(0deg);
               }
-              to {
+              33% { 
+                transform: translateY(-8px) rotate(120deg);
+              }
+              66% { 
+                transform: translateY(4px) rotate(240deg);
+              }
+            }
+            
+            @keyframes textGlow {
+              0% { 
+                color: #334155;
+              }
+              100% { 
+                color: #667eea;
+              }
+            }
+            
+            @keyframes progressFlow {
+              0% { 
+                transform: translateX(-100%);
+              }
+              100% { 
+                transform: translateX(300px);
+              }
+            }
+            
+            @keyframes waveDots {
+              0%, 60%, 100% {
+                transform: translateY(0px);
+                opacity: 0.7;
+              }
+              30% {
+                transform: translateY(-15px);
                 opacity: 1;
-                transform: translateY(0);
               }
+            }
+            
+            @keyframes floatingDots {
+              0% { 
+                transform: translateY(0px) translateX(0px);
+              }
+              50% { 
+                transform: translateY(-20px) translateX(10px);
+              }
+              100% { 
+                transform: translateY(0px) translateX(0px);
+              }
+            }
+            
+            @keyframes particle0 {
+              0%, 100% { transform: scale(0) rotate(0deg); opacity: 0; }
+              50% { transform: scale(1) rotate(180deg); opacity: 1; }
+            }
+            
+            @keyframes particle1 {
+              0%, 100% { transform: scale(0) rotate(0deg); opacity: 0; }
+              50% { transform: scale(1) rotate(-180deg); opacity: 1; }
+            }
+            
+            @keyframes particle2 {
+              0%, 100% { transform: scale(0) rotate(0deg); opacity: 0; }
+              50% { transform: scale(1) rotate(360deg); opacity: 1; }
+            }
+            
+            @keyframes particle3 {
+              0%, 100% { transform: scale(0) rotate(0deg); opacity: 0; }
+              50% { transform: scale(1) rotate(-360deg); opacity: 1; }
+            }
+            
+            @keyframes particle4 {
+              0%, 100% { transform: scale(0) rotate(0deg); opacity: 0; }
+              50% { transform: scale(1) rotate(180deg); opacity: 1; }
+            }
+            
+            @keyframes particle5 {
+              0%, 100% { transform: scale(0) rotate(0deg); opacity: 0; }
+              50% { transform: scale(1) rotate(-180deg); opacity: 1; }
             }
           `}</style>
         </div>
       </div>
     );
   } else {
-    // ✅ ไม่แสดง Loading เลย, แสดงข้อมูลเดิม
     return null;
   }
 }
+
 
   // Error State (ย่อ)
   // if (error && showRealError) {
@@ -1017,598 +781,461 @@ if (loading && !showRealError) {
   
   return (
     <div className="container">
-      {/* ============ 🆕 UNIFIED FILTER DROPDOWN ============ */}
-      <div className="card" style={{ 
-        marginBottom: '24px', 
-        position: 'relative',
-        zIndex: showFilterDropdown ? 10000 : 'auto'
+     {/* ========== 🎨 COLLAPSIBLE HORIZONTAL FILTER SYSTEM ========== */}
+<div className="filter-container" style={{
+  background: 'white',
+  borderRadius: '16px',
+  marginBottom: '24px',
+  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+  border: '1px solid #e5e7eb',
+  overflow: 'hidden'
+}}>
+  
+  {/* Filter Header - Always Visible */}
+  <div 
+    onClick={() => setShowFilters(!showFilters)}
+    style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '16px 20px',
+      cursor: 'pointer',
+      borderBottom: showFilters ? '1px solid #e5e7eb' : 'none',
+      transition: 'all 0.3s ease',
+      backgroundColor: showFilters ? '#f0fdf4' : 'white'
+    }}
+  >
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+  <Search size={24} color="#059669" />
+  <div>
+    <h3 style={{ 
+      margin: 0, 
+      color: '#059669',
+      fontSize: '1.2rem',
+      fontWeight: '700'
+    }}>
+          ตัวกรองและค้นหา
+        </h3>
+        <p style={{
+          margin: 0,
+          color: '#047857',
+          fontSize: '0.9rem',
+          fontWeight: '500'
+        }}>
+          {getActiveFiltersCount() > 0 
+            ? `กำลังใช้ ${getActiveFiltersCount()} ตัวกรอง • ${filteredProducts.length} สินค้า`
+            : `${filteredProducts.length} สินค้าทั้งหมด • คลิกเพื่อค้นหา`
+          }
+        </p>
+      </div>
+    </div>
+    
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      {/* Active Filters Badge */}
+      {getActiveFiltersCount() > 0 && (
+        <span style={{
+          backgroundColor: '#059669',
+          color: 'white',
+          fontSize: '0.8rem',
+          fontWeight: '700',
+          padding: '6px 12px',
+          borderRadius: '20px',
+          animation: 'pulse 2s infinite'
+        }}>
+          {getActiveFiltersCount()}
+        </span>
+      )}
+      
+      {/* Toggle Icon */}
+      <div style={{
+        fontSize: '1.5rem',
+        color: '#059669',
+        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        transform: showFilters ? 'rotate(180deg)' : 'rotate(0deg)'
       }}>
-        {/* Dropdown Header */}
-        <div 
-          onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '16px',
-            cursor: 'pointer',
-            borderRadius: '12px',
-            transition: 'all 0.2s ease',
-            backgroundColor: showFilterDropdown ? '#f0f9ff' : 'white',
-            border: `2px solid ${showFilterDropdown ? '#667eea' : '#e5e7eb'}`,
-            boxShadow: showFilterDropdown ? '0 0 0 3px rgba(102, 126, 234, 0.1)' : 'none'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <span style={{ fontSize: '1.5rem' }}>🔍</span>
-            <div>
-              <h3 style={{ 
-                margin: 0, 
-                color: '#1f2937',
-                fontSize: '1.2rem',
-                fontWeight: '600'
-              }}>
-                ค้นหาและกรองสินค้า
-              </h3>
-              <p style={{
-                margin: 0,
-                color: '#6b7280',
-                fontSize: '0.9rem'
-              }}>
-                {getActiveFiltersCount() > 0 
-                  ? `ใช้ตัวกรอง ${getActiveFiltersCount()} รายการ • ${filteredProducts.length} สินค้า`
-                  : `${filteredProducts.length} สินค้าทั้งหมด`
-                }
-              </p>
-            </div>
-          </div>
+        <ChevronDown size={20} />
+      </div>
+    </div>
+  </div>
+
+  {/* Animated Filter Content */}
+  <div style={{
+    height: showFilters ? 'auto' : '0',
+    opacity: showFilters ? '1' : '0',
+    transform: showFilters ? 'translateY(0)' : 'translateY(-20px)',
+    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+    overflow: 'hidden'
+  }}>
+    <div style={{ padding: '20px' }}>
+      
+      {/* Search Bar */}
+      <div style={{ marginBottom: '20px' }}>
+        <div style={{ position: 'relative' }}>
+          <input
+            type="text"
+            placeholder="ค้นหาสินค้า, รายละเอียด, หรือหมวดหมู่..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '14px 18px 14px 50px',
+              fontSize: '1rem',
+              border: '2px solid #059669',
+              borderRadius: '14px',
+              outline: 'none',
+              transition: 'all 0.3s ease',
+              backgroundColor: '#f0fdf4',
+              boxShadow: '0 2px 8px rgba(5, 150, 105, 0.1)'
+            }}
+            onFocus={(e) => {
+              e.target.style.backgroundColor = 'white';
+              e.target.style.boxShadow = '0 4px 16px rgba(5, 150, 105, 0.2)';
+            }}
+            onBlur={(e) => {
+              e.target.style.backgroundColor = '#f0fdf4';
+              e.target.style.boxShadow = '0 2px 8px rgba(5, 150, 105, 0.1)';
+            }}
+          />
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {getActiveFiltersCount() > 0 && (
-              <span style={{
-                backgroundColor: '#667eea',
-                color: 'white',
-                fontSize: '0.8rem',
-                fontWeight: '600',
-                padding: '4px 8px',
-                borderRadius: '12px',
-                minWidth: '20px',
-                textAlign: 'center'
-              }}>
-                {getActiveFiltersCount()}
-              </span>
-            )}
-            <span style={{ 
-              fontSize: '1.2rem',
-              transition: 'transform 0.2s ease',
-              transform: showFilterDropdown ? 'rotate(180deg)' : 'rotate(0deg)'
+          <div style={{
+              position: 'absolute',
+              left: '18px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#059669'
             }}>
-              🔽
-            </span>
+              <Search size={20} />
+            </div>
+          
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              style={{
+                position: 'absolute',
+                right: '15px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '1.3rem',
+                color: '#6b7280',
+                transition: 'all 0.2s ease',
+                borderRadius: '50%',
+                width: '28px',
+                height: '28px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#fee2e2';
+                e.target.style.color = '#dc2626';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.color = '#6b7280';
+              }}
+            >
+              <RotateCcw size={16} />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Filters Grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+        gap: '20px',
+        alignItems: 'start'
+      }}>
+        
+        {/* Categories */}
+        <div>
+          <label style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '1rem',
+              fontWeight: '700',
+              color: '#047857',
+              marginBottom: '12px'
+            }}>
+              <Package size={18} />
+              หมวดหมู่สินค้า
+            </label>
+          <div style={{
+            display: 'flex',
+            gap: '8px',
+            flexWrap: 'wrap'
+          }}>
+            <button
+              onClick={() => setSelectedCategory('')}
+              style={{
+                padding: '10px 16px',
+                fontSize: '0.9rem',
+                fontWeight: '600',
+                border: selectedCategory === '' ? '2px solid #059669' : '2px solid #d1d5db',
+                borderRadius: '25px',
+                backgroundColor: selectedCategory === '' ? '#059669' : 'white',
+                color: selectedCategory === '' ? 'white' : '#6b7280',
+                cursor: 'pointer',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                whiteSpace: 'nowrap',
+                transform: 'scale(1)',
+                boxShadow: selectedCategory === '' ? '0 4px 12px rgba(5, 150, 105, 0.3)' : 'none'
+              }}
+              onMouseEnter={(e) => {
+                if (selectedCategory !== '') {
+                  e.target.style.borderColor = '#059669';
+                  e.target.style.color = '#059669';
+                  e.target.style.transform = 'scale(1.05)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (selectedCategory !== '') {
+                  e.target.style.borderColor = '#d1d5db';
+                  e.target.style.color = '#6b7280';
+                  e.target.style.transform = 'scale(1)';
+                }
+              }}
+            >
+              ทั้งหมด
+            </button>
+            {categories.map(category => (
+              <button
+                key={category}
+                onClick={() => setSelectedCategory(category)}
+                style={{
+                  padding: '10px 16px',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  border: selectedCategory === category ? '2px solid #059669' : '2px solid #d1d5db',
+                  borderRadius: '25px',
+                  backgroundColor: selectedCategory === category ? '#059669' : 'white',
+                  color: selectedCategory === category ? 'white' : '#6b7280',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  whiteSpace: 'nowrap',
+                  transform: 'scale(1)',
+                  boxShadow: selectedCategory === category ? '0 4px 12px rgba(5, 150, 105, 0.3)' : 'none'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedCategory !== category) {
+                    e.target.style.borderColor = '#059669';
+                    e.target.style.color = '#059669';
+                    e.target.style.transform = 'scale(1.05)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedCategory !== category) {
+                    e.target.style.borderColor = '#d1d5db';
+                    e.target.style.color = '#6b7280';
+                    e.target.style.transform = 'scale(1)';
+                  }
+                }}
+              >
+                {category}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Dropdown Content */}
-        {showFilterDropdown && (
-          <div style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            zIndex: 9999,
-            backgroundColor: 'white',
-            border: '2px solid #667eea',
-            borderTop: 'none',
-            borderRadius: '0 0 12px 12px',
-            boxShadow: '0 8px 25px rgba(0, 0, 0, 0.25)',
-            padding: '24px',
-            marginTop: '-2px'
+        {/* Price Range */}
+        <div>
+          <label style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '1rem',
+            fontWeight: '700',
+            color: '#047857',
+            marginBottom: '12px'
           }}>
-            {/* Search Section */}
-            <div style={{ marginBottom: '24px' }}>
-              <h4 style={{ 
-                margin: '0 0 12px 0', 
-                color: '#374151',
-                fontSize: '1rem',
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                🔍 ค้นหาสินค้า
-              </h4>
-              
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="text"
-                  placeholder="ค้นหาชื่อสินค้า, รายละเอียด, หรือหมวดหมู่..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    paddingLeft: '45px',
-                    fontSize: '1rem',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '12px',
-                    outline: 'none',
-                    transition: 'all 0.2s ease',
-                    backgroundColor: 'white',
-                    boxSizing: 'border-box'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#667eea';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(102, 126, 234, 0.1)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '#e5e7eb';
-                    e.target.style.boxShadow = 'none';
-                  }}
-                />
-                
-                {/* Search Icon */}
-                <div style={{
-                  position: 'absolute',
-                  left: '15px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  fontSize: '1.2rem',
-                  color: '#9ca3af',
-                  pointerEvents: 'none'
-                }}>
-                  🔍
-                </div>
-                
-                {/* Clear Button */}
-                {searchTerm && (
-                  <button
-                    onClick={() => setSearchTerm('')}
-                    style={{
-                      position: 'absolute',
-                      right: '12px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      fontSize: '1.2rem',
-                      color: '#6b7280',
-                      borderRadius: '50%',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#f3f4f6';
-                      e.target.style.color = '#374151';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = 'transparent';
-                      e.target.style.color = '#6b7280';
-                    }}
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-              
-              {/* Search Results Info */}
-              {searchTerm && (
-                <div style={{
-                  marginTop: '12px',
-                  padding: '8px 12px',
-                  backgroundColor: '#f0f9ff',
-                  border: '1px solid #bae6fd',
-                  borderRadius: '8px',
-                  fontSize: '0.9rem',
-                  color: '#0369a1'
-                }}>
-                  <span style={{ fontWeight: '600' }}>
-                    🎯 ผลการค้นหา: "{searchTerm}"
-                  </span>
-                  <span style={{ marginLeft: '8px' }}>
-                    พบ {filteredProducts.length} รายการ
-                  </span>
-                </div>
-              )}
-            </div>
-
-            {/* Grid Layout for Filters */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: '24px',
-              marginBottom: '24px'
+            <DollarSign size={18} />
+            ช่วงราคา
+          </label>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <input
+              type="number"
+              placeholder="ต่ำสุด"
+              value={priceRange.min}
+              onChange={(e) => setPriceRange({...priceRange, min: parseInt(e.target.value) || 0})}
+              style={{
+                width: '90px',
+                padding: '8px 10px',
+                fontSize: '0.9rem',
+                border: '2px solid #d1d5db',
+                borderRadius: '8px',
+                outline: 'none',
+                transition: 'all 0.2s ease'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#059669';
+                e.target.style.boxShadow = '0 0 0 3px rgba(5, 150, 105, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#d1d5db';
+                e.target.style.boxShadow = 'none';
+              }}
+            />
+            <span style={{ 
+              color: '#6b7280', 
+              fontSize: '1.2rem', 
+              fontWeight: '600' 
             }}>
-              
-              {/* Category Filter */}
-              <div>
-                <h4 style={{ 
-                  margin: '0 0 12px 0', 
-                  color: '#374151',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  📂 หมวดหมู่สินค้า
-                </h4>
-                
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    fontSize: '0.9rem',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '8px',
-                    backgroundColor: 'white',
-                    color: '#374151',
-                    cursor: 'pointer',
-                    outline: 'none',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <option value="">ทั้งหมด ({filteredProducts.length} รายการ)</option>
-                  {categories.map(category => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              -
+            </span>
+            <input
+              type="number"
+              placeholder="สูงสุด"
+              value={priceRange.max}
+              onChange={(e) => setPriceRange({...priceRange, max: parseInt(e.target.value) || 3000000})}
+              style={{
+                width: '90px',
+                padding: '8px 10px',
+                fontSize: '0.9rem',
+                border: '2px solid #d1d5db',
+                borderRadius: '8px',
+                outline: 'none',
+                transition: 'all 0.2s ease'
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#059669';
+                e.target.style.boxShadow = '0 0 0 3px rgba(5, 150, 105, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#d1d5db';
+                e.target.style.boxShadow = 'none';
+              }}
+            />
+          </div>
+        </div>
 
-              {/* Price Range Filter */}
-              <div>
-                <h4 style={{ 
-                  margin: '0 0 12px 0', 
-                  color: '#374151',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  💰 ช่วงราคา
-                </h4>
-                
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                  <input
-                    type="number"
-                    placeholder="ต่ำสุด"
-                    value={priceRange.min}
-                    onChange={(e) => setPriceRange({...priceRange, min: parseInt(e.target.value) || 0})}
-                    style={{
-                      width: '50%',
-                      padding: '8px',
-                      fontSize: '0.9rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      outline: 'none'
-                    }}
-                  />
-                  <input
-                    type="number"
-                    placeholder="สูงสุด"
-                    value={priceRange.max}
-                    onChange={(e) => setPriceRange({...priceRange, max: parseInt(e.target.value) || 3000000})}
-                    style={{
-                      width: '50%',
-                      padding: '8px',
-                      fontSize: '0.9rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      outline: 'none'
-                    }}
-                  />
-                </div>
-                
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  fontSize: '0.85rem',
-                  color: '#6b7280',
-                  marginBottom: '8px'
-                }}>
-                  <span>฿{priceRange.min.toLocaleString()}</span>
-                  <span>฿{priceRange.max.toLocaleString()}</span>
-                </div>
-                
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  <button
-                    onClick={() => setPriceRange({ min: 0, max: 1000 })}
-                    style={{
-                      padding: '4px 8px',
-                      fontSize: '0.8rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      backgroundColor: priceRange.min === 0 && priceRange.max === 1000 ? '#667eea' : 'white',
-                      color: priceRange.min === 0 && priceRange.max === 1000 ? 'white' : '#6b7280',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    &lt;฿1,000
-                  </button>
-                  <button
-                    onClick={() => setPriceRange({ min: 1000, max: 5000 })}
-                    style={{
-                      padding: '4px 8px',
-                      fontSize: '0.8rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      backgroundColor: priceRange.min === 1000 && priceRange.max === 5000 ? '#667eea' : 'white',
-                      color: priceRange.min === 1000 && priceRange.max === 5000 ? 'white' : '#6b7280',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    ฿1K-5K
-                  </button>
-                  <button
-                    onClick={() => setPriceRange({ min: 5000, max: priceStats.max })}
-                    style={{
-                      padding: '4px 8px',
-                      fontSize: '0.8rem',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      backgroundColor: priceRange.min === 5000 && priceRange.max === priceStats.max ? '#667eea' : 'white',
-                      color: priceRange.min === 5000 && priceRange.max === priceStats.max ? 'white' : '#6b7280',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    &gt;฿5,000
-                  </button>
-                </div>
-              </div>
+        {/* Sort */}
+        <div>
+          <label style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontSize: '1rem',
+            fontWeight: '700',
+            color: '#047857',
+            marginBottom: '12px'
+          }}>
+            <BarChart3 size={18} />
+            เรียงลำดับ
+          </label>
+          <select
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+            style={{
+              padding: '10px 14px',
+              fontSize: '0.9rem',
+              border: '2px solid #d1d5db',
+              borderRadius: '10px',
+              backgroundColor: 'white',
+              color: '#374151',
+              cursor: 'pointer',
+              outline: 'none',
+              minWidth: '160px',
+              transition: 'all 0.2s ease'
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = '#059669';
+              e.target.style.boxShadow = '0 0 0 3px rgba(5, 150, 105, 0.1)';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#d1d5db';
+              e.target.style.boxShadow = 'none';
+            }}
+          >
+            <option value="">เริ่มต้น</option>
+            <option value="price-low">ราคา: ต่ำ → สูง</option>
+            <option value="price-high">ราคา: สูง → ต่ำ</option>
+            <option value="name-az">ชื่อ: A → Z</option>
+            <option value="name-za">ชื่อ: Z → A</option>
+          </select>
+        </div>
 
-              {/* Sort Options */}
-              <div>
-                <h4 style={{ 
-                  margin: '0 0 12px 0', 
-                  color: '#374151',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  📊 เรียงลำดับ
-                </h4>
-                
-                <select
-                  value={sortOption}
-                  onChange={(e) => setSortOption(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    fontSize: '0.9rem',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '8px',
-                    backgroundColor: 'white',
-                    color: '#374151',
-                    cursor: 'pointer',
-                    outline: 'none',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <option value="">-- เลือกการเรียง --</option>
-                  <option value="price-low">💰 ราคา: ต่ำ → สูง</option>
-                  <option value="price-high">💰 ราคา: สูง → ต่ำ</option>
-                  <option value="name-az">🔤 ชื่อ: A → Z</option>
-                  <option value="name-za">🔤 ชื่อ: Z → A</option>
-                  <option value="stock-high">📦 สต็อก: มาก → น้อย</option>
-                  <option value="stock-low">📦 สต็อก: น้อย → มาก</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div style={{
+        {/* Clear Button */}
+        {getActiveFiltersCount() > 0 && (
+          <div>
+            <label style={{
               display: 'flex',
-              justifyContent: 'space-between',
               alignItems: 'center',
-              paddingTop: '16px',
-              borderTop: '1px solid #e5e7eb'
+              gap: '8px',
+              fontSize: '1rem',
+              fontWeight: '700',
+              color: '#dc2626',
+              marginBottom: '12px'
             }}>
-              <button
-                onClick={clearAllFilters}
-                disabled={getActiveFiltersCount() === 0}
-                style={{
-                  padding: '8px 16px',
-                  fontSize: '0.9rem',
-                  fontWeight: '600',
-                  border: '2px solid #ef4444',
-                  borderRadius: '8px',
-                  backgroundColor: getActiveFiltersCount() === 0 ? '#f3f4f6' : 'white',
-                  color: getActiveFiltersCount() === 0 ? '#9ca3af' : '#ef4444',
-                  cursor: getActiveFiltersCount() === 0 ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  if (getActiveFiltersCount() > 0) {
-                    e.target.style.backgroundColor = '#ef4444';
-                    e.target.style.color = 'white';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (getActiveFiltersCount() > 0) {
-                    e.target.style.backgroundColor = 'white';
-                    e.target.style.color = '#ef4444';
-                  }
-                }}
-              >
-                🗑️ ล้างตัวกรองทั้งหมด
-              </button>
-             
-              <button
-                onClick={() => setShowFilterDropdown(false)}
-                style={{
-                  padding: '8px 16px',
-                  fontSize: '0.9rem',
-                  fontWeight: '600',
-                  border: '2px solid #667eea',
-                  borderRadius: '8px',
-                  backgroundColor: '#667eea',
-                  color: 'white',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#5a67d8';
-                  e.target.style.borderColor = '#5a67d8';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#667eea';
-                  e.target.style.borderColor = '#667eea';
-                }}
-              >
-                ✅ ใช้ตัวกรอง
-              </button>
-            </div>
+              <RotateCcw size={18} />
+              รีเซ็ต
+            </label>
+            <button
+              onClick={clearAllFilters}
+              style={{
+                padding: '10px 20px',
+                fontSize: '0.9rem',
+                fontWeight: '700',
+                border: '2px solid #dc2626',
+                borderRadius: '10px',
+                backgroundColor: 'white',
+                color: '#dc2626',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                transform: 'scale(1)'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#dc2626';
+                e.target.style.color = 'white';
+                e.target.style.transform = 'scale(1.05)';
+                e.target.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'white';
+                e.target.style.color = '#dc2626';
+                e.target.style.transform = 'scale(1)';
+                e.target.style.boxShadow = 'none';
+              }}
+            >
+              ล้างตัวกรองทั้งหมด
+            </button>
           </div>
         )}
       </div>
 
-      {/* Active Filters Display */}
+      {/* Results Summary */}
       {getActiveFiltersCount() > 0 && (
         <div style={{
-          marginBottom: '24px',
-          padding: '12px',
-          backgroundColor: '#f0f9ff',
-          border: '1px solid #bae6fd',
-          borderRadius: '12px'
+          marginTop: '20px',
+          padding: '16px',
+          backgroundColor: '#ecfdf5',
+          border: '2px solid #bbf7d0',
+          borderRadius: '12px',
+          fontSize: '0.95rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#0369a1' }}>
-              🏷️ ตัวกรองที่ใช้:
+          <Sparkles size={20} color="#059669" />
+          <div>
+            <span style={{ fontWeight: '700', color: '#059669' }}>
+              ผลการกรอง: 
             </span>
-            
-            {selectedCategory && (
-              <span style={{
-                padding: '4px 8px',
-                fontSize: '0.8rem',
-                backgroundColor: '#667eea',
-                color: 'white',
-                borderRadius: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}>
-                หมวด: {selectedCategory}
-                <button
-                  onClick={() => setSelectedCategory('')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'white',
-                    cursor: 'pointer',
-                    fontSize: '0.7rem',
-                    padding: '0',
-                    marginLeft: '2px'
-                  }}
-                >
-                  ✕
-                </button>
-              </span>
-            )}
-            
-            {searchTerm && (
-              <span style={{
-                padding: '4px 8px',
-                fontSize: '0.8rem',
-                backgroundColor: '#10b981',
-                color: 'white',
-                borderRadius: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}>
-                ค้นหา: "{searchTerm}"
-                <button
-                  onClick={() => setSearchTerm('')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'white',
-                    cursor: 'pointer',
-                    fontSize: '0.7rem',
-                    padding: '0',
-                    marginLeft: '2px'
-                  }}
-                >
-                  ✕
-                </button>
-              </span>
-            )}
-            
-            {(priceRange.min > 0 || priceRange.max < 100000) && (
-              <span style={{
-                padding: '4px 8px',
-                fontSize: '0.8rem',
-                backgroundColor: '#f59e0b',
-                color: 'white',
-                borderRadius: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}>
-                ราคา: ฿{priceRange.min.toLocaleString()}-{priceRange.max.toLocaleString()}
-                <button
-                  onClick={() => setPriceRange({ min: 0, max: 100000 })}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'white',
-                    cursor: 'pointer',
-                    fontSize: '0.7rem',
-                    padding: '0',
-                    marginLeft: '2px'
-                  }}
-                >
-                  ✕
-                </button>
-              </span>
-            )}
-            
-            {sortOption && (
-              <span style={{
-                padding: '4px 8px',
-                fontSize: '0.8rem',
-                backgroundColor: '#8b5cf6',
-                color: 'white',
-                borderRadius: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}>
-                เรียง: {sortOption === 'price-low' ? 'ราคาต่ำ→สูง' : 
-                       sortOption === 'price-high' ? 'ราคาสูง→ต่ำ' :
-                       sortOption === 'name-az' ? 'ชื่อ A→Z' :
-                       sortOption === 'name-za' ? 'ชื่อ Z→A' :
-                       sortOption === 'stock-high' ? 'สต็อกมาก→น้อย' :
-                       sortOption === 'stock-low' ? 'สต็อกน้อย→มาก' : sortOption}
-                <button
-                  onClick={() => setSortOption('')}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: 'white',
-                    cursor: 'pointer',
-                    fontSize: '0.7rem',
-                    padding: '0',
-                    marginLeft: '2px'
-                  }}
-                >
-                  ✕
-                </button>
-              </span>
-            )}
+            <span style={{ marginLeft: '8px', color: '#047857', fontWeight: '600' }}>
+              พบ {filteredProducts.length} สินค้าจากทั้งหมด {products.length} รายการ
+            </span>
           </div>
         </div>
       )}
+    </div>
+  </div>
+</div>
+
+      
 
       {/* Products Count */}
       <div style={{ marginBottom: '24px' }}>
@@ -1902,6 +1529,53 @@ if (loading && !showRealError) {
         .product-grid > * {
           z-index: 2 !important;
         }
+
+        @media (max-width: 768px) {
+        .horizontal-filters {
+          padding: 16px !important;
+        }
+        
+        .horizontal-filters > div:last-child {
+          grid-template-columns: 1fr !important;
+          gap: 12px !important;
+        }
+        
+        .horizontal-filters input[type="number"] {
+          width: 70px !important;
+          padding: 4px 6px !important;
+        }
+        
+        .horizontal-filters select {
+          width: 100% !important;
+        }
+        @keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .filter-container {
+    margin: 0 -4px 24px !important;
+    border-radius: 12px !important;
+  }
+  
+  .filter-container > div:last-child > div {
+    padding: 16px !important;
+  }
+  
+  .filter-container input[type="number"] {
+    width: 70px !important;
+  }
+  
+  .filter-container select {
+    width: 100% !important;
+  }
+}
       `}</style>
     </div>
   );

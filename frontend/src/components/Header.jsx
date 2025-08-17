@@ -1,8 +1,23 @@
 // frontend/src/components/Header.jsx - FIXED VERSION
-import React, { useState } from 'react';
+import React, { useState , useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 import LogoutModal from './LogoutModal';
+
+import clsx from 'clsx';
+import { 
+  Store, 
+  Smartphone, 
+  UserCheck, 
+  Settings, 
+  Home, 
+  ShoppingCart, 
+  LogOut, 
+  Package,
+  User,
+  Shield
+} from 'lucide-react';
+
 
 const Header = ({ 
   onLoginClick, 
@@ -20,6 +35,11 @@ const Header = ({
   const { totalItems, toggleCart, formatCurrency, totalAmount } = useCart();
   
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const theme = useMemo(() => {
+  if (!user) return 'customer';
+  return user.role === 'admin' ? 'admin' : 'customer';
+  }, [user]);
 
   const handleLogout = () => {
     setShowLogoutModal(true);
@@ -105,6 +125,7 @@ const Header = ({
 
   return (
     <>
+    <div className={`theme-${theme}`}>
       <header className="header">
         <div className="container">
           <div className="header-layout">
@@ -124,7 +145,7 @@ const Header = ({
                         e.target.nextSibling.style.display = 'inline';
                       }}
                     />
-                    <span className="logo-fallback">🛍️</span>
+                    <Store className="w-6 h-6 text-blue-500 logo-fallback" />
                     <h1 className="logo-title">Vip Store Website</h1>
                   </div>
                   
@@ -137,19 +158,19 @@ const Header = ({
               {/* View Badge */}
               {currentView === 'admin' && (
                 <span className="view-badge admin-badge">
-                  👨‍💼 Admin Panel
+                  <UserCheck className="w-4 h-4" /> Admin Panel
                 </span>
               )}
               {currentView === 'settings' && (
                 <span className="view-badge settings-badge">
-                  ⚙️ Settings
+                  <Settings className="w-4 h-4" /> Settings
                 </span>
               )}
               
               {/* ✨ Product Preview Badge */}
               {showProductBackButton && (
                 <span className="view-badge product-badge">
-                  📦 รายละเอียดสินค้า
+                  <Package className="w-4 h-4" /> รายละเอียดสินค้า
                 </span>
               )}
             </div>
@@ -167,7 +188,7 @@ const Header = ({
                     // onClick={handleProductBackClick}
                     onClick={onBackToHome}
                   >
-                    🏠 กลับไปหน้าหลัก
+                    <Home className="w-4 h-4" /> กลับไปหน้าหลัก
                   </button>
                 )}
 
@@ -177,18 +198,23 @@ const Header = ({
                     className="btn-secondary btn-back"
                     onClick={onBackToHome}
                   >
-                    🏠 Back to VipStore
+                    <Home className="w-4 h-4" /> Back to VipStore
                   </button>
                 )}
 
                 {/* Cart Button (Home view only and not in product preview) */}
                 {currentView === 'home' && !showProductBackButton && (
                   <button 
-                    className="btn-secondary cart-button"
-                    onClick={toggleCart}
-                    style={{ position: 'relative' }}
-                  >
-                    🛒 ({totalItems})
+                      className="btn-secondary cart-button"
+                      onClick={toggleCart}
+                      style={{ 
+                        position: 'relative',
+                        padding: '4px 8px',
+                        fontSize: '0.7rem',
+                        minHeight: '26px'
+                      }}
+                    >
+                    <ShoppingCart className="w-4 h-4" /> ({totalItems})
                     {totalItems > 0 && (
                       <span className="cart-badge">{totalItems}</span>
                     )}
@@ -221,7 +247,7 @@ const Header = ({
                             }}
                           />
                         ) : (
-                          isAdmin() ? '👨‍💼' : '🛍️'
+                         isAdmin() ? <UserCheck className="w-4 h-4" /> : <User className="w-4 h-4" />
                         )}
                       </div>
                       <div className="user-details">
@@ -251,7 +277,7 @@ const Header = ({
                               title="การตั้งค่า"
                             >
                               <span className="btn-text">การตั้งค่า</span>
-                              <span className="btn-icon">⚙️</span>
+                              <Settings className="w-4 h-4" />
                             </button>
                           )}
 
@@ -261,7 +287,7 @@ const Header = ({
                               className="btn-primary btn-admin"
                               onClick={handleAdminClick}
                             >
-                              ⚙️ จัดการ
+                              <Settings className="w-4 h-4" /> จัดการ
                             </button>
                           )}
                         </>
@@ -273,7 +299,7 @@ const Header = ({
                         onClick={handleLogout}
                       >
                         <span className="btn-text">ออกจากระบบ</span>
-                        <span className="btn-icon">🚪</span>
+                        <span className="btn-icon"><LogOut className="w-4 h-4" /></span>
                       </button>
                     </div>
                   </>
@@ -284,7 +310,7 @@ const Header = ({
                       className="btn-primary btn-login"
                       onClick={onLoginClick}
                     >
-                      🔐 เข้าสู่ระบบ
+                      <Shield className="w-4 h-4" /> เข้าสู่ระบบ
                     </button>
                   )
                 )}
@@ -464,6 +490,49 @@ const Header = ({
             font-weight: 500;
             line-height: 1.1;
           }
+
+          /* ===== THEME COLORS ===== */
+/* Admin Theme - Blue */
+.theme-admin .btn-primary,
+.user-info.admin .user-avatar,
+.admin-badge,
+.btn-admin {
+  background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%) !important;
+  color: white !important;
+}
+
+.theme-admin .btn-secondary,
+.theme-admin .cart-button {
+  border-color: #1E40AF !important;
+  color: #1E40AF !important;
+}
+
+.theme-admin .btn-secondary:hover,
+.theme-admin .cart-button:hover {
+  background: #1E40AF !important;
+  color: white !important;
+}
+
+/* Customer Theme - Green */
+.theme-customer .btn-primary,
+.user-info.customer .user-avatar,
+.settings-badge,
+.btn-settings {
+  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+  color: white !important;
+}
+
+.theme-customer .btn-secondary,
+.theme-customer .cart-button {
+  border-color: #059669 !important;
+  color: #059669 !important;
+}
+
+.theme-customer .btn-secondary:hover,
+.theme-customer .cart-button:hover {
+  background: #059669 !important;
+  color: white !important;
+}
 
           /* ===== ACTION BUTTONS ===== */
           .action-buttons {
@@ -722,6 +791,7 @@ const Header = ({
           }
         `}</style>
       </header>
+    </div>
 
       {/* Logout Modal */}
       <LogoutModal

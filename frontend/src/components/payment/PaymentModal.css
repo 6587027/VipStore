@@ -1126,4 +1126,103 @@
     font-size: 0.7rem;
     padding: 3px 8px;
   }
+
+
+     /* เพิ่มใน PaymentModal.css */
+
+/* ปุ่มชำระเงินภายหลัง */
+.payment-later-btn {
+  background: linear-gradient(135deg, #6B7280, #9CA3AF);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.payment-later-btn:hover {
+  background: linear-gradient(135deg, #4B5563, #6B7280);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+}
+
+.payment-later-btn:active {
+  transform: translateY(0);
+}
+
+/* ปรับ layout footer ให้มี 3 ปุ่ม */
+.payment-modal-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 20px;
+  border-top: 1px solid #E5E7EB;
+  background: #F9FAFB;
+}
+
+/* ปรับปุ่มอื่นๆให้มี flex layout */
+.payment-back-btn,
+.payment-confirm-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Bank icon styles */
+.bank-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  margin-right: 8px;
+}
+
+.blue-bank {
+  background: linear-gradient(135deg, #1E40AF, #3B82F6);
+}
+
+.purple-bank {
+  background: linear-gradient(135deg, #7C3AED, #A855F7);
+}
+
+/* Credit card chip styling */
+.chip-pattern {
+  width: 24px;
+  height: 18px;
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  border-radius: 3px;
+  position: relative;
+}
+
+.chip-pattern::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  background: #C0C0C0;
+  border-radius: 1px;
+}
+
+/* Responsive สำหรับ mobile */
+@media (max-width: 768px) {
+  .payment-modal-footer {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .payment-later-btn,
+  .payment-back-btn,
+  .payment-confirm-btn {
+    width: 100%;
+    min-width: unset;
+  }
+}
 }

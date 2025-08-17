@@ -3,6 +3,17 @@ import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import './AddToCartButton.css';
 
+import { 
+  ShoppingCart, 
+  Plus, 
+  Minus, 
+  CheckCircle, 
+  XCircle, 
+  AlertTriangle,
+  Lock,
+  Loader2
+} from 'lucide-react';
+
 const AddToCartButton = ({ 
   product, 
   quantity = 1, 
@@ -118,13 +129,13 @@ const AddToCartButton = ({
   };
 
   const getButtonIcon = () => {
-    if (isAdding) return '⏳';
-    if (showSuccess) return '✅';
-    if (isOutOfStock) return '❌';
-    if (isProductInCart && currentQuantity >= product.stock) return '🔒'; // 🆕 ไอคอนเมื่อเต็ม
-    if (isProductInCart) return '✓';
-    return '🛒';
-  };
+  if (isAdding) return <Loader2 className="w-4 h-4 animate-spin" />;
+  if (showSuccess) return <CheckCircle className="w-4 h-4" />;
+  if (isOutOfStock) return <XCircle className="w-4 h-4" />;
+  if (isProductInCart && currentQuantity >= product.stock) return <Lock className="w-4 h-4" />;
+  if (isProductInCart) return <CheckCircle className="w-4 h-4" />;
+  return <ShoppingCart className="w-4 h-4" />;
+};
 
   const buttonClasses = [
     'add-to-cart-button',
@@ -143,15 +154,17 @@ const AddToCartButton = ({
     <div className="add-to-cart-container">
       {/* Stock Status */}
       {isLowStock && !isOutOfStock && (
-        <div className="stock-warning">
-          ⚠️ เหลือ {product.stock} ชิ้น
-        </div>
-      )}
+  <div className="stock-warning">
+    <AlertTriangle className="w-4 h-4" />
+    <span>เหลือ {product.stock} ชิ้น</span>
+  </div>
+)}
 
       {/* 🆕 แสดงสถานะตะกร้าเมื่อมีสินค้าในตะกร้าแล้ว */}
       {isProductInCart && (
         <div className="cart-status">
-          🛒 ในตะกร้า: {currentQuantity} ชิ้น | เหลือ: {availableStock} ชิ้น
+          <ShoppingCart className="w-4 h-4" />
+          ในตะกร้า: {currentQuantity} ชิ้น | เหลือ: {availableStock} ชิ้น
         </div>
       )}
 
@@ -221,21 +234,21 @@ const AddToCartButton = ({
           <button
             type="button"
             className="quick-action-btn"
-            onClick={handleQuickDecrease} // 🆕 ใช้ function ใหม่
+            onClick={handleQuickDecrease}
             disabled={currentQuantity <= 1}
             title="ลดจำนวน"
           >
-            -
+            <Minus className="w-3 h-3" />
           </button>
           <span className="current-quantity">{currentQuantity}</span>
           <button
             type="button"
             className="quick-action-btn"
-            onClick={handleQuickIncrease} // 🆕 ใช้ function ใหม่
-            disabled={currentQuantity >= product.stock} // 🆕 เพิ่ม stock check
+            onClick={handleQuickIncrease}
+            disabled={currentQuantity >= product.stock}
             title={currentQuantity >= product.stock ? 'ไม่สามารถเพิ่มได้ (เต็มสต็อก)' : 'เพิ่มจำนวน'}
           >
-            +
+            <Plus className="w-3 h-3" />
           </button>
         </div>
       )}

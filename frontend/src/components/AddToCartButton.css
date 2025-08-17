@@ -101,7 +101,7 @@
 
 /* Button Variants */
 .add-to-cart-button.variant-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%); /* Customer Green */
   color: white;
 }
 
@@ -132,8 +132,8 @@
 
 /* Button States */
 .add-to-cart-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  transform: translateY(-10px);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
 }
 
 .add-to-cart-button.loading {
@@ -153,10 +153,10 @@
   opacity: 0.7;
 }
 
-.add-to-cart-button.in-cart {
+/* .add-to-cart-button.in-cart {
   background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
   color: white;
-}
+} */
 
 .add-to-cart-button:disabled {
   cursor: not-allowed;
@@ -225,9 +225,9 @@
 }
 
 .quick-action-btn:hover:not(:disabled) {
-  background: #667eea;
+  background: #3B82F6; 
   color: white;
-  border-color: #667eea;
+  border-color: #3B82F6;
 }
 
 .quick-action-btn:disabled {
@@ -288,16 +288,21 @@
 
 /* Cart Status Display */
 .cart-status {
-  background: #e3f2fd;
-  color: #1565c0;
-  padding: 6px 12px;
+  background: #DBEAFE; /* Blue 100 */
+  color: #1E40AF; /* Blue 700 */
+  padding: 8px 12px;
   border-radius: 6px;
   font-size: 0.8em;
   font-weight: 600;
   text-align: center;
   margin-bottom: 8px;
-  border: 1px solid #bbdefb;
+  border: 1px solid #93C5FD; /* Blue 300 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
+
 
 /* Stock Full State */
 .add-to-cart-button.stock-full {
@@ -351,15 +356,19 @@
 
 /* Stock Warning Enhancement */
 .stock-warning {
-  background: #fff3cd;
-  color: #856404;
-  border: 1px solid #ffeaa7;
-  padding: 6px 12px;
+  background: #FEF3C7; /* Amber 100 */
+  color: #92400E; /* Amber 800 */
+  border: 1px solid #FDE68A;
+  padding: 8px 12px;
   border-radius: 6px;
   font-size: 0.8em;
   font-weight: 600;
   text-align: center;
   margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 /* Quantity Controls Enhancement */
@@ -386,10 +395,10 @@
 }
 
 /* Success State Enhancement */
-.add-to-cart-button.success {
-  background: linear-gradient(135deg, #4caf50, #45a049) !important;
+.add-to-cart-button.success,
+.add-to-cart-button.in-cart {
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
   color: white !important;
-  border-color: #4caf50 !important;
 }
 
 /* Loading State Enhancement */

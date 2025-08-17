@@ -630,71 +630,78 @@ router.get('/admin/stats', async (req, res) => {
 });
 
 // ✅ PUT /api/orders/:orderId/payment - Update payment status
-router.put('/:orderId/payment', async (req, res) => {
-  try {
-    const { orderId } = req.params;
-    const { paymentMethod, paymentMethodName, cardData } = req.body;
+// router.put('/:orderId/payment', async (req, res) => {
+//   try {
+//     const { orderId } = req.params;
+//     const { paymentMethod, paymentMethodName, cardData } = req.body;
 
-    console.log(`💳 Updating payment for order ${orderId}:`, {
-      method: paymentMethod,
-      methodName: paymentMethodName
-    });
+//     console.log(`💳 Updating payment for order ${orderId}:`, {
+//       method: paymentMethod,
+//       methodName: paymentMethodName
+//     });
 
-    const order = await Order.findById(orderId);
-    if (!order) {
-      return res.status(404).json({
-        success: false,
-        message: 'ไม่พบออเดอร์'
-      });
-    }
+//     const order = await Order.findById(orderId);
+//     if (!order) {
+//       return res.status(404).json({
+//         success: false,
+//         message: 'ไม่พบออเดอร์'
+//       });
+//     }
 
-    const updateData = {
-      status: 'confirmed',
-      paymentStatus: 'paid',
-      'paymentInfo.method': paymentMethod,
-      'paymentInfo.methodName': paymentMethodName,
-      'paymentInfo.paidAt': new Date(),
-      'paymentInfo.transactionId': `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    };
+//     const updateData = {
+//       status: 'confirmed',
+//       paymentStatus: 'paid',
+//       'paymentInfo.method': paymentMethod,
+//       'paymentInfo.methodName': paymentMethodName,
+//       'paymentInfo.paidAt': new Date(),
+//       'paymentInfo.transactionId': `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+//     };
 
-    if (paymentMethod === 'credit_card' && cardData) {
-      updateData['paymentInfo.cardData.last4'] = cardData.cardNumber.replace(/\s/g, '').slice(-4);
-      updateData['paymentInfo.cardData.cardType'] = 'VISA';
-    }
+//     if (paymentMethod === 'credit_card' && cardData) {
+//       updateData['paymentInfo.cardData.last4'] = cardData.cardNumber.replace(/\s/g, '').slice(-4);
+//       updateData['paymentInfo.cardData.cardType'] = 'VISA';
+//     }
 
-    const updatedOrder = await Order.findByIdAndUpdate(
-      orderId,
-      updateData,
-      { new: true, runValidators: true }
-    ).populate('items.productId');
+//     const updatedOrder = await Order.findByIdAndUpdate(
+//       orderId,
+//       updateData,
+//       { new: true, runValidators: true }
+//     ).populate('items.productId');
 
-    console.log(`✅ Payment updated for order ${updatedOrder.orderNumber}`);
+//     console.log(`✅ Payment updated for order ${updatedOrder.orderNumber}`);
 
-    res.json({
-      success: true,
-      message: 'อัปเดตการชำระเงินสำเร็จ',
-      order: updatedOrder
-    });
+//     res.json({
+//       success: true,
+//       message: 'อัปเดตการชำระเงินสำเร็จ',
+//       order: updatedOrder
+//     });
 
-  } catch (error) {
-    console.error('Payment update error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'เกิดข้อผิดพลาดในการอัปเดตการชำระเงิน',
-      error: error.message
-    });
-  }
-});
+//   } catch (error) {
+//     console.error('Payment update error:', error);
+//     res.status(500).json({
+//       success: false,
+//       message: 'เกิดข้อผิดพลาดในการอัปเดตการชำระเงิน',
+//       error: error.message
+//     });
+//   }
+// });
 
 // ✅ PUT /api/orders/:orderId/payment - Update payment status (FIXED)
 router.put('/:orderId/payment', async (req, res, next) => {
   try {
     const { orderId } = req.params;
-    const { paymentMethod, paymentMethodName, cardData } = req.body;
+    const { 
+      paymentMethod, 
+      paymentMethodName, 
+      cardData,
+      saveForLater,        // ← เพิ่มบรรทัดนี้
+      paymentStatus        // ← เพิ่มบรรทัดนี้
+    } = req.body;
 
     console.log(`💳 Updating payment for order ${orderId}:`, {
       method: paymentMethod,
       methodName: paymentMethodName,
+      saveForLater: saveForLater,  // ← เพิ่มบรรทัดนี้
       orderId: orderId
     });
 
@@ -709,6 +716,41 @@ router.put('/:orderId/payment', async (req, res, next) => {
 
     console.log(`📋 Found order: ${order.orderNumber}, current status: ${order.status}`);
 
+    // ← เพิ่มส่วนนี้ก่อน existing logic
+    // ✅ Handle "ชำระเงินภายหลัง" case
+    if (saveForLater === true || paymentMethod === 'later') {
+      console.log(`💾 Saving order ${order.orderNumber} for later payment`);
+      
+      const updateData = {
+        status: 'pending',
+        paymentStatus: 'pending',
+        paymentInfo: {
+          method: 'later',
+          methodName: 'ชำระเงินภายหลัง',
+          savedAt: new Date(),
+          isPaid: false
+        }
+      };
+
+      const updatedOrder = await Order.findByIdAndUpdate(
+        orderId,
+        { $set: updateData },
+        { 
+          new: true, 
+          runValidators: false,
+          strict: false 
+        }
+      ).populate('items.productId');
+
+      console.log(`💾 Order saved for later payment: ${updatedOrder.orderNumber}`);
+
+      return res.json({
+        success: true,
+        message: 'บันทึกออเดอร์สำหรับชำระเงินภายหลัง',
+        order: updatedOrder
+      });
+    }
+
     // ✅ FIXED: ใช้ findByIdAndUpdate แบบ direct field update
     const updateData = {
       status: 'confirmed',
@@ -718,7 +760,8 @@ router.put('/:orderId/payment', async (req, res, next) => {
         method: paymentMethod,
         methodName: paymentMethodName,
         paidAt: new Date(),
-        transactionId: `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        transactionId: `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        isPaid: true            // ← เพิ่มบรรทัดนี้
       }
     };
 
@@ -738,8 +781,8 @@ router.put('/:orderId/payment', async (req, res, next) => {
       { $set: updateData },
       { 
         new: true, 
-        runValidators: false, // ✅ ปิด validation เพื่อให้เพิ่ม paymentInfo ได้
-        strict: false // ✅ อนุญาตให้เพิ่ม field ที่ไม่อยู่ใน schema
+        runValidators: false,
+        strict: false
       }
     ).populate('items.productId');
 

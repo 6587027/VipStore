@@ -5,6 +5,65 @@ import { authAPI, ordersAPI } from '../../services/api';
 import PaymentModal from '../payment/PaymentModal'; 
 import { socketManager, chatSocket, socketUtils } from '../../services/socketClient';
 
+import { 
+  User, 
+  MapPin, 
+  CreditCard, 
+  ShoppingBag,
+  ShoppingCart, 
+  Shield, 
+  MessageCircle,
+  Settings,
+  ArrowLeft,
+  CheckCircle,
+  Clock,
+  XCircle,
+  AlertTriangle,
+  RefreshCw,
+  Send,
+  Save,
+  Edit,
+  Trash2,
+  Plus,
+  Lock,
+  RefreshCcw,
+  Home,
+  MapPinIcon,
+  HistoryIcon,
+  Pen,
+  Globe,
+  Loader,
+  Loader2,
+  Loader2Icon,
+  Trash,
+  Phone,
+  Mail,
+  Camera,
+  User2,
+  BoxIcon,
+  BoxSelectIcon,
+  BoxesIcon,
+  Package,
+  Calendar,
+  ListIcon,
+  ReceiptCentIcon,
+  ReceiptIcon,
+  Receipt,
+  RotateCcwIcon,
+  ChevronUp,
+  ChevronDown,
+  Link,
+  Unlink,
+  Unlink2,
+  UserCheck2Icon,
+  SendHorizonalIcon,
+  Key,
+  KeyIcon,
+  KeyRoundIcon,
+  
+} from 'lucide-react';
+import { ChatBubbleBottomCenterIcon, ListBulletIcon } from '@heroicons/react/16/solid';
+
 
 // ✅ Use Environment Variable or Fallback to Production URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com/api';
@@ -572,7 +631,7 @@ const [newProfileData, setNewProfileData] = useState({
   const [passwordHistory, setPasswordHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  // 🛒 Order History State (ย้ายมาจาก UserProfileModal เป๊ะเลย)
+  // 🛒 Order History State (ย้ายมาจาก UserProfileModal 
   const [orderHistory, setOrderHistory] = useState([]);
   const [orderLoading, setOrderLoading] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -1001,12 +1060,49 @@ const handlePaymentSuccess = async (paymentData) => {
     setLoading(true);
     setError('');
 
-    // อัพเดตสถานะออเดอร์เป็นชำระเงินแล้ว
-    const response = await ordersAPI.admin.updateStatus(paymentData.orderId || paymentOrderData.orderId, {
-      status: 'confirmed',
-      paymentStatus: 'paid',
-      notes: `ชำระเงินสำเร็จด้วย ${paymentData.methodName || paymentData.method} เมื่อ ${new Date().toLocaleString('th-TH')} (ผ่าน Payment Modal)`
+    // 🔧 ตรวจสอบว่าเป็นการ "ชำระเงินภายหลัง" หรือไม่
+    const isPayLater = paymentData.saveForLater === true || 
+                       paymentData.method === 'pay_later' ||
+                       paymentData.methodName === 'ชำระเงินภายหลัง';
+
+    console.log('🔍 Payment analysis:', {
+      saveForLater: paymentData.saveForLater,
+      method: paymentData.method,
+      methodName: paymentData.methodName,
+      isPayLater: isPayLater
     });
+
+    if (isPayLater) {
+      // 📋 กรณีชำระเงินภายหลัง - ไม่ต้องอัพเดตสถานะ
+      console.log('📋 Payment saved for later - no status update needed');
+      
+      setSuccess(`📋 บันทึกคำขอชำระเงินภายหลังสำเร็จ! ออเดอร์ ${paymentOrderData.orderNumber} รอการชำระเงิน`);
+      
+      // รีเฟรชรายการออเดอร์
+      await fetchOrderHistory();
+      
+      // ปิด Payment Modal
+      setShowPaymentModal(false);
+      setPaymentOrderData(null);
+      
+      setTimeout(() => {
+        setSuccess('');
+      }, 5000);
+      
+      return; // 🚨 สำคัญ: ออกจากฟังก์ชันทันที ไม่ต้องเรียก updateStatus
+    }
+
+    // 💳 กรณีชำระเงินจริง - อัพเดตสถานะเป็น confirmed
+    console.log('💳 Real payment - updating status to confirmed');
+    
+    const response = await ordersAPI.admin.updateStatus(
+      paymentData.orderId || paymentOrderData.orderId, 
+      {
+        status: 'confirmed',
+        paymentStatus: 'paid',
+        notes: `💳 ชำระเงินสำเร็จด้วย ${paymentData.methodName || paymentData.method} เมื่อ ${new Date().toLocaleString('th-TH')} (ผ่าน Payment Modal)`
+      }
+    );
 
     if (response.data.success) {
       setSuccess(`🎉 ชำระเงินสำเร็จ! ออเดอร์ ${paymentOrderData.orderNumber} ได้รับการยืนยันแล้ว`);
@@ -1022,7 +1118,7 @@ const handlePaymentSuccess = async (paymentData) => {
         setSuccess('');
       }, 5000);
     } else {
-      setError('ชำระเงินสำเร็จ แต่ไม่สามารถอัพเดตสถานะออเดอร์ได้');
+      setError('ไม่สามารถอัพเดตสถานะออเดอร์ได้');
     }
 
   } catch (error) {
@@ -1032,6 +1128,7 @@ const handlePaymentSuccess = async (paymentData) => {
     setLoading(false);
   }
 };
+
 // 5. 🆕 Payment Close Handler
 const handlePaymentClose = () => {
   setShowPaymentModal(false);
@@ -1411,35 +1508,35 @@ const handleNewProfileInputChange = (e) => {
   const menuItems = [
     {
       id: 'profile',
-      icon: '👤',
+      icon: <User className="w-6 h-6"  />,
       title: 'ข้อมูลส่วนตัว',
       description: 'แก้ไขชื่อ, อีเมล, รหัสผ่าน',
       badge: null
     },
     {
       id: 'addresses',
-      icon: '🏠',
+      icon: <MapPin className="w-6 h-6" />,
       title: 'ที่อยู่จัดส่ง',
       description: 'จัดการที่อยู่สำหรับการสั่งซื้อ',
       badge: `${addressProfiles.length}/5`
     },
     {
       id: 'payment',
-      icon: '💳',
+      icon: <CreditCard className="w-6 h-6" />,
       title: 'วิธีชำระเงิน',
       description: 'บัตรเครดิต, โอนธนาคาร, QR Code',
       badge: '🚧 DEMO'
     },
     {
       id: 'orders',
-      icon: '🛒',
-      title: 'ประวัติการสั่งซื้อ', // ✅ เพิ่มใหม่
+      icon: <ShoppingCart className="w-6 h-6" />,
+      title: 'ประวัติการสั่งซื้อ', 
       description: 'ดูประวัติการสั่งซื้อและติดตามสถานะ',
       badge: orderHistory.length > 0 ? `${orderHistory.length}` : null
     },
     // {
     //   id: 'security',
-    //   icon: '🔐',
+    //   icon: <Shield className="w-6 h-6" />,
     //   title: 'ความปลอดภัย',
     //   description: 'เปลี่ยนรหัสผ่าน, ประวัติการเข้าสู่ระบบ',
     //   badge: null
@@ -1447,7 +1544,7 @@ const handleNewProfileInputChange = (e) => {
 
     {
   id: 'chat',
-  icon: '💬',
+  icon: <MessageCircle className="w-6 h-6" />,
   title: 'Chat With Admin',
   description: 'แชทสอบถามกับทีมสนับสนุน',
   badge: '🟢 Online'
@@ -1461,18 +1558,19 @@ const handleNewProfileInputChange = (e) => {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: '20px',
+        marginTop: '8px',
+        marginBottom: '14px',
         flexWrap: 'wrap',
         gap: '12px'
       }}>
         <h4 style={{ margin: 0, fontSize: '1.3rem', fontWeight: '700', color: '#374151' }}>
-          🛒 ประวัติการสั่งซื้อ
+          <ShoppingCart className="w-6 h-6" />   ประวัติการสั่งซื้อ
         </h4>
         <button
           onClick={fetchOrderHistory}
           style={{
             padding: '8px 16px',
-            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            background: '#3d85c6',
             color: 'white',
             border: 'none',
             borderRadius: '8px',
@@ -1481,7 +1579,7 @@ const handleNewProfileInputChange = (e) => {
             fontWeight: '600'
           }}
         >
-          🔄 รีเฟรช
+          <RefreshCcw size={16} className="inline-block mr-1" /> รีเฟรช
         </button>
       </div>
       
@@ -1530,7 +1628,7 @@ const handleNewProfileInputChange = (e) => {
               fontWeight: '600'
             }}
           >
-            🛍️ เริ่มช้อปปิ้ง
+            <ShoppingBag size={16} className="inline-block mr-1" /> เริ่มช้อปปิ้ง
           </button>
         </div>
       ) : (
@@ -1591,13 +1689,13 @@ const handleNewProfileInputChange = (e) => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                   <div style={{ flex: 1, minWidth: '200px' }}>
                     <div style={{ fontWeight: '700', fontSize: '1.1rem', color: '#1f2937', marginBottom: '4px' }}>
-                      📦 {order.orderNumber}
+                      <Package className="inline-block mr-1" /> {order.orderNumber}
                     </div>
                     <div style={{ fontSize: '0.9rem', color: '#6b7280', marginBottom: '8px' }}>
-                      📅 {formatDate(order.orderDate || order.createdAt)}
+                      <Calendar size={14} className="inline-block mr-1" /> {formatDate(order.orderDate || order.createdAt)}
                     </div>
                     <div style={{ fontSize: '0.9rem', color: '#6b7280' }}>
-                      📋 {order.items?.length || 0} รายการ
+                      <ShoppingCart size={14} className="inline-block mr-1" /> {order.items?.length || 0} รายการ
                     </div>
                   </div>
                   
@@ -1653,7 +1751,7 @@ const handleNewProfileInputChange = (e) => {
                           }
                         }}
                       >
-                        {loading ? '⏳' : '💳'} {loading ? 'กำลังประมวลผล...' : 'ชำระเงิน'}
+                        {loading ? <Loader size={16} className="inline-block mr-1" /> : <CreditCard size={16} className="inline-block mr-1" />} {loading ? 'กำลังประมวลผล...' : 'ชำระเงิน'}
                       </button>
                     )}
                     
@@ -1670,7 +1768,7 @@ const handleNewProfileInputChange = (e) => {
                         textAlign: 'center',
                         border: '1px solid #10b981'
                       }}>
-                        ✅ ชำระเงินแล้ว
+                        <CheckCircle size={15} className="inline-block mr-1" /> ชำระเงินแล้ว
                       </div>
                     )}
                     
@@ -1714,7 +1812,7 @@ const handleNewProfileInputChange = (e) => {
                           }
                         }}
                       >
-                        {loading ? '⏳' : '🚫'} {loading ? 'กำลังยกเลิก...' : 'ยกเลิกออเดอร์'}
+                        {loading ? <Loader size={16} className="inline-block mr-1" /> : <Trash size={16} className="inline-block mr-1" />} {loading ? 'กำลังยกเลิก...' : 'ยกเลิกออเดอร์'}
                       </button>
                     )}
                     {/* 💰 ปุ่มขอคืนเงิน - เพิ่มหลังปุ่ม Cancel Order */}
@@ -1766,7 +1864,7 @@ const handleNewProfileInputChange = (e) => {
                                     transition: 'all 0.2s ease'
                                   }}
                                 >
-                                  💰 ขอคืนเงิน
+                                  <ReceiptIcon size={14} className="inline-block mr-1" /> ขอคืนเงิน
                                 </button>
                               );
                             }
@@ -1784,7 +1882,7 @@ const handleNewProfileInputChange = (e) => {
                         borderRadius: '6px',
                         fontSize: '0.75rem'
                       }}>
-                        📋 สถานะคำขอคืนเงิน: 
+                        <RotateCcwIcon size={14} className="inline-block mr-1" /> สถานะคำขอคืนเงิน: 
                         <span style={{
                           marginLeft: '4px',
                           fontWeight: 'bold',
@@ -1824,7 +1922,7 @@ const handleNewProfileInputChange = (e) => {
                   marginBottom: '12px'
                 }}>
                   <div style={{ fontSize: '0.9rem', color: '#374151', fontWeight: '600', marginBottom: '8px' }}>
-                    🛍️ รายการสินค้า:
+                    <ListIcon size={14} className="inline-block mr-1" /> รายการสินค้า:
                   </div>
                   {order.items && order.items.slice(0, 2).map((item, itemIndex) => (
                     <div key={itemIndex} style={{
@@ -1856,21 +1954,21 @@ const handleNewProfileInputChange = (e) => {
                     {/* Customer Info */}
                     <div style={{ marginBottom: '16px' }}>
                       <h5 style={{ margin: '0 0 8px', fontSize: '1rem', fontWeight: '600', color: '#374151' }}>
-                        📍 ข้อมูลการจัดส่ง
+                        <MapPin size={15} className="inline-block mr-1" strokeWidth={2.5} /> ข้อมูลการจัดส่ง
                       </h5>
                       <div style={{ fontSize: '0.9rem', color: '#6b7280', lineHeight: 1.6 }}>
                         <div><strong>{order.customerInfo?.firstName} {order.customerInfo?.lastName}</strong></div>
-                        <div>📧 {order.customerInfo?.email}</div>
-                        <div>📞 {order.customerInfo?.phone}</div>
-                        <div>🏠 {order.customerInfo?.address?.street}</div>
-                        <div>📍 {order.customerInfo?.address?.district} {order.customerInfo?.address?.province} {order.customerInfo?.address?.postalCode}</div>
+                        <div><Mail size={14} className="inline-block mr-1" /> {order.customerInfo?.email}</div>
+                        <div><Phone size={14} className="inline-block mr-1" /> {order.customerInfo?.phone}</div>
+                        <div><Home size={14} className="inline-block mr-1" /> {order.customerInfo?.address?.street}</div>
+                        <div><MapPin size={14} className="inline-block mr-1" /> {order.customerInfo?.address?.district} {order.customerInfo?.address?.province} {order.customerInfo?.address?.postalCode}</div>
                       </div>
                     </div>
 
                     {/* All Items */}
                     <div>
                       <h5 style={{ margin: '0 0 8px', fontSize: '1rem', fontWeight: '600', color: '#374151' }}>
-                        📦 รายการสินค้าทั้งหมด
+                        <Package size={14} className="inline-block mr-1" strokeWidth={2.5} /> รายการสินค้าทั้งหมด
                       </h5>
                       {order.items && order.items.map((item, itemIndex) => (
                         <div key={itemIndex} style={{
@@ -1947,7 +2045,7 @@ const handleNewProfileInputChange = (e) => {
                   fontSize: '0.8rem',
                   fontWeight: '500'
                 }}>
-                  {selectedOrder === order._id ? '👆 คลิกเพื่อซ่อนรายละเอียด' : '👇 คลิกเพื่อดูรายละเอียด'}
+                  {selectedOrder === order._id ? <><ChevronUp size={16} className="inline-block mr-1" strokeWidth={2} /> คลิกเพื่อซ่อนรายละเอียด</> : <><ChevronDown size={16} className="inline-block mr-1" strokeWidth={2} /> คลิกเพื่อดูรายละเอียด</>}
                 </div>
               </div>
             ))}
@@ -2009,9 +2107,8 @@ const handleNewProfileInputChange = (e) => {
           e.target.style.boxShadow = 'none';
         }}
         >
-          {!profilePicture && '👤'}
-          
-          
+          {!profilePicture && <User size={60} className="inline-block" />}
+
           {/* Upload Overlay */}
 
           <div style={{
@@ -2029,7 +2126,7 @@ const handleNewProfileInputChange = (e) => {
             border: '3px solid white',
             boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
           }}>
-            📷
+            <Camera size={16} className="inline-block" />
           </div>
         </div>
         
@@ -2049,7 +2146,7 @@ const handleNewProfileInputChange = (e) => {
           fontSize: '0.95rem',
           opacity: 0.9
         }}>
-          📧 {user?.email || 'ไม่ระบุอีเมล'}
+          <Mail size={14} className="inline-block mr-1" color='white' strokeWidth={2.5} /> : {user?.email || 'ไม่ระบุอีเมล'}
         </p>
         
         <p style={{
@@ -2057,7 +2154,7 @@ const handleNewProfileInputChange = (e) => {
           fontSize: '0.85rem',
           opacity: 0.8
         }}>
-          🛍️ ลูกค้า VipStore
+          <ShoppingBag size={14} className="inline-block mr-1" strokeWidth={2.5} /> : ลูกค้า VipStore
         </p>
         
         {/* Edit Profile Picture Button */}
@@ -2262,7 +2359,7 @@ const handleNewProfileInputChange = (e) => {
                   fontWeight: '600'
                 }}
               >
-                ← กลับ
+                   <ArrowLeft size={16} /> กลับ
               </button>
               
               <h2 style={{ 
@@ -2270,7 +2367,7 @@ const handleNewProfileInputChange = (e) => {
                 fontSize: '1.8rem', 
                 fontWeight: '700' 
               }}>
-                🛒 ประวัติการสั่งซื้อ
+                ประวัติการสั่งซื้อ
               </h2>
               <p style={{ 
                 margin: 0, 
@@ -2282,7 +2379,7 @@ const handleNewProfileInputChange = (e) => {
             </div>
 
             {/* Content */}
-            <div style={{ padding: '30px' }}>
+            <div style={{ padding: '5px' }}>
               {/* Error/Success Messages */}
               {error && (
                 <div style={{
@@ -2334,7 +2431,7 @@ const handleNewProfileInputChange = (e) => {
               textAlign: 'center',
               position: 'relative'
             }}>
-              {/* <button
+              <button
                 onClick={() => setActiveSection('menu')}
                 style={{
                   position: 'absolute',
@@ -2351,15 +2448,15 @@ const handleNewProfileInputChange = (e) => {
                   fontWeight: '600'
                 }}
               >
-                ← กลับ
+                <ArrowLeft size={16} /> กลับ
               </button>
-               */}
+              
               <h2 style={{ 
                 margin: '0 0 8px', 
                 fontSize: '1.8rem', 
                 fontWeight: '700' 
               }}>
-                👤 ข้อมูลส่วนตัว
+                <User size={26} strokeWidth={2.5} /> ข้อมูลส่วนตัว
               </h2>
               <p style={{ 
                 margin: 0, 
@@ -2538,7 +2635,7 @@ const handleNewProfileInputChange = (e) => {
                       border: '1px solid #f59e0b'
                     }}>
                       <p style={{ margin: '0 0 8px', fontSize: '0.95rem', color: '#374151', fontWeight: '600' }}>
-                        🔐 เปลี่ยนรหัสผ่าน
+                        <Lock size={16} className="inline-block mr-1" /> เปลี่ยนรหัสผ่าน
                       </p>
                       <p style={{ margin: '0 0 12px', fontSize: '0.85rem', color: '#6b7280' }}>
                         สำหรับการเปลี่ยนรหัสผ่าน กรุณาแจ้งขอต่อ Admin เพื่อความปลอดภัย
@@ -2566,7 +2663,7 @@ const handleNewProfileInputChange = (e) => {
                           e.target.style.transform = 'translateY(0)';
                         }}
                       >
-                        📨 ส่งคำขอเปลี่ยนรหัสผ่าน
+                        <Send size={16} className="inline-block mr-1" /> ส่งคำขอเปลี่ยนรหัสผ่าน
                       </button>
                     </div>
                     {/* 📋 ประวัติคำขอเปลี่ยนรหัสผ่าน - เพิ่มส่วนนี้ */}
@@ -2592,7 +2689,7 @@ const handleNewProfileInputChange = (e) => {
                           alignItems: 'center',
                           gap: '8px'
                         }}>
-                          📋 ประวัติคำขอเปลี่ยนรหัสผ่าน
+                          <HistoryIcon size={20} className="inline-block mr-1" /> ประวัติคำขอเปลี่ยนรหัสผ่าน
                           {passwordHistory.filter(req => req.status === 'pending').length > 0 && (
                             <span style={{
                               background: '#ef4444',
@@ -2624,7 +2721,7 @@ const handleNewProfileInputChange = (e) => {
                             fontWeight: '600'
                           }}
                         >
-                          🔄 รีเฟรช
+                          <RefreshCcw size={16} className="inline-block mr-1" /> รีเฟรช
                         </button>
                       </div>
                       
@@ -2652,7 +2749,7 @@ const handleNewProfileInputChange = (e) => {
                           borderRadius: '8px',
                           border: '1px dashed #cbd5e1'
                         }}>
-                          <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📋</div>
+                          <div style={{ fontSize: '2rem', marginBottom: '8px' }}><Lock size={20} className="inline-block mr-1" /></div>
                           <p style={{ margin: 0, fontSize: '0.9rem' }}>
                             ยังไม่มีประวัติคำขอเปลี่ยนรหัสผ่าน
                           </p>
@@ -2815,7 +2912,7 @@ const handleNewProfileInputChange = (e) => {
                           fontWeight: '600'
                         }}
                       >
-                        ← กลับ
+                        <ArrowLeft size={16} /> กลับ
                       </button>
                       <button
                         type="submit"
@@ -2830,7 +2927,7 @@ const handleNewProfileInputChange = (e) => {
                           fontWeight: '600'
                         }}
                       >
-                        {loading ? '⏳ กำลังบันทึก...' : '💾 บันทึกข้อมูล'}
+                        {loading ? '⏳ กำลังบันทึก...' : <Save size={16} className="inline-block mr-1" />} บันทึกข้อมูล
                       </button>
                     </div>
                   </div>
@@ -2845,7 +2942,7 @@ const handleNewProfileInputChange = (e) => {
                     border: '1px solid #3b82f6'
                   }}>
                     <h4 style={{ margin: '0 0 8px', color: '#1e40af' }}>
-                      📨 คำขอเปลี่ยนรหัสผ่าน
+                      <Shield size={24} className="inline-block mr-1" /> คำขอเปลี่ยนรหัสผ่าน
                     </h4>
                     <p style={{ margin: 0, fontSize: '0.9rem', color: '#374151' }}>
                       กรุณาระบุเหตุผลในการเปลี่ยนรหัสผ่าน Admin จะตรวจสอบและดำเนินการให้
@@ -2921,7 +3018,7 @@ const handleNewProfileInputChange = (e) => {
                         fontWeight: '600'
                       }}
                     >
-                      {loading ? '⏳ กำลังส่ง...' : '📨 ส่งคำขอ'}
+                      {loading ? '⏳ กำลังส่ง...' : <><Send size={14} className="inline-block mr-1" /> ส่งคำขอ</>}
                     </button>
                   </div>
                 </div>
@@ -2963,10 +3060,10 @@ case 'addresses':
             fontWeight: '600'
           }}
         >
-          ← กลับ
+          <ArrowLeft size={16} /> กลับ
         </button>
         <h2 style={{ margin: '0 0 8px', fontSize: '1.8rem', fontWeight: '700' }}>
-          🏠 ที่อยู่จัดส่ง
+          <Home size={24} /> ที่อยู่จัดส่ง
         </h2>
         <p style={{ margin: 0, opacity: 0.9, fontSize: '1rem' }}>
           จัดการที่อยู่สำหรับการสั่งซื้อ ({addressProfiles.length}/5)
@@ -2974,12 +3071,12 @@ case 'addresses':
       </div>
 
       {/* Content */}
-      <div style={{ padding: '30px' }}>
+      <div style={{ padding: '5px' }}>
         {/* Alert Messages */}
         {message.text && (
           <div style={{
             padding: '16px',
-            borderRadius: '12px',
+            borderRadius: '0px',
             marginBottom: '20px',
             background: message.type === 'error' ? '#fee2e2' : '#dbeafe',
             border: `1px solid ${message.type === 'error' ? '#fecaca' : '#bfdbfe'}`,
@@ -3001,7 +3098,7 @@ case 'addresses':
               gap: '12px'
             }}>
               <h4 style={{ margin: 0, fontSize: '1.2rem', fontWeight: '600', color: '#374151' }}>
-                📍 ที่อยู่ทั้งหมด
+                <MapPinIcon size={16} className="inline-block mr-1" /> ที่อยู่ทั้งหมด
               </h4>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <button 
@@ -3017,7 +3114,7 @@ case 'addresses':
                     fontWeight: '600'
                   }}
                 >
-                  🔄 รีเฟรช
+                  <RefreshCcw size={16} className="inline-block mr-1" /> รีเฟรช
                 </button>
                 {/* <button 
                   onClick={() => setShowCreateProfile(true)}
@@ -3052,7 +3149,7 @@ case 'addresses':
                       fontWeight: '600'
                     }}
                   >
-                    ⚙️ จัดการ
+                    <MapPinIcon size={16} className="inline-block mr-1" /> จัดการที่อยู่
                   </button>
                 )}
               </div>
@@ -3112,7 +3209,7 @@ case 'addresses':
                     fontWeight: '600'
                   }}
                 >
-                  🏠 เพิ่มที่อยู่แรก
+                  <Home size={20} className="inline-block mr-1" /> เพิ่มที่อยู่แรก
                 </button>
               </div>
             )}
@@ -3127,7 +3224,7 @@ case 'addresses':
                       background: 'white',
                       border: profile.isDefault ? '2px solid #10b981' : '2px solid #e5e7eb',
                       borderRadius: '16px',
-                      padding: '20px',
+                      padding: '15px',
                       transition: 'all 0.2s ease',
                       boxShadow: profile.isDefault ? '0 4px 12px rgba(16, 185, 129, 0.15)' : '0 2px 4px rgba(0,0,0,0.1)',
                       position: 'relative'
@@ -3167,7 +3264,7 @@ case 'addresses':
                             fontWeight: '700',
                             color: '#1f2937'
                           }}>
-                            📍 {profile.profileName}
+                            <Home size={20} /> {profile.profileName}
                           </h5>
                           {profile.isDefault && (
                             <span style={{
@@ -3178,7 +3275,7 @@ case 'addresses':
                               fontSize: '0.75rem',
                               fontWeight: '600'
                             }}>
-                              ⭐ หลัก
+                              ⭐ บ้านหลัก
                             </span>
                           )}
                         </div>
@@ -3189,16 +3286,16 @@ case 'addresses':
                           lineHeight: 1.5
                         }}>
                           <div style={{ marginBottom: '4px' }}>
-                            👤 <strong>{profile.firstName} {profile.lastName}</strong>
+                            <User size={16} className="inline-block mr-1" /> <strong>{profile.firstName} {profile.lastName}</strong>
                           </div>
                           <div style={{ marginBottom: '4px' }}>
-                            📞 {profile.phone}
+                            <Phone size={16} className="inline-block mr-1" /> {profile.phone}
                           </div>
                           <div style={{ marginBottom: '4px' }}>
-                            📍 {profile.address.street}
+                            <MapPin size={16} className="inline-block mr-1" /> {profile.address.street}
                           </div>
                           <div>
-                            🌍 {profile.address.district}, {profile.address.province} {profile.address.postalCode}
+                            <Globe size={16} className="inline-block mr-1" /> {profile.address.district}, {profile.address.province} {profile.address.postalCode}
                           </div>
                           
                           {profile.address.notes && (
@@ -3210,7 +3307,7 @@ case 'addresses':
                               fontSize: '0.8rem',
                               fontStyle: 'italic'
                             }}>
-                              💬 {profile.address.notes}
+                              <MessageCircle size={16} className="inline-block mr-1" /> {profile.address.notes}
                             </div>
                           )}
                         </div>
@@ -3291,7 +3388,7 @@ case 'addresses':
         </div>
 
        {/* Create Profile Modal */}
-{showCreateProfile && (
+    {showCreateProfile && (
   <div style={{
     position: 'fixed',
     top: 0,
@@ -3337,7 +3434,7 @@ case 'addresses':
         }}></div>
         
         {/* Close Button */}
-        <button
+        {/* <button
           onClick={() => setShowCreateProfile(false)}
           style={{
             position: 'absolute',
@@ -3367,14 +3464,14 @@ case 'addresses':
           }}
         >
           ✕
-        </button>
+        </button> */}
         
         {/* Header Content */}
         <div style={{ position: 'relative', zIndex: 1 }}>
           <div style={{
             fontSize: '2rem',
             marginBottom: '8px'
-          }}>🏠</div>
+          }}><Home size={32} className="inline-block mr-1" /></div>
           <h2 style={{ 
             margin: '0 0 8px', 
             fontSize: '1.5rem', 
@@ -3402,7 +3499,7 @@ case 'addresses':
           background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
           borderRadius: '16px',
           border: '1px solid #e2e8f0'
-        }}>
+        }}> 
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -3419,7 +3516,7 @@ case 'addresses':
               justifyContent: 'center',
               fontSize: '1.2rem'
             }}>
-              📝
+              <Pen size={24} className="inline-block mr-1" />
             </div>
             <h3 style={{ 
               margin: 0, 
@@ -3501,7 +3598,7 @@ case 'addresses':
               justifyContent: 'center',
               fontSize: '1.2rem'
             }}>
-              👤
+              <User className="w-6 h-6" />
             </div>
             <h3 style={{ 
               margin: 0, 
@@ -3665,7 +3762,7 @@ case 'addresses':
               justifyContent: 'center',
               fontSize: '1.2rem'
             }}>
-              📍
+              <MapPinIcon size={24} />
             </div>
             <h3 style={{ 
               margin: 0, 
@@ -3910,7 +4007,7 @@ case 'addresses':
               justifyContent: 'center',
               fontSize: '1.2rem'
             }}>
-              ⚙️
+              <Settings className="w-5 h-5" />
             </div>
             <h3 style={{ 
               margin: 0, 
@@ -4025,7 +4122,7 @@ case 'addresses':
               e.target.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.4)';
             }}
           >
-            ✅ บันทึกที่อยู่
+            <Save size={20} className="inline-block mr-1" /> บันทึกที่อยู่
           </button>
         </div>
       </div>
@@ -4050,8 +4147,8 @@ case 'addresses':
           }}>
             <div style={{
               background: 'white',
-              borderRadius: '16px',
-              padding: '24px',
+              borderRadius: '12px',
+              padding: '15px',
               maxWidth: '700px',
               width: '100%',
               maxHeight: '90vh',
@@ -4076,7 +4173,7 @@ case 'addresses':
                   alignItems: 'center',
                   gap: '8px'
                 }}>
-                  ⚙️ จัดการที่อยู่
+                  <MapPinIcon size={16} className="inline-block mr-1" /> จัดการที่อยู่
                 </h3>
                 <button
                   onClick={() => setShowManageProfiles(false)}
@@ -4132,7 +4229,7 @@ case 'addresses':
                               fontWeight: '600',
                               color: '#1f2937'
                             }}>
-                              📍 {profile.profileName}
+                              <Home size={16} className="inline-block mr-1" /> {profile.profileName}
                             </h5>
                             {profile.isDefault && (
                               <span style={{
@@ -4143,7 +4240,7 @@ case 'addresses':
                                 fontSize: '0.7rem',
                                 fontWeight: '600'
                               }}>
-                                ⭐ หลัก
+                                ⭐ บ้านหลัก
                               </span>
                             )}
                           </div>
@@ -4154,13 +4251,13 @@ case 'addresses':
                             lineHeight: 1.4
                           }}>
                             <div style={{ marginBottom: '2px' }}>
-                              👤 {profile.firstName} {profile.lastName} | 📞 {profile.phone}
+                              <User size={16} className="inline-block mr-1" /> {profile.firstName} {profile.lastName} | <Phone size={16} className="inline-block mr-1" /> {profile.phone}
                             </div>
                             <div style={{ marginBottom: '2px' }}>
-                              📍 {profile.address.street}
+                              <MapPinIcon size={16} className="inline-block mr-1" /> {profile.address.street}
                             </div>
                             <div>
-                              🌍 {profile.address.district}, {profile.address.province} {profile.address.postalCode}
+                              <Globe size={16} className="inline-block mr-1" /> {profile.address.district}, {profile.address.province} {profile.address.postalCode}
                             </div>
                             
                             {profile.address.notes && (
@@ -4172,7 +4269,7 @@ case 'addresses':
                                 fontSize: '0.75rem',
                                 fontStyle: 'italic'
                               }}>
-                                💬 {profile.address.notes}
+                                <MessageCircle size={16} className="inline-block mr-1" /> {profile.address.notes}
                               </div>
                             )}
                           </div>
@@ -4199,7 +4296,7 @@ case 'addresses':
                                 minWidth: '80px'
                               }}
                             >
-                              ⭐ ตั้งหลัก
+                              ⭐ หลัก
                             </button>
                           )}
                           
@@ -4218,7 +4315,7 @@ case 'addresses':
                               minWidth: '80px'
                             }}
                           >
-                            🗑️ ลบ
+                            <Trash2 size={15} className="inline-block mr-1" /> ลบ
                           </button>
                         </div>
                       </div>
@@ -4248,7 +4345,7 @@ case 'addresses':
                       fontWeight: '600'
                     }}
                   >
-                    ➕ เพิ่มที่อยู่ใหม่
+                    <Pen size={16} className="inline-block mr-1" /> เพิ่มที่อยู่ใหม่
                   </button>
                 </div>
               </div>
@@ -4273,7 +4370,7 @@ case 'addresses':
                     fontWeight: '600'
                   }}
                 >
-                  ✅ เสร็จสิ้น
+                  <CheckCircle size={15} className="inline-block mr-1" /> เสร็จสิ้น
                 </button>
               </div>
             </div>
@@ -4315,7 +4412,7 @@ case 'addresses':
                   fontWeight: '600'
                 }}
               >
-                ← กลับ
+                <ArrowLeft size={16} /> กลับ
               </button>
               <h2 style={{ margin: '0 0 8px', fontSize: '1.8rem', fontWeight: '700' }}>
                 🔐 ความปลอดภัย
@@ -4385,7 +4482,7 @@ case 'addresses':
                   fontWeight: '600'
                 }}
               >
-                ← กลับ
+                <ArrowLeft size={16} /> กลับ
               </button>
               <h2 style={{ margin: '0 0 8px', fontSize: '1.8rem', fontWeight: '700' }}>
                 📷 รูปโปรไฟล์
@@ -4458,7 +4555,7 @@ case 'payment':
             fontWeight: '600'
           }}
         >
-          ← กลับ
+          <ArrowLeft size={16} /> กลับ
         </button>
         <h2 style={{ margin: '0 0 8px', fontSize: '1.8rem', fontWeight: '700' }}>
           💳 วิธีชำระเงิน
@@ -4776,7 +4873,7 @@ case 'payment':
   return (
     <div style={{
       background: 'white',
-      borderRadius: '16px',
+      borderRadius: '12px',
       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
       overflow: 'hidden'
     }}>
@@ -4805,7 +4902,7 @@ case 'payment':
             fontWeight: '600'
           }}
         >
-          ← กลับ
+          <ArrowLeft size={16} /> กลับ
         </button>
         
         {/* Real-time Connection Status */}
@@ -4826,15 +4923,15 @@ case 'payment':
                        connectionStatus === 'connecting' ? '#f59e0b' : '#ef4444',
             animation: connectionStatus === 'connecting' ? 'pulse 1s infinite' : 'none'
           }}></div>
-          <span style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-            {connectionStatus === 'connected' && '🟢 เชื่อมต่อแล้ว'}
+          {/* <span style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+            {connectionStatus === 'connected' && '🟢 เชื่อมต่อแล้วววว'}
             {connectionStatus === 'connecting' && '🟡 กำลังเชื่อมต่อ...'}
             {connectionStatus === 'disconnected' && '🔴 ไม่ได้เชื่อมต่อ'}
-          </span>
+          </span> */}
         </div>
 
         <h2 style={{ margin: '0 0 8px', fontSize: '1.8rem', fontWeight: '700' }}>
-          💬 Chat With Admin
+          <MessageCircle size={26} className="inline-block mr-1" strokeWidth={1.5} /> Chat With Admin
           {/* 🆕 Unread Badge */}
           {unreadCount > 0 && (
             <span style={{
@@ -4862,7 +4959,7 @@ case 'payment':
       </div>
 
       {/* Chat Content */}
-      <div style={{ padding: '30px' }}>
+      <div style={{ padding: '5px' }}>
         {/* Connection Control */}
         <div style={{
           background: chatConnected 
@@ -4871,6 +4968,7 @@ case 'payment':
           padding: '16px 20px',
           borderRadius: '12px',
           border: `1px solid ${chatConnected ? '#10b981' : '#f59e0b'}`,
+          marginTop: '17px',
           marginBottom: '24px',
           display: 'flex',
           justifyContent: 'space-between',
@@ -4927,7 +5025,7 @@ case 'payment':
                   fontWeight: '600'
                 }}
               >
-                🔄 รีเฟรชแชท
+                <RefreshCcw size={16} className="inline-block mr-1" /> รีเฟรชแชท
               </button>
             )}
             
@@ -4950,8 +5048,8 @@ case 'payment':
               }}
             >
               {connectionStatus === 'connecting' && '⏳ กำลังเชื่อมต่อ...'}
-              {connectionStatus === 'connected' && '🔴 ตัดการเชื่อมต่อ'}
-              {connectionStatus === 'disconnected' && '🔌 เชื่อมต่อแชท'}
+              {connectionStatus === 'connected' && <> <Unlink size={16} className="inline-block mr-1" strokeWidth={2.5} /> ตัดการเชื่อมต่อ</>}
+              {connectionStatus === 'disconnected' && <><Link size={16} className="inline-block mr-1" strokeWidth={2.5} /> เชื่อมต่อแชท</>}
             </button>
           </div>
         </div>
@@ -4985,7 +5083,7 @@ case 'payment':
               justifyContent: 'center',
               fontSize: '1.2rem'
             }}>
-              👨‍💼
+              <UserCheck2Icon size={24} className="inline-block" color='White' strokeWidth={2.5} />
             </div>
             <div>
               <div style={{ fontWeight: '600', color: '#1f2937' }}>
@@ -5017,7 +5115,7 @@ case 'payment':
                 alignItems: 'center',
                 gap: '4px'
               }}>
-                {chatConnected ? '🟢 Online • พร้อมตอบ' : '🔴 ไม่ได้เชื่อมต่อ'}
+                {chatConnected ? '🟢 Online • พร้อมตอบ' : <><Unlink size={16} className="inline-block mr-1" strokeWidth={2.5} /> ไม่ได้เชื่อมต่อ</>}
                 {adminTyping && ' • กำลังพิมพ์...'}
               </div>
             </div>
@@ -5043,7 +5141,7 @@ case 'payment':
       color: '#6b7280',
       padding: '40px 20px'
     }}>
-      <div style={{ fontSize: '3rem', marginBottom: '16px' }}>💬</div>
+      <div style={{ fontSize: '3rem', marginBottom: '16px' }}><MessageCircle size={70} className="inline-block" color='#6b7280' /></div>
       <h3 style={{ margin: '0 0 8px', fontSize: '1.2rem', color: '#374151' }}>
         {chatConnected ? 'เริ่มการสนทนา' : 'เชื่อมต่อเพื่อเริ่มแชท'}
       </h3>
@@ -5080,7 +5178,7 @@ case 'payment':
           fontSize: '0.9rem',
           flexShrink: 0
         }}>
-          👨‍💼
+          <UserCheck2Icon size={24} className="inline-block" color='White' strokeWidth={2.5} />
         </div>
       )}
       
@@ -5134,7 +5232,7 @@ case 'payment':
         justifyContent: 'center',
         fontSize: '0.9rem'
       }}>
-        👨‍💼
+        <UserCheck2Icon size={24} className="inline-block" color='White' strokeWidth={2.5} />
       </div>
       <div style={{
         background: '#f1f5f9',
@@ -5251,7 +5349,7 @@ boxShadow: '0 4px 12px rgba(255, 107, 107, 0.6)',
                   e.target.style.boxShadow = 'none';
                 }}
               >
-                📤
+                <SendHorizonalIcon size={20} className="inline-block" strokeWidth={2.5} />
               </button>
             </div>
             
@@ -5264,7 +5362,7 @@ boxShadow: '0 4px 12px rgba(255, 107, 107, 0.6)',
               💡 กด Enter เพื่อส่งข้อความ • Shift+Enter สำหรับขึ้นบรรทัดใหม่
               {chatRoomId && (
                 <span style={{ marginLeft: '8px', color: '#10b981' }}>
-                  • ห้อง: {chatRoomId.slice(-8)}
+                  <KeyRoundIcon size={12} className="inline-block" strokeWidth={2.5} /> • ห้อง: {chatRoomId.slice(-8)}
                 </span>
               )}
             </div>
@@ -5290,7 +5388,7 @@ boxShadow: '0 4px 12px rgba(255, 107, 107, 0.6)',
         )} */}
 
         {/* 🆕 Chat Statistics */}
-        <div style={{
+        {/* <div style={{
           marginTop: '16px',
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
@@ -5340,7 +5438,7 @@ boxShadow: '0 4px 12px rgba(255, 107, 107, 0.6)',
               สถานะการเชื่อมต่อ
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Add CSS for animations */}
@@ -5433,7 +5531,7 @@ boxShadow: '0 4px 12px rgba(255, 107, 107, 0.6)',
                   e.target.style.color = '#667eea';
                 }}
               >
-                ← กลับสู่ร้านค้า
+                <ArrowLeft className="w-5 h-5" />กลับสู่ร้านค้า
               </button>
               
               <h1 style={{
@@ -5445,7 +5543,7 @@ boxShadow: '0 4px 12px rgba(255, 107, 107, 0.6)',
                 alignItems: 'center',
                 gap: '12px'
               }}>
-                ⚙️ การตั้งค่า
+                <Settings size={40}/> การตั้งค่า
               </h1>
             </div>
           )}
@@ -5613,7 +5711,7 @@ boxShadow: '0 4px 12px rgba(255, 107, 107, 0.6)',
               fontWeight: '600'
             }}
           >
-            {isSubmittingRefund ? '⏳ กำลังส่ง...' : '📤 ส่งคำขอ'}
+            {isSubmittingRefund ? '⏳ กำลังส่ง...' : <><Send size={14} className="inline-block mr-1" /> ส่งคำขอ</>}
           </button>
         </div>
       </div>

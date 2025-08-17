@@ -37,7 +37,7 @@ export const CartProvider = ({ children }) => {
 
   // Add item to cart
   const addToCart = (product, quantity = 1) => {
-    console.log('🛒 Adding to cart:', product.name, 'Quantity:', quantity);
+    console.log('Adding to cart:', product.name, 'Quantity:', quantity);
     setCartItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === product._id);
       
@@ -125,7 +125,7 @@ export const CartProvider = ({ children }) => {
 
   // Clear entire cart
   const clearCart = () => {
-    console.log('🧹 Clearing cart');
+    console.log('Clearing cart');
     setCartItems([]);
   };
 
@@ -231,8 +231,8 @@ export const CartProvider = ({ children }) => {
     // Getters
     getCartStats,
     isInCart,
-    getItemQuantity,           // เก็บไว้เพื่อ backward compatibility
-    getCartItemQuantity,       // ✅ **เพิ่มฟังก์ชันใหม่สำหรับ ProductPreview**
+    getItemQuantity,
+    getCartItemQuantity,
     getCartItem,
     getShippingCost,
     getFinalTotal,

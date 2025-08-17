@@ -1,14 +1,28 @@
 // frontend/src/components/payment/PaymentModal.jsx 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { 
+  CreditCard, 
+  Smartphone, 
+  Building2, 
+  Wallet, 
+  Clock, 
+  CheckCircle, 
+  ArrowLeft, 
+  Save, 
+  AlertCircle,
+  Info,
+  Loader2,
+  X
+} from 'lucide-react';
 import './PaymentModal.css';
 import { ordersAPI } from '../../services/api';
 
 const PaymentModal = ({ isOpen, onClose, orderData, onPaymentSuccess }) => {
   const { user } = useAuth();
-  const [paymentStep, setPaymentStep] = useState('methods'); // 'methods', 'processing', 'success'
+  const [paymentStep, setPaymentStep] = useState('methods');
   const [selectedMethod, setSelectedMethod] = useState('');
-  const [timeLeft, setTimeLeft] = useState(300); // 5 minutes countdown
+  const [timeLeft, setTimeLeft] = useState(300);
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Payment Methods Data
@@ -16,7 +30,7 @@ const PaymentModal = ({ isOpen, onClose, orderData, onPaymentSuccess }) => {
     {
       id: 'qr_code',
       name: 'QR Code',
-      icon: '📱',
+      icon: <Smartphone className="w-6 h-6" />,
       description: 'สแกน QR Code ผ่าน Mobile Banking',
       available: true,
       processingTime: '3-5 วินาที'
@@ -24,7 +38,7 @@ const PaymentModal = ({ isOpen, onClose, orderData, onPaymentSuccess }) => {
     {
       id: 'credit_card',
       name: 'บัตรเครดิต/เดบิต',
-      icon: '💳',
+      icon: <CreditCard className="w-6 h-6" />,
       description: 'Visa, Mastercard, JCB',
       available: true,
       processingTime: '1-2 นาที'
@@ -32,7 +46,7 @@ const PaymentModal = ({ isOpen, onClose, orderData, onPaymentSuccess }) => {
     {
       id: 'bank_transfer',
       name: 'โอนเงินผ่านธนาคาร',
-      icon: '🏦',
+      icon: <Building2 className="w-6 h-6" />,
       description: 'โอนผ่านแอพธนาคาร',
       available: true,
       processingTime: '5-10 นาที'
@@ -40,7 +54,7 @@ const PaymentModal = ({ isOpen, onClose, orderData, onPaymentSuccess }) => {
     {
       id: 'wallet',
       name: 'TrueMoney Wallet',
-      icon: '💰',
+      icon: <Wallet className="w-6 h-6" />,
       description: 'ชำระผ่าน TrueMoney',
       available: false,
       processingTime: 'ไม่พร้อมใช้งาน'
@@ -62,7 +76,7 @@ const PaymentModal = ({ isOpen, onClose, orderData, onPaymentSuccess }) => {
         setTimeLeft(prev => {
           if (prev <= 1) {
             clearInterval(timer);
-            onClose(); // Auto close when time expires
+            onClose();
             return 0;
           }
           return prev - 1;
@@ -105,75 +119,122 @@ const PaymentModal = ({ isOpen, onClose, orderData, onPaymentSuccess }) => {
     }
   };
 
-  // 🔧 แก้ไข Handle payment processing ให้เรียก onPaymentSuccess
-  // 🔧 FIX: แก้ไขส่วน handlePayment ใน PaymentModal.jsx
+  // Handle payment processing
+  const handlePayment = async () => {
+    if (!selectedMethod) {
+      alert('กรุณาเลือกวิธีการชำระเงิน (เป็นระบบจำลองเท่านั้น)');
+      return;
+    }
 
-const handlePayment = async () => {
-  if (!selectedMethod) {
-    alert('กรุณาเลือกวิธีการชำระเงิน (เป็นระบบจำลองเท่านั้น)');
-    return;
-  }
+    setIsProcessing(true);
+    setPaymentStep('processing');
 
-  setIsProcessing(true);
-  setPaymentStep('processing');
-
-  try {
-    // จำลองการประมวลผล Payment
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    setPaymentStep('success');
-    setIsProcessing(false);
-    
-    // 🆕 เรียก API เพื่ออัปเดต Order Payment Status
-    if (orderData?.orderId) {
-      console.log('💳 Updating payment status for order:', orderData.orderId);
+    try {
+      // จำลองการประมวลผล Payment
+      await new Promise(resolve => setTimeout(resolve, 3000));
       
-      const paymentUpdateData = {
-        paymentMethod: selectedMethod,
-        paymentMethodName: paymentMethods.find(m => m.id === selectedMethod)?.name,
-        cardData: selectedMethod === 'credit_card' ? cardData : null
+      setPaymentStep('success');
+      setIsProcessing(false);
+      
+      // เรียก API เพื่ออัปเดต Order Payment Status
+      if (orderData?.orderId) {
+        console.log('Updating payment status for order:', orderData.orderId);
+        
+        const paymentUpdateData = {
+          paymentMethod: selectedMethod,
+          paymentMethodName: paymentMethods.find(m => m.id === selectedMethod)?.name,
+          cardData: selectedMethod === 'credit_card' ? cardData : null,
+          paymentStatus: 'completed'
+        };
+
+        try {
+          const result = await ordersAPI.updatePayment(orderData.orderId, paymentUpdateData);
+
+          if (result.success) {
+            console.log('Payment status updated successfully');
+          } else {
+            console.error('Payment update failed:', result.message);
+          }
+        } catch (updateError) {
+          console.error('Error updating payment status:', updateError);
+        }
+      }
+      
+      // เรียก callback function เพื่อแจ้ง CartModal
+      const paymentResult = {
+        method: selectedMethod,
+        methodName: paymentMethods.find(m => m.id === selectedMethod)?.name,
+        amount: orderData?.finalTotal,
+        timestamp: new Date().toISOString(),
+        cardData: selectedMethod === 'credit_card' ? cardData : null,
+        paymentStatus: 'completed'
       };
 
-      // ✅ FIX: เพิ่ม try-catch ที่สมบูรณ์
-      try {
-        const result = await ordersAPI.updatePayment(orderData.orderId, paymentUpdateData);
-
-        if (result.success) {
-          console.log('✅ Payment status updated successfully');
-        } else {
-          console.error('❌ Payment update failed:', result.message);
+      // Auto close after success และเรียก callback
+      setTimeout(() => {
+        if (onPaymentSuccess) {
+          onPaymentSuccess(paymentResult);
         }
-      } catch (updateError) {
-        console.error('❌ Error updating payment status:', updateError);
-        // ไม่ให้ error นี้หยุดการทำงาน - ยังคงแสดงหน้า success
-      }
-    }
-    
-    // เรียก callback function เพื่อแจ้ง CartModal
-    const paymentResult = {
-      method: selectedMethod,
-      methodName: paymentMethods.find(m => m.id === selectedMethod)?.name,
-      amount: orderData?.finalTotal,
-      timestamp: new Date().toISOString(),
-      cardData: selectedMethod === 'credit_card' ? cardData : null
-    };
+        onClose();
+        setPaymentStep('methods');
+      }, 3000);
 
-    // Auto close after success และเรียก callback
-    setTimeout(() => {
-      if (onPaymentSuccess) {
-        onPaymentSuccess(paymentResult);
+    } catch (error) {
+      console.error('Payment processing error:', error);
+      alert('เกิดข้อผิดพลาดในการชำระเงิน');
+      setIsProcessing(false);
+      setPaymentStep('methods');
+    }
+  };
+
+  // Handle payment later
+  const handlePaymentLater = async () => {
+    try {
+      console.log('Saving order for later payment...');
+      
+      // บันทึกออเดอร์โดยไม่ชำระเงิน
+      if (orderData?.orderId) {
+        const saveForLaterData = {
+          paymentStatus: 'pending',
+          paymentMethod: 'pending',
+          saveForLater: true,
+          savedAt: new Date().toISOString()
+        };
+
+        try {
+          const result = await ordersAPI.updatePayment(orderData.orderId, saveForLaterData);
+          
+          if (result.success) {
+            console.log('Order saved for later payment');
+          }
+        } catch (updateError) {
+          console.error('Error saving order:', updateError);
+        }
       }
+      
+      // เรียก callback เพื่อแจ้ง CartModal ว่าบันทึกแล้ว
+      const laterPaymentResult = {
+        method: 'later',
+        methodName: 'ชำระเงินภายหลัง',
+        amount: orderData?.finalTotal,
+        timestamp: new Date().toISOString(),
+        savedForLater: true,
+        paymentStatus: 'pending'
+      };
+
+      if (onPaymentSuccess) {
+        onPaymentSuccess(laterPaymentResult);
+      }
+      
+      // ปิด modal
       onClose();
       setPaymentStep('methods');
-    }, 3000);
-
-  } catch (error) {
-    console.error('Payment processing error:', error);
-    alert('เกิดข้อผิดพลาดในการชำระเงิน');
-    setIsProcessing(false);
-    setPaymentStep('methods');
-  }
-};
+      
+    } catch (error) {
+      console.error('Error saving order for later:', error);
+      alert('เกิดข้อผิดพลาดในการบันทึกออเดอร์');
+    }
+  };
 
   // Handle card input changes
   const handleCardInputChange = (e) => {
@@ -183,7 +244,7 @@ const handlePayment = async () => {
     // Format card number (add spaces every 4 digits)
     if (name === 'cardNumber') {
       formattedValue = value.replace(/\s/g, '').replace(/(.{4})/g, '$1 ').trim();
-      formattedValue = formattedValue.slice(0, 19); // Max 16 digits + 3 spaces
+      formattedValue = formattedValue.slice(0, 19);
     }
     // Format expiry date (MM/YY)
     else if (name === 'expiryDate') {
@@ -206,27 +267,39 @@ const handlePayment = async () => {
       {/* Header */}
       <div className="payment-header">
         <div className="payment-title">
-          <h3>💳 เลือกวิธีการชำระเงิน (Demo)</h3>
+          <h3>
+            <CreditCard className="w-5 h-5 inline mr-2" />
+            เลือกวิธีการชำระเงิน (Demo)
+          </h3>
           <div className="payment-timer">
-            <span className="timer-icon">⏰</span>
+            <Clock className="w-4 h-4" />
             <span className={`timer-display ${timeLeft <= 60 ? 'urgent' : ''}`}>
               {formatTime(timeLeft)}
             </span>
           </div>
         </div>
         <div className="note-content">
-          <h4>💡 หมายเหตุสำคัญ</h4>
+          <h4>
+            <Info className="w-4 h-4 inline mr-2" />
+            หมายเหตุสำคัญ
+          </h4>
           <p>
-            <strong>🔄 การบันทึกออเดอร์:</strong> เมื่อกดปุ่ม "กลับ" โดยไม่ชำระเงิน 
-            ระบบจะบันทึกการสั่งซื้อไว้ใน<span className="highlight"> ประวัติการสั่งซื้อ</span> สามารถชำระเงินได้ในภายหลัง
+            <strong>
+              <Save className="w-4 h-4 inline mr-1" />
+              การบันทึกออเดอร์:
+            </strong> 
+            สามารถเลือก<span className="highlight"> "ชำระเงินภายหลัง" </span>
+            เพื่อบันทึกออเดอร์ไว้ในประวัติการสั่งซื้อ และชำระเงินได้ในภายหลัง
           </p>
-          </div>
+        </div>
       </div>
-      
 
       {/* Order Summary */}
       <div className="payment-order-summary">
-        <h4>📋 สรุปคำสั่งซื้อ</h4>
+        <h4>
+          <AlertCircle className="w-4 h-4 inline mr-2" />
+          สรุปคำสั่งซื้อ
+        </h4>
         <div className="summary-details">
           <div className="summary-row">
             <span>ยอดรวม</span>
@@ -271,14 +344,17 @@ const handlePayment = async () => {
             
             <div className="method-footer">
               <span className="processing-time">
-                ⏱️ {method.processingTime}
+                <Clock className="w-3 h-3 inline mr-1" />
+                {method.processingTime}
               </span>
               {!method.available && (
-                <span className="unavailable-badge">🚧 ไม่พร้อมใช้งาน</span>
+                <span className="unavailable-badge">
+                  <AlertCircle className="w-3 h-3 inline mr-1" />
+                  ไม่พร้อมใช้งาน
+                </span>
               )}
             </div>
           </div>
-          
         ))}
       </div>
 
@@ -296,7 +372,10 @@ const handlePayment = async () => {
       case 'qr_code':
         return (
           <div className="payment-details qr-code-details">
-            <h4>📱 สแกน QR Code เพื่อชำระเงิน</h4>
+            <h4>
+              <Smartphone className="w-4 h-4 inline mr-2" />
+              สแกน QR Code เพื่อชำระเงิน
+            </h4>
             <div className="qr-code-container">
               <div className="qr-code-mock">
                 <div className="qr-pattern">
@@ -320,11 +399,16 @@ const handlePayment = async () => {
       case 'credit_card':
         return (
           <div className="payment-details credit-card-details">
-            <h4>💳 กรอกข้อมูลบัตรเครดิต/เดบิต</h4>
+            <h4>
+              <CreditCard className="w-4 h-4 inline mr-2" />
+              กรอกข้อมูลบัตรเครดิต/เดบิต
+            </h4>
             <div className="card-form">
               <div className="card-visual">
                 <div className="credit-card-mock">
-                  <div className="card-chip">📶</div>
+                  <div className="card-chip">
+                    <div className="chip-pattern"></div>
+                  </div>
                   <div className="card-number">
                     {cardData.cardNumber || '**** **** **** ****'}
                   </div>
@@ -363,7 +447,6 @@ const handlePayment = async () => {
                     placeholder="คุณชื่อ-นามสกุล"
                     className="card-input"
                     required
-
                   />
                 </div>
                 
@@ -400,11 +483,14 @@ const handlePayment = async () => {
       case 'bank_transfer':
         return (
           <div className="payment-details bank-transfer-details">
-            <h4>🏦 ข้อมูลการโอนเงิน</h4>
+            <h4>
+              <Building2 className="w-4 h-4 inline mr-2" />
+              ข้อมูลการโอนเงิน
+            </h4>
             <div className="bank-accounts">
               <div className="bank-account">
                 <div className="bank-header">
-                  <span className="bank-icon">🟦</span>
+                  <div className="bank-icon blue-bank"></div>
                   <span className="bank-name">ธนาคารกรุงเทพ</span>
                 </div>
                 <div className="bank-details">
@@ -421,7 +507,7 @@ const handlePayment = async () => {
               
               <div className="bank-account">
                 <div className="bank-header">
-                  <span className="bank-icon">🟪</span>
+                  <div className="bank-icon purple-bank"></div>
                   <span className="bank-name">ธนาคารไทยพาณิชย์</span>
                 </div>
                 <div className="bank-details">
@@ -438,7 +524,10 @@ const handlePayment = async () => {
             </div>
             
             <div className="transfer-instructions">
-              <h5>📝 วิธีการโอนเงิน:</h5>
+              <h5>
+                <Info className="w-4 h-4 inline mr-2" />
+                วิธีการโอนเงิน:
+              </h5>
               <ol>
                 <li>โอนเงินจำนวน <strong>{orderData?.finalTotal}</strong></li>
                 <li>ใส่หมายเหตุ: "วิปสโตร์ - สั่งซื้อออนไลน์"</li>
@@ -458,9 +547,12 @@ const handlePayment = async () => {
   const renderProcessing = () => (
     <div className="payment-processing">
       <div className="processing-animation">
-        <div className="payment-spinner"></div>
+        <Loader2 className="w-12 h-12 animate-spin text-blue-500" />
       </div>
-      <h3>⏳ กำลังดำเนินการชำระเงิน</h3>
+      <h3>
+        <Clock className="w-5 h-5 inline mr-2" />
+        กำลังดำเนินการชำระเงิน
+      </h3>
       <p>กรุณารอสักครู่...</p>
       <div className="processing-method">
         วิธีการชำระ: {paymentMethods.find(m => m.id === selectedMethod)?.name}
@@ -471,24 +563,34 @@ const handlePayment = async () => {
   // Render Success State
   const renderSuccess = () => (
     <div className="payment-success">
-      <div className="success-icon">🎉</div>
+      <div className="success-icon">
+        <CheckCircle className="w-16 h-16 text-green-500" />
+      </div>
       <h3>ชำระเงินสำเร็จ!</h3>
       <p>ขอบคุณสำหรับการชำระเงิน</p>
       <div className="success-details">
         <div className="success-row">
-          <span>💳 วิธีการชำระ:</span>
+          <span>
+            <CreditCard className="w-4 h-4 inline mr-1" />
+            วิธีการชำระ:
+          </span>
           <span>{paymentMethods.find(m => m.id === selectedMethod)?.name}</span>
         </div>
         <div className="success-row">
-          <span>💰 ยอดเงิน:</span>
+          <span>
+            <Wallet className="w-4 h-4 inline mr-1" />
+            ยอดเงิน:
+          </span>
           <span>{orderData?.finalTotal}</span>
         </div>
         <div className="success-row">
-          <span>📅 วันที่:</span>
+          <span>
+            <Clock className="w-4 h-4 inline mr-1" />
+            วันที่:
+          </span>
           <span>{new Date().toLocaleString('th-TH')}</span>
         </div>
       </div>
-      <div className="success-animation">✨</div>
     </div>
   );
 
@@ -498,11 +600,28 @@ const handlePayment = async () => {
         {/* Header */}
         <div className="payment-modal-header">
           <h2>
-            {paymentStep === 'methods' && '💳 เลือกการชำระเงิน'}
-            {paymentStep === 'processing' && '⏳ กำลังดำเนินการ'}
-            {paymentStep === 'success' && '✅ ชำระเงินสำเร็จ'}
+            {paymentStep === 'methods' && (
+              <>
+                <CreditCard className="w-5 h-5 inline mr-2" />
+                เลือกการชำระเงิน
+              </>
+            )}
+            {paymentStep === 'processing' && (
+              <>
+                <Loader2 className="w-5 h-5 inline mr-2 animate-spin" />
+                กำลังดำเนินการ
+              </>
+            )}
+            {paymentStep === 'success' && (
+              <>
+                <CheckCircle className="w-5 h-5 inline mr-2" />
+                ชำระเงินสำเร็จ
+              </>
+            )}
           </h2>
-          <button className="payment-close-btn" onClick={onClose}>✕</button>
+          <button className="payment-close-btn" onClick={onClose}>
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Content */}
@@ -516,14 +635,25 @@ const handlePayment = async () => {
         {paymentStep === 'methods' && (
           <div className="payment-modal-footer">
             <button className="payment-back-btn" onClick={onClose}>
-              ← กลับ
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              กลับ
             </button>
+            
+            <button 
+              className="payment-later-btn"
+              onClick={handlePaymentLater}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              ชำระเงินภายหลัง
+            </button>
+            
             <button 
               className="payment-confirm-btn"
               onClick={handlePayment}
               disabled={!selectedMethod || isProcessing}
             >
-              ✅ ยืนยันการชำระเงิน ({orderData?.finalTotal})
+              <CheckCircle className="w-4 h-4 mr-2" />
+              ยืนยันการชำระเงิน ({orderData?.finalTotal})
             </button>
           </div>
         )}

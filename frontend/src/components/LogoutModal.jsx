@@ -593,6 +593,10 @@ const LogoutModal = ({ isOpen, onConfirm, onCancel, user, roleDisplay }) => {
 
           .user-name {
             font-size: 1rem;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
           }
 
           .user-role {

@@ -2,6 +2,14 @@
 import React from 'react';
 import AddToCartButton from './AddToCartButton';
 
+import { 
+  Package, 
+  Eye, 
+  CheckCircle, 
+  XCircle, 
+  AlertTriangle 
+} from 'lucide-react';
+
 const ProductCard = ({ product, onProductClick }) => {
   // Format price in Thai Baht
   const formatPrice = (price) => {
@@ -77,7 +85,8 @@ const ProductCard = ({ product, onProductClick }) => {
         {/* Hover Overlay with "View Details" */}
         <div className="product-hover-overlay">
           <span className="view-details-text">
-            👁️ ดูรายละเอียด
+            <Eye className="w-5 h-5" />
+            <span>ดูรายละเอียด</span>
           </span>
         </div>
       </div>
@@ -86,11 +95,11 @@ const ProductCard = ({ product, onProductClick }) => {
       <div className="product-info">
         {/* Category Badge */}
         {product.category && (
-          <div className="product-category">
-            📦 {product.category}
-          </div>
-        )}
-
+            <div className="product-category">
+              <Package className="w-4 h-4" />
+              <span>{product.category}</span>
+            </div>
+          )}
         {/* Product Name */}
         <h3 className="product-name" title={product.name}>
           {product.name}
@@ -113,14 +122,23 @@ const ProductCard = ({ product, onProductClick }) => {
 
         {/* Stock Info */}
        <div className="product-stock">
-  {isOutOfStock ? (
-    <span className="stock-status out-of-stock">❌ สินค้าหมด</span>
-  ) : isLowStock ? (
-    <span className="stock-status low-stock">⚠️ เหลือน้อย</span>
-  ) : (
-    <span className="stock-status in-stock">✅ มีสินค้า {product.stock} ชิ้น</span>  
-  )}
-</div>
+            {isOutOfStock ? (
+              <span className="stock-status out-of-stock">
+                <XCircle className="w-4 h-4" />
+                <span>สินค้าหมด</span>
+              </span>
+            ) : isLowStock ? (
+              <span className="stock-status low-stock">
+                <AlertTriangle className="w-4 h-4" />
+                <span>เหลือน้อย</span>
+              </span>
+            ) : (
+              <span className="stock-status in-stock">
+                <CheckCircle className="w-4 h-4" />
+                <span>มีสินค้า {product.stock} ชิ้น</span>
+              </span>  
+            )}
+          </div>
 
         {/* Add to Cart Button */}
         <div className="product-actions">
@@ -165,7 +183,7 @@ const ProductCard = ({ product, onProductClick }) => {
           transform: scale(1.05);
         }
 
-        /* ✅ **Hover Overlay เพื่อแสดงว่าคลิกได้** */
+        
         .product-hover-overlay {
           position: absolute;
           top: 0;
@@ -233,15 +251,18 @@ const ProductCard = ({ product, onProductClick }) => {
         }
 
         .product-category {
-          background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
-          color: #3730a3;
-          padding: 4px 8px;
-          border-radius: 12px;
-          font-size: 0.8rem;
-          font-weight: 600;
-          width: fit-content;
-          border: 1px solid #a5b4fc;
-        }
+            background: linear-gradient(135deg, #E0E7FF 0%, #C7D2FE 100%);
+            color: #3730A3; /* Blue 700 */
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            width: fit-content;
+            border: 1px solid #A5B4FC; /* Blue 300 */
+            display: flex;
+            align-items: center;
+            gap: 6px;
+          }
 
         .product-name {
           font-size: 1.1rem;
@@ -266,10 +287,10 @@ const ProductCard = ({ product, onProductClick }) => {
           overflow: hidden;
         }
 
-        .product-price {
+       .product-price {
           font-size: 1.3rem;
           font-weight: 800;
-          color: #059669;
+          color: #059669; 
           text-shadow: 0 1px 2px rgba(5, 150, 105, 0.1);
         }
 
@@ -280,23 +301,26 @@ const ProductCard = ({ product, onProductClick }) => {
         .stock-status {
           font-size: 0.85rem;
           font-weight: 600;
-          padding: 4px 8px;
+          padding: 6px 12px;
           border-radius: 8px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
         }
 
         .stock-status.in-stock {
-          background: #dcfce7;
-          color: #166534;
+          background: #DCFCE7; /* Green 100 - เก็บไว้ */
+          color: #166534; /* Green 800 */
         }
 
         .stock-status.low-stock {
-          background: #fef3c7;
-          color: #92400e;
+          background: #FEF3C7; /* Amber 100 - เก็บไว้ */
+          color: #92400E; /* Amber 800 */
         }
 
         .stock-status.out-of-stock {
-          background: #fee2e2;
-          color: #991b1b;
+          background: #FEE2E2; /* Red 100 - เก็บไว้ */
+          color: #991B1B; /* Red 800 */
         }
 
         .product-actions {
@@ -323,7 +347,14 @@ const ProductCard = ({ product, onProductClick }) => {
           }
 
           .view-details-text {
-            font-size: 1rem;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            animation: fadeInUp 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
           }
         }
 
@@ -345,6 +376,11 @@ const ProductCard = ({ product, onProductClick }) => {
           .product-price {
             font-size: 1.1rem;
           }
+
+          .product-card:hover {
+              border-color: #3B82F6; /* Blue แทนเขียว */
+              box-shadow: 0 12px 35px rgba(59, 130, 246, 0.15); /* Blue shadow */
+            }
         }
       `}</style>
     </div>
