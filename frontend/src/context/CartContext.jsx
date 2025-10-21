@@ -171,8 +171,8 @@ export const CartProvider = ({ children }) => {
   const getShippingCost = () => {
     const { totalAmount } = getCartStats();
     if (totalAmount === 0) return 0;
-    if (totalAmount >= 1000) return 0; // Free shipping over 1000 THB
-    return 50; // 50 THB shipping fee
+    if (totalAmount >= 2000) return 0; // Free shipping over 2000 THB
+    return 250; // 250 THB shipping fee
   };
 
   // Get final total including shipping

@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import LogoutModal from './LogoutModal';
 
 import clsx from 'clsx';
+
 import { 
   Store, 
   Smartphone, 
@@ -145,13 +146,14 @@ const Header = ({
                         e.target.nextSibling.style.display = 'inline';
                       }}
                     />
-                    <Store className="w-6 h-6 text-blue-500 logo-fallback" />
+                    <Store className="w-10 h-10 text-blue-500 logo-fallback" />
                     <h1 className="logo-title">Vip Store Website</h1>
+                    {/* <p>( DEMO Version )</p> */}
                   </div>
                   
-                  <p className="logo-description">
+                  {/* <p className="logo-description">
                     📱 DEMO Version| เวอร์ชันมือถืออยู่ระหว่างการพัฒนา
-                  </p>
+                  </p> */}
                 </div>
               </div>
               
@@ -320,476 +322,432 @@ const Header = ({
         </div>
 
         {/* Enhanced CSS with Product Preview Support */}
-        <style jsx>{`
-          /* ===== MOBILE-FIRST HEADER LAYOUT ===== */
-          .header-layout {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-          }
-
-          .header-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-          }
-
-          .header-bottom {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 8px;
-          }
-
-          /* ===== LOGO SECTION ===== */
-          .logo-section {
-            cursor: pointer;
-            flex: 1;
-          }
-
-          .logo-container {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-          }
-
-          .logo-main {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-          }
-
-          .logo-image {
-            width: 24px;
-            height: 24px;
-            object-fit: contain;
-            border-radius: 4px;
-          }
-
-          .logo-fallback {
-            display: none;
-            font-size: 1.2rem;
-          }
-
-          .logo-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #3b82f6;
-            margin: 0;
-            line-height: 1.2;
-          }
-
-          .logo-description {
-            margin: 2px 0 0 0;
-            font-size: 0.65rem;
-            color: #666;
-            font-weight: 400;
-            font-style: italic;
-            line-height: 1.1;
-            display: block;
-          }
-
-          /* ===== VIEW BADGES ===== */
-          .view-badge {
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            white-space: nowrap;
-          }
-
-          .admin-badge {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-          }
-
-          .settings-badge {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            color: white;
-          }
-
-          /* ✨ Product Preview Badge */
-          .product-badge {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: white;
-          }
-
-          /* ===== HEADER SECTIONS ===== */
-          .header-left,
-          .header-right {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-          }
-
-          .header-right {
-            flex-wrap: wrap;
-          }
-
-          /* ===== USER INFO ===== */
-          .user-info {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px 8px;
-            border-radius: 12px;
-            border: 1px solid;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-          }
-
-          .user-info.admin {
-            background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
-            border-color: #667eea40;
-          }
-
-          .user-info.customer {
-            background: linear-gradient(135deg, #10b98120 0%, #05966920 100%);
-            border-color: #10b98140;
-          }
-
-          .user-avatar {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            color: white;
-            overflow: hidden;
-          }
-
-          .user-info.admin .user-avatar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          }
-
-          .user-info.customer .user-avatar {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-          }
-
-          .user-details {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-          }
-
-          .user-name {
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: #1f2937;
-            line-height: 1.1;
-            max-width: 180px; 
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-          }
-
-          .user-role {
-            font-size: 0.65rem;
-            color: #6b7280;
-            font-weight: 500;
-            line-height: 1.1;
-          }
-
-          /* ===== THEME COLORS ===== */
-/* Admin Theme - Blue */
-.theme-admin .btn-primary,
-.user-info.admin .user-avatar,
-.admin-badge,
-.btn-admin {
-  background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%) !important;
-  color: white !important;
-}
-
-.theme-admin .btn-secondary,
-.theme-admin .cart-button {
-  border-color: #1E40AF !important;
-  color: #1E40AF !important;
-}
-
-.theme-admin .btn-secondary:hover,
-.theme-admin .cart-button:hover {
-  background: #1E40AF !important;
-  color: white !important;
-}
-
-/* Customer Theme - Green */
-.theme-customer .btn-primary,
-.user-info.customer .user-avatar,
-.settings-badge,
-.btn-settings {
-  background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
-  color: white !important;
-}
-
-.theme-customer .btn-secondary,
-.theme-customer .cart-button {
-  border-color: #059669 !important;
-  color: #059669 !important;
-}
-
-.theme-customer .btn-secondary:hover,
-.theme-customer .cart-button:hover {
-  background: #059669 !important;
-  color: white !important;
-}
-
-          /* ===== ACTION BUTTONS ===== */
-          .action-buttons {
-            display: flex;
-            gap: 4px;
-            align-items: center;
-          }
-
-          /* ===== BUTTON STYLES ===== */
-          .btn-back {
-            background: white;
-            color: #667eea;
-            border: 2px solid #667eea;
-          }
-
-          /* ✨ Product Back Button */
-          .btn-product-back {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
-            color: white !important;
-            border: none !important;
-            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-            transition: all 0.3s ease;
-          }
-
-          .btn-product-back:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
-            background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%) !important;
-          }
-
-          .btn-settings {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            border: none;
-            display: flex;
-            align-items: center;
-            gap: 2px;
-          }
-
-          .btn-profile {
-            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-            border: none;
-            display: flex;
-            align-items: center;
-            gap: 2px;
-          }
-
-          .btn-admin {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-          }
-
-          .btn-logout {
-            background: white;
-            color: #dc3545;
-            border: 1px solid #dc3545;
-            transition: all 0.2s;
-          }
-
-          .btn-logout:hover {
-            background: #dc3545;
-            color: white;
-          }
-
-          .btn-login {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-          }
-
-          /* ===== RESPONSIVE TEXT HANDLING ===== */
-          .btn-text {
-            display: none;
-          }
-
-          .btn-icon {
-            display: inline;
-            font-size: 1rem;
-          }
-
-          /* ===== TABLET+ RESPONSIVE (768px+) ===== */
-          @media (min-width: 768px) {
-            .header-layout {
-              flex-direction: row;
-              justify-content: space-between;
-              align-items: center;
-              gap: 0;
-            }
-
-            .header-top {
-              display: contents;
-            }
-
-            .header-bottom {
-              display: contents;
-            }
-
-            .header-left {
-              order: 2;
-            }
-
-            .header-right {
-              order: 3;
-              gap: 12px;
-            }
-
-            .logo-section {
-              order: 1;
-              flex: unset;
-            }
-
-            .logo-description {
-              font-size: 0.75rem;
-            }
-
-            .logo-image {
-              width: 32px;
-              height: 32px;
-            }
-
-            .logo-title {
-              font-size: 1.5rem;
-            }
-
-            .view-badge {
-              font-size: 0.8rem;
-              padding: 5px 12px;
-            }
-
-            .user-info {
-              padding: 8px 16px;
-              gap: 10px;
-            }
-
-            .user-avatar {
-              width: 32px;
-              height: 32px;
-              font-size: 1rem;
-            }
-
-            .user-name {
-              font-size: 0.9rem;
-              max-width: 180px;
-              font-weight: 700;
-            }
-
-            .user-role {
-              font-size: 0.7rem;
-            }
-
-            .btn-text {
-              display: inline;
-            }
-
-            .btn-icon {
-              display: none;
-            }
-
-            .action-buttons {
-              gap: 8px;
-            }
-
-            .btn-product-back {
-              padding: 10px 16px;
-              font-size: 0.9rem;
-            }
-          }
-
-          /* ===== LARGE DESKTOP (1024px+) ===== */
-          @media (min-width: 1024px) {
-            .header-right {
-              gap: 15px;
-            }
-
-            .logo-title {
-              font-size: 1.8rem;
-            }
-
-            .user-name {
-              font-size: 0.95rem;
-              max-width: 160px;
-            }
-          }
-
-          /* ===== MOBILE RESPONSIVE ENHANCEMENTS ===== */
-          @media (max-width: 768px) {
-            .user-info {
-              padding: 4px 8px;
-              gap: 6px;
-              max-width: 140px;
-            }
-
-            .user-avatar {
-              width: 20px;
-              height: 20px;
-              font-size: 0.7rem;
-            }
-
-            .user-name {
-              font-size: 0.75rem;
-              max-width: 80px;
-            }
-
-            .user-role.mobile-hidden {
-              display: none;
-            }
-
-            .action-buttons {
-              gap: 4px;
-            }
-
-            .btn-settings,
-            .btn-profile,
-            .btn-admin,
-            .btn-logout,
-            .btn-product-back {
-              padding: 6px 8px;
-              font-size: 0.8rem;
-              min-width: 36px;
-              height: 32px;
-            }
-
-            .header-bottom {
-              gap: 6px;
-            }
-
-            .header-right {
-              gap: 6px;
-              flex-wrap: nowrap;
-            }
-          }
-
-          @media (max-width: 480px) {
-            .user-info {
-              padding: 3px 6px;
-              gap: 4px;
-              max-width: 120px;
-            }
-
-            .user-name {
-              font-size: 0.7rem;
-              max-width: 70px;
-            }
-
-            .btn-settings,
-            .btn-profile,
-            .btn-admin,
-            .btn-logout,
-            .btn-product-back {
-              padding: 5px 6px;
-              min-width: 32px;
-              height: 28px;
-            }
-
-            .btn-icon {
-              font-size: 0.9rem;
-            }
-          }
-        `}</style>
+       
+<style jsx>{`
+  /* ===== MOBILE-FIRST HEADER REDESIGN ===== */
+  .header {
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  }
+
+  .container {
+    margin: 0 auto;
+    padding: 0 12px;
+  }
+
+  .header-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 8px 0;
+  }
+
+  /* ===== LOGO ROW ===== */
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .logo-section {
+    cursor: pointer;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .logo-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .logo-main {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .logo-image {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    border-radius: 6px;
+    flex-shrink: 0;
+  }
+
+  .logo-fallback {
+    display: none;
+  }
+
+  .logo-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #059669;
+    margin: 0;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Hide description on mobile */
+  .logo-description {
+    display: none;
+  }
+
+  /* ===== VIEW BADGE ===== */
+  .view-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .admin-badge {
+    background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+    color: white;
+  }
+
+  .settings-badge {
+    background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+    color: white;
+  }
+
+  .product-badge {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: white;
+  }
+
+  /* ===== NAVIGATION ROW ===== */
+  .header-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .header-left,
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ===== USER INFO CARD (MOBILE COMPACT) ===== */
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 20px;
+    border: 1px solid;
+    max-width: fit-content;
+  }
+
+  .user-info.admin {
+    background: rgba(30, 64, 175, 0.08);
+    border-color: rgba(30, 64, 175, 0.2);
+  }
+
+  .user-info.customer {
+    background: rgba(5, 150, 105, 0.08);
+    border-color: rgba(5, 150, 105, 0.2);
+  }
+
+  .user-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .user-info.admin .user-avatar {
+    background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+    color: white;
+  }
+
+  .user-info.customer .user-avatar {
+    background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+    color: white;
+  }
+
+  .user-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .user-name {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #1f2937;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+  }
+
+  .user-role {
+    font-size: 0.65rem;
+    color: #6b7280;
+    font-weight: 500;
+    line-height: 1;
+  }
+
+  /* ===== BUTTONS (MOBILE OPTIMIZED) ===== */
+  .action-buttons {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-outline {
+    padding: 6px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+
+  /* Icon-only buttons on mobile */
+  .btn-text {
+    display: none;
+  }
+
+  .btn-icon {
+    display: inline-flex;
+  }
+
+  /* Button Variants */
+  .theme-admin .btn-primary {
+    background: linear-gradient(135deg, #1E40AF 0%, #3B82F6 100%);
+    color: white;
+  }
+
+  .theme-customer .btn-primary {
+    background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+    color: white;
+  }
+
+  .btn-secondary {
+    background: white;
+    color: #059669;
+    border: 1.5px solid #059669;
+  }
+
+  .theme-admin .btn-secondary {
+    color: #1E40AF;
+    border-color: #1E40AF;
+  }
+
+  .btn-outline {
+    background: white;
+    color: #dc2626;
+    border: 1.5px solid #dc2626;
+  }
+
+  .btn-outline:hover {
+    background: #dc2626;
+    color: white;
+  }
+
+  .btn-product-back {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+    color: white !important;
+    border: none !important;
+  }
+
+  /* Cart Button Special */
+  .cart-button {
+    position: relative;
+    min-width: fit-content;
+  }
+
+  .cart-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: #dc2626;
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+  }
+
+  .cart-amount {
+    display: none;
+  }
+
+  /* ===== TABLET BREAKPOINT (640px+) ===== */
+  @media (min-width: 640px) {
+    .container {
+      padding: 0 16px;
+    }
+
+    .header-layout {
+      gap: 12px;
+      padding: 10px 0;
+    }
+
+    .logo-image {
+      width: 36px;
+      height: 36px;
+    }
+
+    .logo-title {
+      font-size: 1rem;
+    }
+
+    .user-name {
+      max-width: 120px;
+      font-size: 0.8rem;
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .btn-outline {
+      padding: 8px 12px;
+      font-size: 0.8rem;
+    }
+
+    /* Show text on larger mobile */
+    .btn-text {
+      display: inline;
+    }
+
+    .cart-amount {
+      display: block;
+      font-size: 0.7rem;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+  }
+
+  /* ===== DESKTOP BREAKPOINT (768px+) ===== */
+  @media (min-width: 768px) {
+    .header-layout {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0;
+      padding: 12px 0;
+    }
+
+    .header-top {
+      display: contents;
+    }
+
+    .header-bottom {
+      display: contents;
+    }
+
+    .logo-section {
+      order: 1;
+      flex: unset;
+    }
+
+    .header-left {
+      order: 2;
+      gap: 12px;
+    }
+
+    .header-right {
+      order: 3;
+      gap: 12px;
+    }
+
+    .logo-image {
+      width: 42px;
+      height: 42px;
+    }
+
+    .logo-title {
+      font-size: 1.3rem;
+    }
+
+    .logo-description {
+      display: block;
+      margin: 2px 0 0 0;
+      font-size: 0.7rem;
+      color: #6b7280;
+      font-style: italic;
+    }
+
+    .view-badge {
+      padding: 6px 14px;
+      font-size: 0.75rem;
+    }
+
+    .user-info {
+      padding: 6px 14px;
+      gap: 10px;
+    }
+
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+    }
+
+    .user-name {
+      font-size: 0.9rem;
+      max-width: 160px;
+    }
+
+    .user-role {
+      font-size: 0.75rem;
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .btn-outline {
+      padding: 10px 16px;
+      font-size: 0.875rem;
+    }
+
+    .action-buttons {
+      
+    }
+  }
+
+  /* ===== LARGE DESKTOP (1024px+) ===== */
+  @media (min-width: 1024px) {
+    .logo-title {
+      font-size: 1.5rem;
+    }
+
+    .user-name {
+      max-width: 200px;
+    }
+  }
+`}</style>
+
+
       </header>
     </div>
 

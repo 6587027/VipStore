@@ -8,23 +8,24 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.o
 // const API_BASE_URL = 'http://localhost:3001/api';
 
 // ✅ Force ใช้ Environment Variable ถ้ามี
-if (import.meta.env.VITE_API_URL) {
-  console.log('🎯 Using Vercel Environment Variable:', import.meta.env.VITE_API_URL);
-} else {
-  console.log('⚠️ Using Fallback URL:', 'https://vipstore-backend.onrender.com/api');
-}
+// if (import.meta.env.VITE_API_URL) {
+//   console.log('🎯 Using Vercel Environment Variable:', import.meta.env.VITE_API_URL);
+// } else {
+//   console.log('⚠️ Using Fallback URL:', 'https://vipstore-backend.onrender.com/api');
+// }
 
 // ✅ Debug Environment
-console.log('🔧 Environment Variables:');
-console.log('- VITE_API_URL:', import.meta.env.VITE_API_URL);
-console.log('- MODE:', import.meta.env.MODE);
-console.log('- DEV:', import.meta.env.DEV);
-console.log('- PROD:', import.meta.env.PROD);
-console.log('🔗 Final API_BASE_URL:', API_BASE_URL);
+
+// console.log('🔧 Environment Variables:');
+// console.log('- VITE_API_URL:', import.meta.env.VITE_API_URL);
+// console.log('- MODE:', import.meta.env.MODE);
+// console.log('- DEV:', import.meta.env.DEV);
+// console.log('- PROD:', import.meta.env.PROD);
+// console.log('🔗 Final API_BASE_URL:', API_BASE_URL);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 5000,
   headers: {
     'Content-Type': 'application/json',
   },

@@ -1,4 +1,4 @@
-// frontend/src/components/ProductCard.jsx - FIXED with Product Click Support
+// frontend/src/components/ProductCard.jsx
 import React from 'react';
 import AddToCartButton from './AddToCartButton';
 
@@ -76,11 +76,11 @@ const ProductCard = ({ product, onProductClick }) => {
             สินค้าหมด
           </div>
         )}
-        {isLowStock && (
+        {/* {isLowStock && (
           <div className="stock-badge low-stock">
             เหลือ {product.stock} ชิ้น
           </div>
-        )}
+        )} */}
         
         {/* Hover Overlay with "View Details" */}
         <div className="product-hover-overlay">
@@ -108,8 +108,8 @@ const ProductCard = ({ product, onProductClick }) => {
         {/* Product Description (if exists) */}
         {product.description && (
           <p className="product-description" title={product.description}>
-            {product.description.length > 100 
-              ? `${product.description.substring(0, 100)}...` 
+            {product.description.length > 1000 
+              ? `${product.description.substring(0, 1000)}...`
               : product.description
             }
           </p>
@@ -130,7 +130,7 @@ const ProductCard = ({ product, onProductClick }) => {
             ) : isLowStock ? (
               <span className="stock-status low-stock">
                 <AlertTriangle className="w-4 h-4" />
-                <span>เหลือน้อย</span>
+                <span>เหลือ {product.stock} ชิ้น</span>
               </span>
             ) : (
               <span className="stock-status in-stock">
@@ -145,7 +145,7 @@ const ProductCard = ({ product, onProductClick }) => {
           <AddToCartButton 
             product={product}
             disabled={isOutOfStock}
-            className="add-to-cart-button" // ✅ **เพิ่ม class สำหรับ prevent click**
+            className="add-to-cart-button" 
           />
         </div>
       </div>

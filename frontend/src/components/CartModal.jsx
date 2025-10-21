@@ -703,7 +703,7 @@ const CartModal = ({ isOpen, onClose }) => {
       </div>
       
       <div className="summary-row">
-        <span>ค่าจัดส่ง</span>
+        <span>ค่าจัดส่ง (ส่งฟรีขั้นต่ำ 2000 บาท)</span>
         <span>
           {shippingCost === 0 ? (
             <span className="free-shipping">ฟรี!</span>
@@ -712,10 +712,10 @@ const CartModal = ({ isOpen, onClose }) => {
           )}
         </span>
       </div>
-      
-      {totalAmount >= 1000 && shippingCost === 0 && (
+
+      {totalAmount >= 2000 && shippingCost === 0 && (
         <div className="shipping-notice">
-          ยินดีด้วย! ได้รับการจัดส่งฟรี
+          มากกว่า 2000 บาท ยินดีด้วย! ได้รับการจัดส่งฟรี
         </div>
       )}
       

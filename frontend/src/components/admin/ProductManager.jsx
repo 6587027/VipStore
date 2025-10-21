@@ -5,6 +5,19 @@ import { productsAPI } from '../../services/api';
 import AddProductForm from './AddProductForm';
 import EditProductModal from './EditProductModal';
 
+import { 
+  Package, 
+  Plus, 
+  Search, 
+  Filter,
+  Edit2, 
+  Trash2,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  Pencil
+} from 'lucide-react';
+
 const ProductManager = ({ products, onProductsChange }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
@@ -57,30 +70,42 @@ const ProductManager = ({ products, onProductsChange }) => {
 
   // Get stock status
   const getStockStatus = (stock) => {
-    if (stock === 0) return { text: 'Out of Stock', class: 'stock-out' };
-    if (stock < 10) return { text: 'Low Stock', class: 'stock-low' };
-    return { text: 'In Stock', class: 'stock-good' };
+  if (stock === 0) return { 
+    text: ' Out of Stock', 
+    class: 'stock-out',
+    icon: <XCircle size={13} />
   };
+  if (stock < 10) return { 
+    text: ' Low Stock', 
+    class: 'stock-low',
+    icon: <AlertCircle size={13} />
+  };
+  return { 
+    text: ' In Stock', 
+    class: 'stock-good',
+    icon: <CheckCircle size={13} />
+  };
+};
 
   return (
     <div className="product-manager">
       {/* Header Actions */}
       <div className="manager-header">
         <div>
-          <h2>📦 Product Management</h2>
+          <h2><Package size={33} className="section-icon" /> Product Management</h2>
           <p>Manage your store inventory</p>
         </div>
         <button 
           className="btn-primary"
           onClick={() => setShowAddForm(true)}
         >
-          ➕ Add New Product
+          <Plus size={18} className="icon" />Add New Product
         </button>
       </div>
 
       {/* Filters and Search */}
       <div className="filters-section">
-        <div className="search-box">
+        <div className="search-box">  
           <input
             type="text"
             placeholder="🔍 Search products..."
@@ -114,7 +139,7 @@ const ProductManager = ({ products, onProductsChange }) => {
       <div className="products-table-container">
         {filteredProducts.length === 0 ? (
           <div className="empty-state">
-            <h3>📭 No products found</h3>
+            <h3><AlertCircle size={24} className="icon" /> No products found</h3>
             <p>Try adjusting your search or filters</p>
           </div>
         ) : (
@@ -171,6 +196,7 @@ const ProductManager = ({ products, onProductsChange }) => {
                     </td>
                     <td>
                       <span className={`stock-status ${stockStatus.class}`}>
+                        {stockStatus.icon}
                         {stockStatus.text}
                       </span>
                     </td>
@@ -181,7 +207,7 @@ const ProductManager = ({ products, onProductsChange }) => {
                           onClick={() => handleEditProduct(product)}
                           title="Edit Product"
                         >
-                          ✏️
+                          <Pencil size={20} />
                         </button>
                         <button
                           className="btn-delete"
@@ -189,7 +215,7 @@ const ProductManager = ({ products, onProductsChange }) => {
                           disabled={loading}
                           title="Delete Product"
                         >
-                          🗑️
+                          <Trash2 size={20} />
                         </button>
                       </div>
                     </td>

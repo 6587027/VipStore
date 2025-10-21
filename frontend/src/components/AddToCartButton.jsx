@@ -152,15 +152,6 @@ const AddToCartButton = ({
 
   return (
     <div className="add-to-cart-container">
-      {/* Stock Status */}
-      {isLowStock && !isOutOfStock && (
-  <div className="stock-warning">
-    <AlertTriangle className="w-4 h-4" />
-    <span>เหลือ {product.stock} ชิ้น</span>
-  </div>
-)}
-
-      {/* 🆕 แสดงสถานะตะกร้าเมื่อมีสินค้าในตะกร้าแล้ว */}
       {isProductInCart && (
         <div className="cart-status">
           <ShoppingCart className="w-4 h-4" />

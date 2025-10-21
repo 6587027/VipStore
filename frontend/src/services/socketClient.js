@@ -12,7 +12,7 @@ const SOCKET_URL = 'https://vipstore-backend.onrender.com';
 // const SOCKET_URL = 'http://localhost:3001'; // ✅ Socket server URL
 
 
-console.log('🔌 Socket connecting to:', SOCKET_URL);
+// console.log('🔌 Socket connecting to:', SOCKET_URL);
 
 
 // 🔌 Socket.IO Client Configuration

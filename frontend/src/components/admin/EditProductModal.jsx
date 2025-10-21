@@ -2,6 +2,19 @@
 import React, { useState, useEffect } from 'react';
 import { productsAPI } from '../../services/api';
 import SimpleShareLinkUpload from './SimpleShareLinkUpload';
+import { 
+  Edit2, 
+  X, 
+  FileText, 
+  AlignLeft, 
+  DollarSign, 
+  Package, 
+  Tag, 
+  Image as ImageIcon,
+  CheckCircle,
+  Cloud,
+  Pencil,
+} from 'lucide-react';
 
 const EditProductModal = ({ product, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -141,7 +154,7 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
       <div className="modal-content edit-product-modal sharelink-version">
         {/* Modal Header */}
         <div className="modal-header">
-          <h2>✏️ Edit Product</h2>
+          <h2><Pencil size={24} className="label-icon" /> Edit Product</h2>
           <button 
             className="modal-close-btn"
             onClick={onClose}
@@ -155,7 +168,7 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
         <form onSubmit={handleSubmit} className="edit-product-form">
           {/* Product Name */}
           <div className="form-group">
-            <label htmlFor="edit-name">📝 Product Name *</label>
+            <label htmlFor="edit-name"><FileText size={16} className="label-icon" /> Product Name *</label>
             <input
               type="text"
               id="edit-name"
@@ -171,7 +184,7 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
 
           {/* Description */}
           <div className="form-group">
-            <label htmlFor="edit-description">📄 Description *</label>
+            <label htmlFor="edit-description"><AlignLeft size={16} className="label-icon" /> Description *</label>
             <textarea
               id="edit-description"
               name="description"
@@ -188,7 +201,7 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
           {/* Price and Stock Row */}
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="edit-price">💰 Price (THB) *</label>
+              <label htmlFor="edit-price"><DollarSign size={16} className="label-icon" /> Price (THB) *</label>
               <input
                 type="number"
                 id="edit-price"
@@ -205,7 +218,7 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="edit-stock">📦 Stock Quantity *</label>
+              <label htmlFor="edit-stock"><Package size={16} className="label-icon" /> Stock Quantity *</label>
               <input
                 type="number"
                 id="edit-stock"
@@ -223,7 +236,7 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
 
           {/* Category */}
           <div className="form-group">
-            <label htmlFor="edit-category">🏷️ Category *</label>
+            <label htmlFor="edit-category"><Tag size={16} className="label-icon" /> Category *</label>
             <select
               id="edit-category"
               name="category"
@@ -244,7 +257,7 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
 
           {/* Simple ShareLink Upload Section */}
           <div className="form-group">
-            <label>🖼️ Product Image *</label>
+            <label><ImageIcon size={16} className="label-icon" /> Product Image *</label>
             <SimpleShareLinkUpload
               onImageSelect={handleImageSelect}
               currentImage={formData.image}
@@ -254,7 +267,7 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
 
           {/* Current vs Updated Info */}
           <div className="update-info">
-            <h4>📋 Update Summary</h4>
+            <h4><CheckCircle size={16} className="label-icon" /> Update Summary</h4>
             <div className="info-grid">
               <div className="info-item">
                 <span className="info-label">Product ID:</span>
@@ -274,28 +287,30 @@ const EditProductModal = ({ product, onClose, onSuccess }) => {
               </div>
               <div className="info-item">
                 <span className="info-label">Image Storage:</span>
-                <span className="info-value">☁️ Cloud Storage</span>
+                <span className="info-value"><Cloud size={16} className="label-icon" /> Cloud Storage</span>
               </div>
             </div>
           </div>
 
           {/* Form Actions */}
           <div className="form-actions">
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={onClose}
-              disabled={loading}
-            >
-              ❌ Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={loading}
-            >
-              {loading ? '⏳ Updating...' : '✅ Update Product'}
-            </button>
+                      <button type="button" className="btn-secondary" onClick={onClose} disabled={loading}>
+            <X size={18} />
+            Cancel
+          </button>
+          <button type="submit" className="btn-primary" disabled={loading}>
+            {loading ? (
+              <>
+                <Package size={18} className="spinning" />
+                Updating...
+              </>
+            ) : (
+              <>
+                <CheckCircle size={18} />
+                Update Product
+              </>
+            )}
+          </button>
           </div>
         </form>
       </div>

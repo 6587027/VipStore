@@ -6,7 +6,7 @@ const AuthContext = createContext();
 // ✅ Use Environment Variable or Fallback to Production URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com/api';
 
-console.log('🔗 AuthContext API_BASE_URL:', API_BASE_URL);
+// console.log('🔗 AuthContext API_BASE_URL:', API_BASE_URL);
 
 // Custom hook to use auth context
 export const useAuth = () => {

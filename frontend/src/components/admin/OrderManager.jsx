@@ -2,6 +2,37 @@
 
 import React, { useState, useEffect } from 'react';
 import { ordersAPI } from '../../services/api';
+import './AdminPanel.css';
+import { ShoppingCart,
+  Users,
+  Store,
+  TriangleAlert,
+  ShoppingBag,
+  CheckCircle,
+  Clock,
+  TrendingUp,
+  Search,
+  RefreshCw,
+  Eye,
+  X,
+  Package,
+  Truck,
+  MapPin,
+  Phone,
+  Mail,
+  DollarSign,
+  AlertTriangle,
+  Ban,
+  RotateCcw,
+  Trash2,
+  Pencil,
+  CreditCard,
+  UserPen,
+  FileText,
+  Settings,
+  ChevronUp,
+  ChevronDown
+} from 'lucide-react';
 
 const OrderManager = () => {
   const [orders, setOrders] = useState([]);
@@ -127,6 +158,19 @@ const OrderManager = () => {
   // 🆕 API Base URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com/api';
 
+// 🆕 State for managing dropdowns
+const [openDropdown, setOpenDropdown] = useState(null);
+useEffect(() => {
+  const handleClickOutside = (event) => {
+    if (openDropdown && !event.target.closest('.dropdown-container')) {
+      setOpenDropdown(null);
+    }
+  };
+  
+  document.addEventListener('mousedown', handleClickOutside);
+  return () => document.removeEventListener('mousedown', handleClickOutside);
+}, [openDropdown]);
+
 // 🆕 Fetch refund requests
 const fetchRefundRequests = async () => {
   try {
@@ -249,60 +293,42 @@ const formatRefundDate = (dateString) => {
 
 // 🆕 Get refund status badge
 const getRefundStatusBadge = (status) => {
-  switch(status) {
-    case 'pending':
-      return (
-        <span style={{
-          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-          color: 'white',
-          padding: '4px 8px',
-          borderRadius: '12px',
-          fontSize: '0.75rem',
-          fontWeight: '600'
-        }}>
-          ⏳ รอพิจารณา
-        </span>
-      );
-    case 'approved':
-      return (
-        <span style={{
-          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-          color: 'white',
-          padding: '4px 8px',
-          borderRadius: '12px',
-          fontSize: '0.75rem',
-          fontWeight: '600'
-        }}>
-          ✅ อนุมัติแล้ว
-        </span>
-      );
-    case 'rejected':
-      return (
-        <span style={{
-          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-          color: 'white',
-          padding: '4px 8px',
-          borderRadius: '12px',
-          fontSize: '0.75rem',
-          fontWeight: '600'
-        }}>
-          ❌ ปฏิเสธ
-        </span>
-      );
-    default:
-      return (
-        <span style={{
-          background: '#6b7280',
-          color: 'white',
-          padding: '4px 8px',
-          borderRadius: '12px',
-          fontSize: '0.75rem',
-          fontWeight: '600'
-        }}>
-          ❓ ไม่ทราบสถานะ
-        </span>
-      );
-  }
+  const configs = {
+    pending: {
+      bg: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+      icon: <Clock size={14} />,
+      text: 'Pending Review'
+    },
+    approved: {
+      bg: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+      icon: <CheckCircle size={14} />,
+      text: 'Approved'
+    },
+    rejected: {
+      bg: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+      icon: <Ban size={14} />,
+      text: 'Rejected'
+    }
+  };
+
+  const config = configs[status] || configs.pending;
+
+  return (
+    <span style={{
+      background: config.bg,
+      color: 'white',
+      padding: '4px 8px',
+      borderRadius: '12px',
+      fontSize: '0.75rem',
+      fontWeight: '600',
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '4px'
+    }}>
+      {config.icon}
+      {config.text}
+    </span>
+  );
 };
 
 
@@ -606,58 +632,115 @@ const deleteOrder = async (orderId, orderNumber) => {
 
   // Get status badge
   const getStatusBadge = (status) => {
-    const statusConfig = {
-      pending: { color: '#f59e0b', bg: '#fef3c7', text: '🕐 Pending' },
-      confirmed: { color: '#3b82f6', bg: '#dbeafe', text: '✅ Confirmed' },
-      processing: { color: '#8b5cf6', bg: '#ede9fe', text: '⚙️ Prepare' },
-      shipped: { color: '#06b6d4', bg: '#cffafe', text: '🚚 Shipped' },
-      delivered: { color: '#10b981', bg: '#d1fae5', text: '📦 Delivered' },
-      cancelled: { color: '#ef4444', bg: '#fee2e2', text: '❌ Order cancelled' }
-    };
-
-
-    const config = statusConfig[status] || statusConfig.pending;
-    
-    return (
-      <span style={{
-        background: config.bg,
-        color: config.color,
-        padding: '4px 8px',
-        borderRadius: '12px',
-        fontSize: '0.75rem',
-        fontWeight: '600',
-        border: `1px solid ${config.color}20`
-      }}>
-        {config.text}
-      </span>
-    );
+  const statusConfig = {
+    pending: { 
+      color: '#f59e0b', 
+      bg: '#fef3c7', 
+      icon: <Clock size={14} />,
+      text: 'Pending' 
+    },
+    confirmed: { 
+      color: '#3b82f6', 
+      bg: '#dbeafe', 
+      icon: <CheckCircle size={14} />,
+      text: 'Confirmed' 
+    },
+    processing: { 
+      color: '#8b5cf6', 
+      bg: '#ede9fe', 
+      icon: <Package size={14} />,
+      text: 'Processing' 
+    },
+    shipped: { 
+      color: '#06b6d4', 
+      bg: '#cffafe', 
+      icon: <Truck size={14} />,
+      text: 'Shipped' 
+    },
+    delivered: { 
+      color: '#10b981', 
+      bg: '#d1fae5', 
+      icon: <CheckCircle size={14} />,
+      text: 'Delivered' 
+    },
+    cancelled: { 
+      color: '#ef4444', 
+      bg: '#fee2e2', 
+      icon: <Ban size={14} />,
+      text: 'Cancelled' 
+    }
   };
+
+  const config = statusConfig[status] || statusConfig.pending;
+  
+  return (
+    <span style={{
+      background: config.bg,
+      color: config.color,
+      padding: '4px 8px',
+      borderRadius: '12px',
+      fontSize: '0.75rem',
+      fontWeight: '600',
+      border: `1px solid ${config.color}20`,
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '4px'
+    }}>
+      {config.icon}
+      {config.text}
+    </span>
+  );
+};
 
   // Get payment status badge
   const getPaymentBadge = (paymentStatus) => {
-    const paymentConfig = {
-      pending: { color: '#f59e0b', bg: '#fef3c7', text: '💳 Pending' },
-      paid: { color: '#10b981', bg: '#d1fae5', text: '✅ Payment suscess' },
-      failed: { color: '#ef4444', bg: '#fee2e2', text: '❌ Payment failed' },
-      refunded: { color: '#f59e0b', bg: '#fef3c7', text: '💰 Refunded' }
-    };
-
-    const config = paymentConfig[paymentStatus] || paymentConfig.pending;
-    
-    return (
-      <span style={{
-        background: config.bg,
-        color: config.color,
-        padding: '4px 8px',
-        borderRadius: '12px',
-        fontSize: '0.75rem',
-        fontWeight: '600',
-        border: `1px solid ${config.color}20`
-      }}>
-        {config.text}
-      </span>
-    );
+  const paymentConfig = {
+    pending: { 
+      color: '#f59e0b', 
+      bg: '#fef3c7', 
+      text: 'Pending',
+      icon: <Clock size={14} />
+    },
+    paid: { 
+      color: '#10b981', 
+      bg: '#d1fae5', 
+      text: 'Payment success',
+      icon: <CheckCircle size={14} />
+    },
+    failed: { 
+      color: '#ef4444', 
+      bg: '#fee2e2', 
+      text: 'Payment failed',
+      icon: <AlertTriangle size={14} />
+    },
+    refunded: { 
+      color: '#f59e0b', 
+      bg: '#fef3c7', 
+      text: 'Refunded',
+      icon: <DollarSign size={14} />
+    }
   };
+
+  const config = paymentConfig[paymentStatus] || paymentConfig.pending;
+  
+  return (
+    <span style={{
+      background: config.bg,
+      color: config.color,
+      padding: '4px 8px',
+      borderRadius: '12px',
+      fontSize: '0.75rem',
+      fontWeight: '600',
+      border: `1px solid ${config.color}20`,
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '4px'
+    }}>
+      {config.icon}
+      {config.text}
+    </span>
+  );
+};
 
   // Filter orders based on search term
   const filteredOrders = orders.filter(order => {
@@ -709,78 +792,63 @@ const deleteOrder = async (orderId, orderNumber) => {
   }
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div className="order-manager-container">
       {/* Header Section */}
-      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="manager-header">
   <div>
-    <h2 style={{ 
-      fontSize: '1.8rem', 
-      fontWeight: '700', 
-      color: '#333',
-      marginBottom: '8px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px'
-    }}>
-      📦 Order Managment
+    <h2>
+      <ShoppingCart size={28} className="section-icon" />
+      Order Management
     </h2>
-    <p style={{ color: '#666', fontSize: '1rem' }}>
-      ติดตามและจัดการคำสั่งซื้อทั้งหมด
-    </p>
+    <p>Track and manage all orders</p>
   </div>
   
-  {/* 🆕 Refund Request Notification Bell */}
-  <div style={{ position: 'relative' }}>
-    <button
-      onClick={() => setShowRefundRequests(true)}
-      style={{
-        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-        color: 'white',
-        border: 'none',
-        borderRadius: '50%',
-        width: '60px',
-        height: '60px',
-        fontSize: '1.8rem',
-        cursor: 'pointer',
-        position: 'relative',
-        boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)',
-        transition: 'transform 0.2s, box-shadow 0.2s'
-      }}
-      title="คำขอคืนเงินจากลูกค้า"
-      onMouseEnter={(e) => {
-        e.target.style.transform = 'scale(1.05)';
-        e.target.style.boxShadow = '0 6px 16px rgba(239, 68, 68, 0.6)';
-      }}
-      onMouseLeave={(e) => {
-        e.target.style.transform = 'scale(1)';
-        e.target.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.4)';
-      }}
-    >
-      💸
-    </button>
-    {refundRequestStats.pendingRequests > 0 && (
-      <span style={{
-        position: 'absolute',
-        top: '-8px',
-        right: '-8px',
-        background: '#fbbf24',
-        color: '#92400e',
-        borderRadius: '50%',
-        width: '28px',
-        height: '28px',
-        fontSize: '0.8rem',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontWeight: '700',
-        border: '2px solid white',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-        animation: 'pulse 2s infinite'
-      }}>
-        {refundRequestStats.pendingRequests}
-      </span>
-    )}
-  </div>
+  {/* Refund Request Notification Bell */}
+<div style={{ position: 'relative' }}>
+  <button
+    onClick={() => setShowRefundRequests(true)}
+    style={{
+      background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+      color: 'white',
+      border: 'none',
+      borderRadius: '50%',
+      width: '60px',
+      height: '60px',
+      cursor: 'pointer',
+      position: 'relative',
+      boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)',
+      transition: 'transform 0.2s, box-shadow 0.2s',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}
+    title="Customer refund requests"
+  >
+    <DollarSign size={28} />
+  </button>
+  {refundRequestStats.pendingRequests > 0 && (
+    <span style={{
+      position: 'absolute',
+      top: '-8px',
+      right: '-8px',
+      background: '#fbbf24',
+      color: '#92400e',
+      borderRadius: '50%',
+      width: '28px',
+      height: '28px',
+      fontSize: '0.8rem',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontWeight: '700',
+      border: '2px solid white',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+      animation: 'pulse 2s infinite'
+    }}>
+      {refundRequestStats.pendingRequests}
+    </span>
+  )}
+</div>
 </div>
 
       {/* Stats Cards */}
@@ -790,137 +858,118 @@ const deleteOrder = async (orderId, orderNumber) => {
         gap: '16px',
         marginBottom: '24px'
       }}>
-        <div style={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          padding: '20px',
-          borderRadius: '12px',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '2rem', fontWeight: '700' }}>
-            {stats.totalOrders}
-          </div>
-          <div style={{ fontSize: '0.9rem', opacity: '0.9' }}>
-            All Order
-          </div>
-        </div>
+        {/* Total Orders Card */}
+  <div style={{
+    background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
+    color: 'white',
+    padding: '20px',
+    borderRadius: '12px',
+    textAlign: 'center'
+  }}>
+    <ShoppingCart size={32} style={{ marginBottom: '8px' }} />
+    <div style={{ fontSize: '2rem', fontWeight: '700' }}>
+      {stats.totalOrders}
+    </div>
+    <div style={{ fontSize: '0.9rem', opacity: '0.9' }}>
+      All Orders
+    </div>
+  </div>
 
-        <div style={{
-          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-          color: 'white',
-          padding: '20px',
-          borderRadius: '12px',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '2rem', fontWeight: '700' }}>
-            {stats.pendingOrders}
-          </div>
-          <div style={{ fontSize: '0.9rem', opacity: '0.9' }}>
-            Pending Orders
-          </div>
-        </div>
+  {/* Pending Orders Card */}
+  <div style={{
+    background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+    color: 'white',
+    padding: '20px',
+    borderRadius: '12px',
+    textAlign: 'center'
+  }}>
+    <Clock size={32} style={{ marginBottom: '8px' }} />
+    <div style={{ fontSize: '2rem', fontWeight: '700' }}>
+      {stats.pendingOrders}
+    </div>
+    <div style={{ fontSize: '0.9rem', opacity: '0.9' }}>
+      Pending Orders
+    </div>
+  </div>
 
-        <div style={{
-          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-          color: 'white',
-          padding: '20px',
-          borderRadius: '12px',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '2rem', fontWeight: '700' }}>
-            {stats.completedOrders}
-          </div>
-          <div style={{ fontSize: '0.9rem', opacity: '0.9' }}>
-            Completed Orders
-          </div>
-        </div>
+  {/* Completed Orders Card */}
+  <div style={{
+    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+    color: 'white',
+    padding: '20px',
+    borderRadius: '12px',
+    textAlign: 'center'
+  }}>
+    <CheckCircle size={32} style={{ marginBottom: '8px' }} />
+    <div style={{ fontSize: '2rem', fontWeight: '700' }}>
+      {stats.completedOrders}
+    </div>
+    <div style={{ fontSize: '0.9rem', opacity: '0.9' }}>
+      Completed Orders
+    </div>
+</div>
 
-        <div style={{
-          background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-          color: 'white',
-          padding: '20px',
-          borderRadius: '12px',
-          textAlign: 'center'
-        }}>
-          <div style={{ fontSize: '2rem', fontWeight: '700' }}>
-            {formatCurrency(stats.totalRevenue).replace('฿', '')}
-          </div>
-          <div style={{ fontSize: '0.9rem', opacity: '0.9' }}>
-            Total sales (฿)
-          </div>
-        </div>
-      </div>
+{/* Total Revenue Card */}
+<div style={{
+  background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+  color: 'white',
+  padding: '20px',
+  borderRadius: '12px',
+  textAlign: 'center'
+}}>
+  <DollarSign size={32} style={{ marginBottom: '8px' }} />
+  <div style={{ fontSize: '2rem', fontWeight: '700' }}>
+    {formatCurrency(stats.totalRevenue).replace('฿', '')}
+  </div>
+  <div style={{ fontSize: '0.9rem', opacity: '0.9' }}>
+    Total Sales (฿)
+  </div>
+</div>
+</div>
 
       {/* Search and Filter Section */}
-      <div style={{
-        display: 'flex',
-        gap: '16px',
-        marginBottom: '24px',
-        flexWrap: 'wrap',
-        alignItems: 'center'
-      }}>
-        {/* Search Input */}
-        <div style={{ flex: '1', minWidth: '250px' }}>
-          <input
-            type="text"
-            placeholder="🔍 ค้นหาออเดอร์ (เลขออเดอร์, ชื่อลูกค้า, อีเมล, เบอร์โทร)"
-            value={filters.searchTerm}
-            onChange={(e) => setFilters({...filters, searchTerm: e.target.value})}
-            style={{
-              width: '100%',
-              padding: '12px 16px',
-              border: '2px solid #e5e7eb',
-              borderRadius: '8px',
-              fontSize: '1rem',
-              transition: 'border-color 0.2s'
-            }}
-            onFocus={(e) => e.target.style.borderColor = '#667eea'}
-            onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-          />
-        </div>
+       <div className="filters-section">
+  {/* Search Box */}
+  <div className="search-box">
+    <Search size={18} className="search-icon" />
+    <input
+      type="text"
+      placeholder="Search orders..."
+      value={filters.searchTerm}
+      onChange={(e) => setFilters({...filters, searchTerm: e.target.value})}
+      className="search-input"
+    />
+  </div>
 
-        {/* Status Filter */}
-        <select
-          value={filters.status}
-          onChange={(e) => setFilters({...filters, status: e.target.value})}
-          style={{
-            padding: '12px 16px',
-            border: '2px solid #e5e7eb',
-            borderRadius: '8px',
-            fontSize: '1rem',
-            background: 'white',
-            cursor: 'pointer'
-          }}
-        >
-          <option value="all">All status</option>
-          <option value="pending">รอดำเนินการ</option>
-          <option value="confirmed">ยืนยันแล้ว</option>
-          <option value="processing">กำลังเตรียม</option>
-          <option value="shipped">จัดส่งแล้ว</option>
-          <option value="delivered">จัดส่งสำเร็จ</option>
-          <option value="cancelled">ยกเลิก</option>
-        </select>
+  {/* Status Filter */}
+  <div className="filter-box">
+    <select
+      value={filters.status}
+      onChange={(e) => setFilters({...filters, status: e.target.value})}
+      className="filter-select"
+      style={{ paddingLeft: '16px' }}
+    >
+      <option value="all">All status</option>
+      <option value="pending">Pending</option>
+      <option value="confirmed">Confirmed</option>
+      <option value="processing">Processing</option>
+      <option value="shipped">Shipped</option>
+      <option value="delivered">Delivered</option>
+      <option value="cancelled">Cancelled</option>
+    </select>
+  </div>
 
-        {/* Refresh Button */}
-        <button
-          onClick={fetchOrders}
-          style={{
-            padding: '12px 20px',
-            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '1rem',
-            fontWeight: '600',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-        >
-          🔄 Reload 
-        </button>
-      </div>
+  {/* Results Info */}
+  <div className="results-info">
+    Showing <strong>{filteredOrders.length}</strong> of <strong>{orders.length}</strong> orders
+  </div>
+
+  {/* Refresh Button */}
+  <button onClick={fetchOrders} className="btn-primary">
+    <RefreshCw size={18} />
+    Reload
+  </button>
+</div>
 
       {/* Error Message */}
       {error && (
@@ -958,7 +1007,7 @@ const deleteOrder = async (orderId, orderNumber) => {
             fontWeight: '600',
             color: '#374151'
           }}>
-            รายการออเดอร์ ({filteredOrders.length} รายการ)
+            Order List : ({filteredOrders.length} items)
           </h3>
         </div>
 
@@ -968,27 +1017,27 @@ const deleteOrder = async (orderId, orderNumber) => {
             textAlign: 'center',
             color: '#6b7280'
           }}>
-            <div style={{ fontSize: '3rem', marginBottom: '16px' }}>📦</div>
+            <Package size={64} style={{ color: '#cbd5e1', margin: '0 auto 16px' }} />
             <p style={{ fontSize: '1.1rem', margin: 0 }}>
               {filters.searchTerm || filters.status !== 'all' 
-                ? 'ไม่พบออเดอร์ที่ตรงกับเงื่อนไขการค้นหา' 
-                : 'ยังไม่มีออเดอร์ในระบบ'
+                ? 'No orders found matching search criteria' 
+                : 'No orders in system yet'
               }
             </p>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div style={{ overflowX: 'auto' ,position: 'relative',zIndex: 1 }}>
+            <table className="products-table">
               <thead>
-                <tr style={{ background: '#f1f5f9' }}>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>เลขออเดอร์</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>ลูกค้า</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: '600', color: '#374151' }}>สินค้า</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: '600', color: '#374151' }}>ยอดรวม</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: '600', color: '#374151' }}>สถานะ</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: '600', color: '#374151' }}>การชำระ</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: '600', color: '#374151' }}>วันที่สั่ง</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', fontWeight: '600', color: '#374151' }}>จัดการ</th>
+                <tr>
+                  <th>ORDER ID</th>
+                    <th>CUSTOMER</th>
+                    <th>PRODUCTS</th>
+                    <th>TOTAL</th>
+                    <th>STATUS</th>
+                    <th>PAYMENT</th>
+                    <th>ORDER DATE</th>
+                    <th style={{ textAlign: 'center' }}>ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
@@ -997,7 +1046,9 @@ const deleteOrder = async (orderId, orderNumber) => {
                     key={order._id || index}
                     style={{ 
                       borderBottom: '1px solid #e5e7eb',
-                      transition: 'background-color 0.2s'
+                      transition: 'background-color 0.2s',
+                      position: 'relative',
+                      zIndex: openDropdown === order._id ? 10 : 1
                     }}
                     onMouseEnter={(e) => e.target.parentElement.style.backgroundColor = '#f8fafc'}
                     onMouseLeave={(e) => e.target.parentElement.style.backgroundColor = 'transparent'}
@@ -1043,284 +1094,475 @@ const deleteOrder = async (orderId, orderNumber) => {
                       {formatDate(order.orderDate || order.createdAt)}
                     </td>
                     <td style={{ padding: '16px', textAlign: 'center' }}>
-  <div style={{ 
-    display: 'flex', 
-    gap: '6px', 
-    justifyContent: 'center', 
-    flexWrap: 'wrap',
-    alignItems: 'center'
-  }}>
-    {/* View Button - แสดงเสมอ */}
-    <button
-      onClick={() => setShowOrderDetails(order)}
-      style={{
-        padding: '6px 12px',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        color: 'white',
-        border: 'none',
-        borderRadius: '6px',
-        fontSize: '0.85rem',
-        fontWeight: '600',
-        cursor: 'pointer'
-      }}
-    >
-      👁️ ดู
-    </button>
-    
-    {/* PENDING STATUS ACTIONS */}
-    {order.status === 'pending' && (
-      <>
-        <button
-          onClick={() => updateOrderStatus(order._id, 'confirmed', 'paid')}
-          style={{
-            padding: '6px 12px',
-            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: '0.85rem',
-            fontWeight: '600',
-            cursor: 'pointer'
-          }}
-        >
-          ✅ ยืนยัน
-        </button>
-        <button
-          onClick={() => updateOrderStatus(order._id, 'cancelled')}
-          style={{
-            padding: '6px 12px',
-            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: '0.85rem',
-            fontWeight: '600',
-            cursor: 'pointer'
-          }}
-        >
-          ❌ ยกเลิก
-        </button>
-      </>
-    )}
+                      <div className="dropdown-container" style={{ position: 'relative', display: 'inline-block' }}>
+                        {/* Main Action Button */}
+                        <button
+                          onClick={() => setOpenDropdown(openDropdown === order._id ? null : order._id)}
+                          style={{
+                            padding: '8px 20px',
+                            background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontSize: '0.9rem',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            transition: 'all 0.2s ease',
+                            boxShadow: '0 2px 4px rgba(59, 130, 246, 0.3)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 4px 8px rgba(59, 130, 246, 0.4)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 2px 4px rgba(59, 130, 246, 0.3)';
+                          }}
+                        >
+                          <Settings size={16} />
+                          Actions
+                          {openDropdown === order._id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        </button>
 
-    {/* CONFIRMED STATUS ACTIONS */}
-    {order.status === 'confirmed' && (
-      <>
-        <button
-          onClick={() => updateOrderStatus(order._id, 'processing')}
-          style={{
-            padding: '6px 12px',
-            background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: '0.85rem',
-            fontWeight: '600',
-            cursor: 'pointer'
-          }}
-        >
-          ⚙️ เตรียมสินค้า
-        </button>
-        {/* ⬅️ REVERT: Confirmed → Pending */}
-        <button
-          onClick={() => revertOrderStatus(order._id, order.status, order.orderNumber)}
-          style={{
-            padding: '6px 12px',
-            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: '0.85rem',
-            fontWeight: '600',
-            cursor: 'pointer'
-          }}
-          title="ยกเลิกการยืนยัน - กลับเป็นรอดำเนินการ (คืนสต็อก)"
-        >
-          ยกเลิกการยืนยัน
-        </button>
-      </>
-    )}
+                        {/* Dropdown Menu */}
+                        {openDropdown === order._id && (
+                          <div style={{
+                            position: 'absolute',
+                            top: 'calc(100% + 4px)',
+                            right: 0,
+                            background: 'white',
+                            border: '1px solid #e2e8f0',
+                            borderRadius: '10px',
+                            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.15)',
+                            minWidth: '220px',
+                            zIndex: 9999,
+                            overflow: 'hidden',
+                            animation: 'slideDown 0.2s ease',
+                            maxHeight: '400px',
+                            overflowY: 'auto'
+                          }}>
+                            <style>
+                              {`
+                                @keyframes slideDown {
+                                  from {
+                                    opacity: 0;
+                                    transform: translateY(-10px);
+                                  }
+                                  to {
+                                    opacity: 1;
+                                    transform: translateY(0);
+                                  }
+                                }
+                              `}
+                            </style>
 
-    {/* PROCESSING STATUS ACTIONS */}
-    {order.status === 'processing' && (
-      <>
-        <button
-          onClick={() => updateOrderStatus(order._id, 'shipped')}
-          style={{
-            padding: '6px 12px',
-            background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: '0.85rem',
-            fontWeight: '600',
-            cursor: 'pointer'
-          }}
-        >
-          🚚 จัดส่ง
-        </button>
-        {/* ⬅️ REVERT: Processing → Confirmed */}
-        <button
-          onClick={() => revertOrderStatus(order._id, order.status, order.orderNumber)}
-          style={{
-            padding: '6px 12px',
-            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: '0.85rem',
-            fontWeight: '600',
-            cursor: 'pointer'
-          }}
-          title="ยกเลิกการเตรียม - กลับเป็นยืนยันแล้ว"
-        >
-          ยกเลิกการเตรียม
-        </button>
-      </>
-    )}
+                            {/* View Details */}
+                            <button
+                              onClick={() => {
+                                setShowOrderDetails(order);
+                                setOpenDropdown(null);
+                              }}
+                              style={{
+                                width: '100%',
+                                padding: '12px 16px',
+                                border: 'none',
+                                background: 'transparent',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                color: '#1e293b',
+                                fontSize: '0.9rem',
+                                fontWeight: '500',
+                                transition: 'background 0.2s ease'
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
+                              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                            >
+                              <Eye size={16} style={{ color: '#3b82f6' }} />
+                              View Details
+                            </button>
 
-    {/* SHIPPED STATUS ACTIONS */}
-    {order.status === 'shipped' && (
-      <>
-        <button
-          onClick={() => updateOrderStatus(order._id, 'delivered')}
-          style={{
-            padding: '6px 12px',
-            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: '0.85rem',
-            fontWeight: '600',
-            cursor: 'pointer'
-          }}
-        >
-          📦 สำเร็จ
-        </button>
-        {/* ⬅️ REVERT: Shipped → Processing */}
-        <button
-          onClick={() => revertOrderStatus(order._id, order.status, order.orderNumber)}
-          style={{
-            padding: '6px 12px',
-            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: '0.85rem',
-            fontWeight: '600',
-            cursor: 'pointer'
-          }}
-          title="ยกเลิกการจัดส่ง - กลับเป็นกำลังเตรียม"
-        >
-          ยกเลิกการจัดส่ง
-        </button>
-      </>
-    )}
+                            {/* PENDING STATUS */}
+                            {order.status === 'pending' && (
+                              <>
+                                <div style={{ height: '1px', background: '#e2e8f0', margin: '4px 0' }} />
+                                <button
+                                  onClick={() => {
+                                    updateOrderStatus(order._id, 'confirmed', 'paid');
+                                    setOpenDropdown(null);
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    color: '#10b981',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '500',
+                                    transition: 'background 0.2s ease'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = '#f0fdf4'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                >
+                                  <CheckCircle size={16} />
+                                  Confirm Order
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    updateOrderStatus(order._id, 'cancelled');
+                                    setOpenDropdown(null);
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    color: '#ef4444',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '500',
+                                    transition: 'background 0.2s ease'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = '#fef2f2'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                >
+                                  <Ban size={16} />
+                                  Cancel Order
+                                </button>
+                              </>
+                            )}
 
-    {/* DELIVERED STATUS ACTIONS */}
-    {order.status === 'delivered' && (
-      <>
-        <span style={{
-          padding: '6px 12px',
-          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-          color: 'white',
-          borderRadius: '6px',
-          fontSize: '0.85rem',
-          fontWeight: '600'
-        }}>
-          🎉 เสร็จสิ้น
-        </span>
-        {/* ⬅️ REVERT: Delivered → Shipped */}
-        <button
-          onClick={() => revertOrderStatus(order._id, order.status, order.orderNumber)}
-          style={{
-            padding: '6px 12px',
-            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: '0.85rem',
-            fontWeight: '600',
-            cursor: 'pointer'
-          }}
-          title="ยกเลิกการสำเร็จ - กลับเป็นจัดส่งแล้ว"
-        >
-          ยกเลิกจัดส่งสำเร็จ
-        </button>
-      </>
-    )}
+                            {/* CONFIRMED STATUS */}
+                            {order.status === 'confirmed' && (
+                              <>
+                                <div style={{ height: '1px', background: '#e2e8f0', margin: '4px 0' }} />
+                                <button
+                                  onClick={() => {
+                                    updateOrderStatus(order._id, 'processing');
+                                    setOpenDropdown(null);
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    color: '#8b5cf6',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '500',
+                                    transition: 'background 0.2s ease'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = '#faf5ff'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                >
+                                  <Package size={16} />
+                                  Start Processing
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    revertOrderStatus(order._id, order.status, order.orderNumber);
+                                    setOpenDropdown(null);
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    color: '#f59e0b',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '500',
+                                    transition: 'background 0.2s ease'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = '#fffbeb'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                  title="Revert to Pending"
+                                >
+                                  <RotateCcw size={16} />
+                                  Revert Confirmation
+                                </button>
+                              </>
+                            )}
 
-    {/* CANCELLED STATUS ACTIONS */}
-    {order.status === 'cancelled' && (
-      <>
-        <span style={{
-          padding: '6px 12px',
-          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-          color: 'white',
-          borderRadius: '6px',
-          fontSize: '0.85rem',
-          fontWeight: '600'
-        }}>
-          ❌ ยกเลิกแล้ว
-        </span>
-        {/* 🔄 REACTIVATE: Cancelled → Pending */}
-        <button
-          onClick={() => revertOrderStatus(order._id, order.status, order.orderNumber)}
-          style={{
-            padding: '6px 12px',
-            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-            color: 'white',
-            border: 'none',
-            borderRadius: '6px',
-            fontSize: '0.85rem',
-            fontWeight: '600',
-            cursor: 'pointer'
-          }}
-          title="เปิดใช้งานออเดอร์ใหม่ - กลับเป็นรอดำเนินการ (หักสต็อก)"
-        >
-          เรียกใช้งานใหม่
-        </button>
-      </>
-    )}
-    {/* REFUND BUTTON */}
-{canRefund(order) && (
-  <button
-    onClick={() => processRefund(order._id, order.orderNumber, order.pricing.total)}
-    style={{
-      padding: '6px 12px',
-      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-      color: 'white',
-      border: 'none',
-      borderRadius: '6px',
-      fontSize: '0.85rem',
-      fontWeight: '600',
-      cursor: 'pointer'
-    }}
-    title="คืนเงินและยกเลิกออเดอร์"
-  >
-    💰 คืนเงิน
-  </button>
-)}
+                            {/* PROCESSING STATUS */}
+                            {order.status === 'processing' && (
+                              <>
+                                <div style={{ height: '1px', background: '#e2e8f0', margin: '4px 0' }} />
+                                <button
+                                  onClick={() => {
+                                    updateOrderStatus(order._id, 'shipped');
+                                    setOpenDropdown(null);
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    color: '#06b6d4',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '500',
+                                    transition: 'background 0.2s ease'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = '#ecfeff'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                >
+                                  <Truck size={16} />
+                                  Ship Order
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    revertOrderStatus(order._id, order.status, order.orderNumber);
+                                    setOpenDropdown(null);
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    color: '#f59e0b',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '500',
+                                    transition: 'background 0.2s ease'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = '#fffbeb'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                  title="Revert to Confirmed"
+                                >
+                                  <RotateCcw size={16} />
+                                  Revert Processing
+                                </button>
+                              </>
+                            )}
 
-    {/* DELETE BUTTON - แสดงเสมอ */}
-    <button
-      onClick={() => deleteOrder(order._id, order.orderNumber)}
-      style={{
-        padding: '6px 12px',
-        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-        color: 'white',
-        border: 'none',
-        borderRadius: '6px',
-        fontSize: '0.85rem',
-        fontWeight: '600',
-        cursor: 'pointer'
-      }}
-      title="ลบออเดอร์ถาวร (คืนสต็อกอัตโนมัติ)"
-    >
-      🗑️ ลบ
-    </button>
-  </div>
-</td>
+                            {/* SHIPPED STATUS */}
+                            {order.status === 'shipped' && (
+                              <>
+                                <div style={{ height: '1px', background: '#e2e8f0', margin: '4px 0' }} />
+                                <button
+                                  onClick={() => {
+                                    updateOrderStatus(order._id, 'delivered');
+                                    setOpenDropdown(null);
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    color: '#10b981',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '500',
+                                    transition: 'background 0.2s ease'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = '#f0fdf4'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                >
+                                  <CheckCircle size={16} />
+                                  Mark as Delivered
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    revertOrderStatus(order._id, order.status, order.orderNumber);
+                                    setOpenDropdown(null);
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    color: '#f59e0b',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '500',
+                                    transition: 'background 0.2s ease'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = '#fffbeb'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                  title="Revert to Processing"
+                                >
+                                  <RotateCcw size={16} />
+                                  Revert Shipment
+                                </button>
+                              </>
+                            )}
+
+                            {/* DELIVERED STATUS */}
+                            {order.status === 'delivered' && (
+                              <>
+                                <div style={{ height: '1px', background: '#e2e8f0', margin: '4px 0' }} />
+                                <button
+                                  onClick={() => {
+                                    revertOrderStatus(order._id, order.status, order.orderNumber);
+                                    setOpenDropdown(null);
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    color: '#f59e0b',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '500',
+                                    transition: 'background 0.2s ease'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = '#fffbeb'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                  title="Revert to Shipped"
+                                >
+                                  <RotateCcw size={16} />
+                                  Revert Delivery
+                                </button>
+                              </>
+                            )}
+
+                            {/* CANCELLED STATUS */}
+                            {order.status === 'cancelled' && (
+                              <>
+                                <div style={{ height: '1px', background: '#e2e8f0', margin: '4px 0' }} />
+                                <button
+                                  onClick={() => {
+                                    revertOrderStatus(order._id, order.status, order.orderNumber);
+                                    setOpenDropdown(null);
+                                  }}
+                                  style={{
+                                    width: '100%',
+                                    padding: '12px 16px',
+                                    border: 'none',
+                                    background: 'transparent',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '10px',
+                                    color: '#10b981',
+                                    fontSize: '0.9rem',
+                                    fontWeight: '500',
+                                    transition: 'background 0.2s ease'
+                                  }}
+                                  onMouseEnter={(e) => e.currentTarget.style.background = '#f0fdf4'}
+                                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                  title="Reactivate to Pending"
+                                >
+                                  <RotateCcw size={16} />
+                                  Reactivate Order
+                                </button>
+                              </>
+                            )}
+
+                            {/* Dangerous Actions Section */}
+                            <div style={{ height: '1px', background: '#e2e8f0', margin: '4px 0' }} />
+
+                            {/* Refund Button */}
+                            {canRefund(order) && (
+                              <button
+                                onClick={() => {
+                                  processRefund(order._id, order.orderNumber, order.pricing.total);
+                                  setOpenDropdown(null);
+                                }}
+                                style={{
+                                  width: '100%',
+                                  padding: '12px 16px',
+                                  border: 'none',
+                                  background: 'transparent',
+                                  textAlign: 'left',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '10px',
+                                  color: '#f59e0b',
+                                  fontSize: '0.9rem',
+                                  fontWeight: '500',
+                                  transition: 'background 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => e.currentTarget.style.background = '#fffbeb'}
+                                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                title="Refund and Cancel Order"
+                              >
+                                <DollarSign size={16} />
+                                Process Refund
+                              </button>
+                            )}
+
+                            {/* Delete Button */}
+                            <button
+                              onClick={() => {
+                                deleteOrder(order._id, order.orderNumber);
+                                setOpenDropdown(null);
+                              }}
+                              style={{
+                                width: '100%',
+                                padding: '12px 16px',
+                                border: 'none',
+                                background: 'transparent',
+                                textAlign: 'left',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                color: '#ef4444',
+                                fontSize: '0.9rem',
+                                fontWeight: '500',
+                                transition: 'background 0.2s ease'
+                              }}
+                              onMouseEnter={(e) => e.currentTarget.style.background = '#fef2f2'}
+                              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                              title="Delete Order Permanently"
+                            >
+                              <Trash2 size={16} />
+                              Delete Order
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+
+
+{/* //////// */}
                   </tr>
                 ))}
               </tbody>
@@ -1362,7 +1604,7 @@ const deleteOrder = async (orderId, orderNumber) => {
               paddingBottom: '16px'
             }}>
               <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>
-                📦 รายละเอียดออเดอร์
+                <FileText size={24} /> Order Details
               </h3>
               <button
                 onClick={() => setShowOrderDetails(null)}
@@ -1381,28 +1623,60 @@ const deleteOrder = async (orderId, orderNumber) => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {/* Order Info */}
               <div>
-                <h4 style={{ margin: '0 0 12px', color: '#374151' }}>ข้อมูลออเดอร์</h4>
+                <h4 style={{ 
+                  margin: '0 0 12px', 
+                  color: '#374151',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <FileText size={20} style={{ color: '#3b82f6' }} />
+                  Order Information
+                </h4>
                 <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px' }}>
                   <div style={{ display: 'grid', gap: '8px' }}>
-                    <div><strong>เลขออเดอร์:</strong> {showOrderDetails.orderNumber}</div>
-                    <div><strong>วันที่สั่ง:</strong> {formatDate(showOrderDetails.orderDate || showOrderDetails.createdAt)}</div>
-                    <div><strong>สถานะ:</strong> {getStatusBadge(showOrderDetails.status)}</div>
-                    <div><strong>การชำระ:</strong> {getPaymentBadge(showOrderDetails.paymentStatus)}</div>
+                    <div><strong>Order ID:</strong> {showOrderDetails.orderNumber}</div>
+                    <div><strong>Order Date:</strong> {formatDate(showOrderDetails.orderDate || showOrderDetails.createdAt)}</div>
+                    <div><strong>Status:</strong> {getStatusBadge(showOrderDetails.status)}</div>
+                    <div><strong>Payment:</strong> {getPaymentBadge(showOrderDetails.paymentStatus)}</div>
                   </div>
                 </div>
               </div>
 
               {/* Customer Info */}
               <div>
-                <h4 style={{ margin: '0 0 12px', color: '#374151' }}>ข้อมูลลูกค้า</h4>
+                 <h4 style={{ 
+                    margin: '0 0 12px', 
+                    color: '#374151',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <Users size={20} style={{ color: '#3b82f6' }} />
+                    Customer Information
+                  </h4>
                 <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px' }}>
                   <div style={{ display: 'grid', gap: '8px' }}>
-                    <div><strong>ชื่อ:</strong> {showOrderDetails.customerInfo.firstName} {showOrderDetails.customerInfo.lastName}</div>
-                    <div><strong>อีเมล:</strong> {showOrderDetails.customerInfo.email}</div>
-                    <div><strong>เบอร์โทร:</strong> {showOrderDetails.customerInfo.phone}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Users size={16} style={{ color: '#6b7280' }} />
+                      <strong>Name:</strong> {showOrderDetails.customerInfo.firstName} {showOrderDetails.customerInfo.lastName}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Mail size={16} style={{ color: '#6b7280' }} />
+                      <strong>Email:</strong> {showOrderDetails.customerInfo.email}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Phone size={16} style={{ color: '#6b7280' }} />
+                      <strong>Phone:</strong> {showOrderDetails.customerInfo.phone}
+                    </div>
                     {showOrderDetails.customerInfo.address && (
-                      <div><strong>ที่อยู่:</strong> {showOrderDetails.customerInfo.address.street}, {showOrderDetails.customerInfo.address.district}, {showOrderDetails.customerInfo.address.province} {showOrderDetails.customerInfo.address.postalCode}</div>
-                    )}
+                        <div style={{ display: 'flex', alignItems: 'start', gap: '8px' }}>
+                          <MapPin size={16} style={{ color: '#6b7280', marginTop: '2px' }} />
+                          <div>
+                            <strong>Address:</strong> {showOrderDetails.customerInfo.address.street}, {showOrderDetails.customerInfo.address.district}, {showOrderDetails.customerInfo.address.province} {showOrderDetails.customerInfo.address.postalCode}
+                          </div>
+                        </div>
+                      )}
                     {/* 🆕 แสดงหมายเหตุเพิ่มเติม */}
                     {showOrderDetails.customerInfo.address?.notes && (
                       <div style={{ 
@@ -1412,7 +1686,7 @@ const deleteOrder = async (orderId, orderNumber) => {
                         border: '1px solid #f59e0b',
                         borderRadius: '6px'
                       }}>
-                        <strong>📝 หมายเหตุเพิ่มเติม:</strong>
+                        <strong><TriangleAlert size={16} /> Additional notes : </strong>
                         <div style={{ 
                           marginTop: '4px', 
                           fontStyle: 'italic',
@@ -1428,7 +1702,16 @@ const deleteOrder = async (orderId, orderNumber) => {
               
               {/* Order Items */}
               <div>
-                <h4 style={{ margin: '0 0 12px', color: '#374151' }}>รายการสินค้า</h4>
+                <h4 style={{ 
+                  margin: '0 0 12px', 
+                  color: '#374151',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <Package size={20} style={{ color: '#3b82f6' }} />
+                  Order Items
+                </h4>
                 <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px' }}>
                   {showOrderDetails.items.map((item, index) => (
                     <div key={index} style={{ 
@@ -1454,15 +1737,24 @@ const deleteOrder = async (orderId, orderNumber) => {
 
               {/* Order Summary */}
               <div>
-                <h4 style={{ margin: '0 0 12px', color: '#374151' }}>สรุปยอดเงิน</h4>
+               <h4 style={{ 
+                  margin: '0 0 12px', 
+                  color: '#374151',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <DollarSign size={20} style={{ color: '#3b82f6' }} />
+                  Order Summary
+                </h4>
                 <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span>ยอดสินค้า:</span>
+                    <span>Price:</span>
                     <span>{formatCurrency(showOrderDetails.pricing.subtotal)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <span>ค่าจัดส่ง:</span>
-                    <span>{showOrderDetails.pricing.shipping === 0 ? 'ฟรี!' : formatCurrency(showOrderDetails.pricing.shipping)}</span>
+                    <span>Shipping (มากกว่า 1000 Bath):</span>
+                    <span>{showOrderDetails.pricing.shipping === 0 ? 'Free!' : formatCurrency(showOrderDetails.pricing.shipping)}</span>
                   </div>
                   <div style={{ 
                     display: 'flex', 
@@ -1473,347 +1765,41 @@ const deleteOrder = async (orderId, orderNumber) => {
                     paddingTop: '8px',
                     marginTop: '8px'
                   }}>
-                    <span>ยอดรวมทั้งสิ้น:</span>
+                    <span>Total:</span>
                     <span style={{ color: '#059669' }}>{formatCurrency(showOrderDetails.pricing.total)}</span>
                   </div>
                 </div>
               </div>
 
               {/* Action Buttons */}
-<div style={{ 
-  display: 'flex', 
-  gap: '12px', 
-  justifyContent: 'flex-end',
-  borderTop: '2px solid #e5e7eb',
-  paddingTop: '16px',
-  flexWrap: 'wrap'
-}}>
-  {/* PENDING STATUS ACTIONS */}
-  {showOrderDetails.status === 'pending' && (
-    <>
-      <button
-        onClick={() => {
-          updateOrderStatus(showOrderDetails._id, 'confirmed', 'paid');
-          setShowOrderDetails(null);
-        }}
-        style={{
-          padding: '12px 20px',
-          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          fontWeight: '600',
-          fontSize: '0.95rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}
-      >
-        ✅ ยืนยันออเดอร์
-      </button>
-      <button
-        onClick={() => {
-          updateOrderStatus(showOrderDetails._id, 'cancelled');
-          setShowOrderDetails(null);
-        }}
-        style={{
-          padding: '12px 20px',
-          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          fontWeight: '600',
-          fontSize: '0.95rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}
-      >
-        ❌ ยกเลิกออเดอร์
-      </button>
-    </>
-  )}
-
-  {/* CONFIRMED STATUS ACTIONS */}
-  {showOrderDetails.status === 'confirmed' && (
-    <>
-      <button
-        onClick={() => {
-          updateOrderStatus(showOrderDetails._id, 'processing');
-          setShowOrderDetails(null);
-        }}
-        style={{
-          padding: '12px 20px',
-          background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          fontWeight: '600',
-          fontSize: '0.95rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}
-      >
-        ⚙️ เริ่มเตรียมสินค้า
-      </button>
-      {/* Revert to Pending */}
-      <button
-        onClick={() => {
-          revertOrderStatus(showOrderDetails._id, showOrderDetails.status, showOrderDetails.orderNumber);
-          setShowOrderDetails(null);
-        }}
-        style={{
-          padding: '12px 20px',
-          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          fontWeight: '600',
-          fontSize: '0.95rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}
-      >
-        ⬅️ ยกเลิกการยืนยัน
-      </button>
-    </>
-  )}
-
-  {/* PROCESSING STATUS ACTIONS */}
-  {showOrderDetails.status === 'processing' && (
-    <>
-      <button
-        onClick={() => {
-          updateOrderStatus(showOrderDetails._id, 'shipped');
-          setShowOrderDetails(null);
-        }}
-        style={{
-          padding: '12px 20px',
-          background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          fontWeight: '600',
-          fontSize: '0.95rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}
-      >
-        🚚 จัดส่งสินค้า
-      </button>
-      {/* Revert to Confirmed */}
-      <button
-        onClick={() => {
-          revertOrderStatus(showOrderDetails._id, showOrderDetails.status, showOrderDetails.orderNumber);
-          setShowOrderDetails(null);
-        }}
-        style={{
-          padding: '12px 20px',
-          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          fontWeight: '600',
-          fontSize: '0.95rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}
-      >
-        ⬅️ ยกเลิกการเตรียม
-      </button>
-    </>
-  )}
-
-  {/* SHIPPED STATUS ACTIONS */}
-  {showOrderDetails.status === 'shipped' && (
-    <>
-      <button
-        onClick={() => {
-          updateOrderStatus(showOrderDetails._id, 'delivered');
-          setShowOrderDetails(null);
-        }}
-        style={{
-          padding: '12px 20px',
-          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          fontWeight: '600',
-          fontSize: '0.95rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}
-      >
-        📦 ยืนยันการจัดส่งสำเร็จ
-      </button>
-      {/* Revert to Processing */}
-      <button
-        onClick={() => {
-          revertOrderStatus(showOrderDetails._id, showOrderDetails.status, showOrderDetails.orderNumber);
-          setShowOrderDetails(null);
-        }}
-        style={{
-          padding: '12px 20px',
-          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          fontWeight: '600',
-          fontSize: '0.95rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}
-      >
-        ⬅️ ยกเลิกการจัดส่ง
-      </button>
-    </>
-  )}
-
-  {/* DELIVERED STATUS ACTIONS */}
-  {showOrderDetails.status === 'delivered' && (
-    <>
-      <div style={{
-        padding: '12px 20px',
-        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-        color: 'white',
-        borderRadius: '8px',
-        fontWeight: '600',
-        fontSize: '0.95rem',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px'
-      }}>
-        🎉 ออเดอร์เสร็จสิ้นแล้ว
-      </div>
-      {/* Revert to Shipped */}
-      <button
-        onClick={() => {
-          revertOrderStatus(showOrderDetails._id, showOrderDetails.status, showOrderDetails.orderNumber);
-          setShowOrderDetails(null);
-        }}
-        style={{
-          padding: '12px 20px',
-          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          fontWeight: '600',
-          fontSize: '0.95rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}
-      >
-        ⬅️ ยกเลิกการสำเร็จ
-      </button>
-    </>
-  )}
-
-  {/* CANCELLED STATUS ACTIONS */}
-  {showOrderDetails.status === 'cancelled' && (
-    <>
-      <div style={{
-        padding: '12px 20px',
-        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-        color: 'white',
-        borderRadius: '8px',
-        fontWeight: '600',
-        fontSize: '0.95rem',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px'
-      }}>
-        ❌ ออเดอร์ถูกยกเลิก
-      </div>
-      {/* Reactivate Order */}
-      <button
-        onClick={() => {
-          revertOrderStatus(showOrderDetails._id, showOrderDetails.status, showOrderDetails.orderNumber);
-          setShowOrderDetails(null);
-        }}
-        style={{
-          padding: '12px 20px',
-          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-          color: 'white',
-          border: 'none',
-          borderRadius: '8px',
-          cursor: 'pointer',
-          fontWeight: '600',
-          fontSize: '0.95rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}
-      >
-        🔄 เปิดใช้งานออเดอร์ใหม่
-      </button>
-    </>
-  )}
-
-  {/* REFUND BUTTON */}
-{canRefund(showOrderDetails) && (
-  <button
-    onClick={() => {
-      processRefund(
-        showOrderDetails._id, 
-        showOrderDetails.orderNumber, 
-        showOrderDetails.pricing.total
-      );
-      setShowOrderDetails(null);
-    }}
-    style={{
-      padding: '12px 20px',
-      background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-      color: 'white',
-      border: 'none',
-      borderRadius: '8px',
-      cursor: 'pointer',
-      fontWeight: '600',
-      fontSize: '0.95rem',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px'
-    }}
-  >
-    💰 คืนเงิน ฿{showOrderDetails.pricing.total.toLocaleString()}
-  </button>
-)}
-
-  {/* CLOSE BUTTON - แสดงเสมอ */}
-  <button
-    onClick={() => setShowOrderDetails(null)}
-    style={{
-      padding: '12px 20px',
-      background: '#6b7280',
-      color: 'white',
-      border: 'none',
-      borderRadius: '8px',
-      cursor: 'pointer',
-      fontWeight: '600',
-      fontSize: '0.95rem',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px'
-    }}
-  >
-    ปิด
-  </button>
-</div>
+            <div style={{ 
+              display: 'flex', 
+              gap: '12px', 
+              justifyContent: 'flex-end',
+              borderTop: '2px solid #e5e7eb',
+              paddingTop: '16px',
+              flexWrap: 'wrap'
+            }}>
+                {/* CLOSE BUTTON - แสดงเสมอ */}
+                <button
+                  onClick={() => setShowOrderDetails(null)}
+                  style={{
+                    padding: '12px 20px',
+                    background: '#6b7280',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    fontSize: '0.95rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1848,8 +1834,16 @@ const deleteOrder = async (orderId, orderNumber) => {
         alignItems: 'center',
         marginBottom: '20px'
       }}>
-        <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700' }}>
-          💸 คำขอคืนเงินจากลูกค้า
+        <h3 style={{ 
+          margin: 0, 
+          fontSize: '1.5rem', 
+          fontWeight: '700',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <DollarSign size={24} style={{ color: '#ef4444' }} />
+          Customer Refund Requests
         </h3>
         <button
           onClick={() => setShowRefundRequests(false)}
@@ -1861,7 +1855,7 @@ const deleteOrder = async (orderId, orderNumber) => {
             padding: '4px'
           }}
         >
-          ✕
+          <X size={20} />
         </button>
       </div>
 
@@ -1894,11 +1888,12 @@ const deleteOrder = async (orderId, orderNumber) => {
           borderRadius: '10px',
           textAlign: 'center'
         }}>
+          <Clock size={24} style={{ marginBottom: '8px' }} />
           <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>
             {refundRequestStats.pendingRequests}
           </div>
           <div style={{ fontSize: '0.8rem', opacity: '0.9' }}>
-            รอพิจารณา
+            Pending Review
           </div>
         </div>
 
@@ -1909,11 +1904,12 @@ const deleteOrder = async (orderId, orderNumber) => {
           borderRadius: '10px',
           textAlign: 'center'
         }}>
+          <CheckCircle size={24} style={{ marginBottom: '8px' }} />
           <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>
             {refundRequestStats.approvedRequests}
           </div>
           <div style={{ fontSize: '0.8rem', opacity: '0.9' }}>
-            อนุมัติแล้ว
+            Approved
           </div>
         </div>
 
@@ -1924,32 +1920,33 @@ const deleteOrder = async (orderId, orderNumber) => {
           borderRadius: '10px',
           textAlign: 'center'
         }}>
+          <Ban size={24} style={{ marginBottom: '8px' }} />
           <div style={{ fontSize: '1.5rem', fontWeight: '700' }}>
             {refundRequestStats.rejectedRequests}
           </div>
           <div style={{ fontSize: '0.8rem', opacity: '0.9' }}>
-            ปฏิเสธแล้ว
+            Rejected
           </div>
         </div>
       </div>
 
       {refundRequests.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '16px' }}>💸</div>
-          <p>ไม่มีคำขอคืนเงิน</p>
+          <DollarSign size={64} style={{ color: '#cbd5e1', margin: '0 auto 16px' }} />
+          <p>No refund requests</p>
         </div>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
+        <div style={{ overflowX: 'auto',position: 'relative',zIndex: 1  }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#f1f5f9' }}>
-                <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>ออเดอร์</th>
-                <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>ลูกค้า</th>
-                <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: '#374151' }}>จำนวนเงิน</th>
-                <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>เหตุผล</th>
-                <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: '#374151' }}>สถานะ</th>
-                <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: '#374151' }}>วันที่ขอ</th>
-                <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: '#374151' }}>จัดการ</th>
+                <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Order</th>
+                <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Customer</th>
+                <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: '#374151' }}>Amount</th>
+                <th style={{ padding: '12px', textAlign: 'left', fontWeight: '600', color: '#374151' }}>Reason</th>
+                <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: '#374151' }}>Status</th>
+                <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: '#374151' }}>Requested At</th>
+                <th style={{ padding: '12px', textAlign: 'center', fontWeight: '600', color: '#374151' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -1997,39 +1994,47 @@ const deleteOrder = async (orderId, orderNumber) => {
                   </td>
                   <td style={{ padding: '12px', textAlign: 'center' }}>
                     {request.status === 'pending' && (
-                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                        <button
-                          onClick={() => approveRefundRequest(request.id, request.orderNumber, request.maxRefundAmount)}
-                          style={{
-                            padding: '6px 12px',
-                            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            fontSize: '0.8rem',
-                            fontWeight: '600',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          ✅ อนุมัติ
-                        </button>
-                        <button
-                          onClick={() => rejectRefundRequest(request.id, request.orderNumber)}
-                          style={{
-                            padding: '6px 12px',
-                            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            fontSize: '0.8rem',
-                            fontWeight: '600',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          ❌ ปฏิเสธ
-                        </button>
-                      </div>
-                    )}
+                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                          <button
+                            onClick={() => approveRefundRequest(request.id, request.orderNumber, request.maxRefundAmount)}
+                            style={{
+                              padding: '6px 12px',
+                              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '0.8rem',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <CheckCircle size={14} />
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => rejectRefundRequest(request.id, request.orderNumber)}
+                            style={{
+                              padding: '6px 12px',
+                              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontSize: '0.8rem',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <Ban size={14} />
+                            Reject
+                          </button>
+                        </div>
+                      )}
                     {request.status !== 'pending' && (
                       <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>
                         {formatRefundDate(request.processedAt)}

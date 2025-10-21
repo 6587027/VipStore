@@ -9,6 +9,25 @@ import OrderManager from './OrderManager';
 import ReportsManager from './ReportsManager'; 
 import AdminChatTab from "../chat/AdminChatTab";
 
+import { 
+  LayoutDashboard, 
+  Package, 
+  CheckCircle,
+  UserCheck, 
+  AlertTriangle,
+  Grid3x3,
+  Activity,
+  TrendingUp,
+  UserRoundCheck,
+  ShoppingCart,
+  BarChart3,
+  MessageCircleMore,
+  Bell,
+  User,
+  ChartNoAxesCombined,
+  BadgeInfo,
+} from 'lucide-react';
+
 const AdminDashboard = () => {
   const { user, isAdmin } = useAuth();
   const [products, setProducts] = useState([]);
@@ -93,16 +112,16 @@ const AdminDashboard = () => {
     <div className="admin-panel">
       <div className="container">
         {/* Admin Header */}
-        <div className="admin-header">
+        {/* <div className="admin-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <h1>👨‍💼 Admin Panel</h1>
-            <span className="admin-badge">Administrator</span>
+            <UserRoundCheck size={28} className="header-icon" />
+            <h1>Admin Panel</h1>
           </div>
           <div className="admin-user-info">
-            <span>Welcome back, <strong>{user.name}</strong></span>
+            <span>Welcome back <strong>{user.name}</strong></span>
             <span className="admin-time">{new Date().toLocaleDateString()}</span>
           </div>
-        </div>
+        </div> */}
 
         {/* Admin Navigation */}
         <div className="admin-nav">
@@ -110,39 +129,38 @@ const AdminDashboard = () => {
             className={`admin-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
             onClick={() => setActiveTab('dashboard')}
           >
-            📊 Dashboard
+             <LayoutDashboard size={13} /> Dashboard
           </button>
           <button 
             className={`admin-tab ${activeTab === 'products' ? 'active' : ''}`}
             onClick={() => setActiveTab('products')}
           >
-            📦 Products
+            <Package size={13} /> Products
           </button>
           <button 
             className={`admin-tab ${activeTab === 'orders' ? 'active' : ''}`}
             onClick={() => setActiveTab('orders')}
           >
-            🛒 Orders 
+            <ShoppingCart size={13} /> Orders
           </button>
           <button 
             className={`admin-tab ${activeTab === 'users' ? 'active' : ''}`}
             onClick={() => setActiveTab('users')}
           >
-            👥 Users 
+            <User size={13} /> Users
           </button>
           <button 
             className={`admin-tab ${activeTab === 'reports' ? 'active' : ''}`}
             onClick={() => setActiveTab('reports')}
           >
-            📊 Reports 
+            <ChartNoAxesCombined size={13} /> Reports
           </button>
-          {/* 🆕 เพิ่ม Chat Tab */}
       <button 
         className={`admin-tab ${activeTab === 'chat' ? 'active' : ''}`}
         onClick={() => setActiveTab('chat')}
         style={{ position: 'relative' }}
       >
-        💬 Live Chat
+        <MessageCircleMore size={13} /> Live Chat
         {/* Real-time notification badge */}
         <span style={{
           position: 'absolute',
@@ -176,28 +194,26 @@ const AdminDashboard = () => {
               
               {/* Quick Actions */}
               <div className="quick-actions">
-                <h3>⚡ Quick Actions</h3>
+                <h3>⚡ Quick Actions :       </h3>
                 <div className="action-cards">
                   <button 
                     className="action-card"
                     onClick={() => setActiveTab('products')}
                   >
-                    <div className="action-icon">📦</div>
+                    <Package size={32} className="action-icon-lucide" />
                     <div className="action-text">
-                      <h4>Manage Products</h4>
-                      <p>Add, edit, or remove products</p>
+                      <h4> Manage Products</h4>
+                      <p>  Add, edit, or remove products</p>
                     </div>
                   </button>
-                  
-                  {/* 🆕 แก้ไขปุ่ม Reports ให้ทำงานได้จริง */}
                   <button 
                     className="action-card"
                     onClick={() => setActiveTab('reports')}
                   >
-                    <div className="action-icon">📊</div>
+                    <ChartNoAxesCombined size={32} className="action-icon-lucide" />
                     <div className="action-text">
-                      <h4>View Reports</h4>
-                      <p>Sales and analytics</p>
+                      <h4> View Reports</h4>
+                      <p> Sales and analytics</p>
                     </div>
                   </button> 
                   
@@ -206,24 +222,28 @@ const AdminDashboard = () => {
 
               {/* Recent Activity */}
               <div className="recent-activity">
-                <h3>📋 Recent Activity</h3>
+               <h3>
+                <BadgeInfo size={22} className="section-icon"/> Recent Activity
+               </h3>
                 <div className="activity-list">
                   <div className="activity-item">
-                    <span className="activity-icon">➕</span>
+                    <CheckCircle size={20} className="activity-icon-success" />
                     <div className="activity-content">
                       <p><strong>System</strong> Admin panel initialized</p>
                       <span className="activity-time">Just now</span>
                     </div>
                   </div>
                   <div className="activity-item">
-                    <span className="activity-icon">👨‍💼</span>
-                    <div className="activity-content">
-                      <p><strong>{user.name}</strong> logged in as admin</p>
-                      <span className="activity-time">Today</span>
-                    </div>
+                  <UserCheck size={20} className="activity-icon-primary" />
+                  <div className="activity-content">
+                    <p>
+                      <strong>{user.firstName} {user.lastName} : </strong> logged in as admin
+                    </p>
+                    <span className="activity-time">Today</span>
                   </div>
+                </div>
                   <div className="activity-item">
-                    <span className="activity-icon">📦</span>
+                    <Package size={20} className="activity-icon-primary" />
                     <div className="activity-content">
                       <p><strong>Database</strong> {stats.totalProducts} products loaded</p>
                       <span className="activity-time">Today</span>

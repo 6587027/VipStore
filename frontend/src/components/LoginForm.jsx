@@ -218,11 +218,16 @@ const LoginForm = ({ onSuccess, onClose }) => {
                   <line x1="23" y1="11" x2="17" y2="11"/>
                 </svg>
               ) : (
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-                  <polyline points="10,17 15,12 10,7"/>
-                  <line x1="15" y1="12" x2="3" y2="12"/>
-                </svg>
+                <img 
+                  src="/VipStoreLogo.png" 
+                  alt="Vip Store Logo" 
+                  style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    objectFit: 'contain',
+                    borderRadius: '12px' ,
+                  }}
+                />
               )}
             </div>
             <div className="header-text">
@@ -261,7 +266,7 @@ const LoginForm = ({ onSuccess, onClose }) => {
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                 <circle cx="12" cy="7" r="4"/>
               </svg>
-              ชื่อผู้ใช้
+              ชื่อผู้ใช้ (Username)
             </label>
             <div className="input-container">
               <input
@@ -288,7 +293,7 @@ const LoginForm = ({ onSuccess, onClose }) => {
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                     <polyline points="22,6 12,13 2,6"/>
                   </svg>
-                  อีเมล
+                  อีเมล (Email)
                 </label>
                 <div className="input-container">
                   <input
@@ -313,7 +318,7 @@ const LoginForm = ({ onSuccess, onClose }) => {
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                       <circle cx="12" cy="7" r="4"/>
                     </svg>
-                    ชื่อจริง
+                    ชื่อจริง (First Name)
                   </label>
                   <div className="input-container">
                     <input
@@ -335,7 +340,7 @@ const LoginForm = ({ onSuccess, onClose }) => {
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                       <circle cx="12" cy="7" r="4"/>
                     </svg>
-                    นามสกุล
+                    นามสกุล (Last Name)
                   </label>
                   <div className="input-container">
                     <input
@@ -363,7 +368,7 @@ const LoginForm = ({ onSuccess, onClose }) => {
                 <circle cx="12" cy="16" r="1"/>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
               </svg>
-              รหัสผ่าน
+              รหัสผ่าน (Password)
             </label>
             <div className="input-container password-container">
               <input
@@ -448,7 +453,7 @@ const LoginForm = ({ onSuccess, onClose }) => {
                   <circle cx="12" cy="16" r="1"/>
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                 </svg>
-                ยืนยันรหัสผ่าน
+                ยืนยันรหัสผ่าน (Confirm Password)
               </label>
               <div className="input-container password-container">
                 <input
@@ -498,7 +503,7 @@ const LoginForm = ({ onSuccess, onClose }) => {
                   <circle cx="12" cy="12" r="3"/>
                   <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
                 </svg>
-                ลืมรหัสผ่าน? ติดต่อผู้พัฒนา
+                ลืมรหัสผ่าน? ติดต่อผู้พัฒนา 
               </button>
             </div>
           )}

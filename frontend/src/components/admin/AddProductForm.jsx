@@ -2,6 +2,19 @@
 import React, { useState } from 'react';
 import { productsAPI } from '../../services/api';
 import SimpleShareLinkUpload from './SimpleShareLinkUpload';
+import { 
+  Plus, 
+  X, 
+  FileText, 
+  AlignLeft, 
+  DollarSign, 
+  Package, 
+  Tag, 
+  Image as ImageIcon,
+  CheckCircle,
+  XCircle,
+  ClipboardPenLine
+} from 'lucide-react';
 
 const AddProductForm = ({ onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -125,7 +138,7 @@ const AddProductForm = ({ onClose, onSuccess }) => {
       <div className="modal-content add-product-modal">
         {/* Modal Header */}
         <div className="modal-header">
-          <h2>➕ Add New Product</h2>
+          <h2><Plus size={24} className="" /> Add New Product</h2>
           <button 
             className="modal-close-btn"
             onClick={onClose}
@@ -139,7 +152,7 @@ const AddProductForm = ({ onClose, onSuccess }) => {
         <form onSubmit={handleSubmit} className="add-product-form">
           {/* Product Name */}
           <div className="form-group">
-            <label htmlFor="name">📝 Product Name *</label>
+            <label htmlFor="name"><FileText size={15} className="label-icon" /> Product Name *</label>
             <input
               type="text"
               id="name"
@@ -155,7 +168,7 @@ const AddProductForm = ({ onClose, onSuccess }) => {
 
           {/* Description */}
           <div className="form-group">
-            <label htmlFor="description">📄 Description *</label>
+            <label htmlFor="description"><AlignLeft size={15} className="label-icon" /> Description *</label>
             <textarea
               id="description"
               name="description"
@@ -172,7 +185,7 @@ const AddProductForm = ({ onClose, onSuccess }) => {
           {/* Price and Stock Row */}
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="price">💰 Price (THB) *</label>
+              <label htmlFor="price"><DollarSign size={15} className="label-icon" /> Price (THB) *</label>
               <input
                 type="number"
                 id="price"
@@ -189,7 +202,7 @@ const AddProductForm = ({ onClose, onSuccess }) => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="stock">📦 Stock Quantity *</label>
+              <label htmlFor="stock"><Package size={15} className="label-icon" /> Stock Quantity *</label>
               <input
                 type="number"
                 id="stock"
@@ -207,7 +220,7 @@ const AddProductForm = ({ onClose, onSuccess }) => {
 
           {/* Category */}
           <div className="form-group">
-            <label htmlFor="category">🏷️ Category *</label>
+            <label htmlFor="category"><Tag size={15} className="label-icon" /> Category *</label>
             <select
               id="category"
               name="category"
@@ -228,7 +241,7 @@ const AddProductForm = ({ onClose, onSuccess }) => {
 
           {/* ShareLink Upload Section */}
           <div className="form-group">
-            <label>🖼️ Product Image * </label>
+            <label><ImageIcon size={15} className="label-icon" /> Product Image * </label>
             <SimpleShareLinkUpload
               onImageSelect={handleImageSelect}
               currentImage={formData.image}
@@ -238,7 +251,7 @@ const AddProductForm = ({ onClose, onSuccess }) => {
 
           {/* New Product Info */}
           <div className="new-product-info">
-            <h4>📋 New Product Summary</h4>
+            <h4><ClipboardPenLine size={15} className="label-icon" /> New Product Summary</h4>
             <div className="info-grid">
               <div className="info-item">
                 <span className="info-label">Product Name:</span>
@@ -261,7 +274,15 @@ const AddProductForm = ({ onClose, onSuccess }) => {
               <div className="info-item">
                 <span className="info-label">Image:</span>
                 <span className="info-value">
-                  {formData.image ? '✅ Ready' : '❌ Not uploaded'}
+                  {formData.image ? (
+                    <span className="status-ready">
+                      <CheckCircle size={16} /> Ready
+                    </span>
+                  ) : (
+                    <span className="status-missing">
+                      <XCircle size={16} /> Not uploaded
+                    </span>
+                  )}
                 </span>
               </div>
             </div>
@@ -269,20 +290,22 @@ const AddProductForm = ({ onClose, onSuccess }) => {
 
           {/* Form Actions */}
           <div className="form-actions">
-            <button
-              type="button"
-              className="btn-secondary"
-              onClick={onClose}
-              disabled={loading}
-            >
-              ❌ Cancel
+            <button type="button" className="btn-secondary" onClick={onClose} disabled={loading}>
+              <X size={18} />
+              Cancel
             </button>
-            <button
-              type="submit"
-              className="btn-primary"
-              disabled={loading}
-            >
-              {loading ? '⏳ Adding Product...' : '✅ Add Product'}
+            <button type="submit" className="btn-primary" disabled={loading}>
+              {loading ? (
+                <>
+                  <Package size={18} className="spinning" />
+                  Adding Product...
+                </>
+              ) : (
+                <>
+                  <CheckCircle size={18} />
+                  Add Product
+                </>
+              )}
             </button>
           </div>
         </form>

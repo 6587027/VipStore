@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import ProductCard from './ProductCard';
 import { productsAPI } from '../services/api';
 import { Search, Filter, Package, DollarSign, BarChart3, RotateCcw, Sparkles, ChevronDown } from 'lucide-react';
-import { Settings, RefreshCw, Clock, User, Code } from 'lucide-react';
+import { Settings, RefreshCw, Clock, User, Code , Megaphone , CircleAlert } from 'lucide-react';
 // import ChatButton from './chat/ChatButton';
 
 const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = true }) => {
@@ -29,14 +29,14 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
   const [filteredProducts, setFilteredProducts] = useState(savedState?.filteredProducts || []);
   const [priceRange, setPriceRange] = useState(savedState?.priceRange || { min: 0, max: 3000000 });
   const [sortOption, setSortOption] = useState(savedState?.sortOption || '');
-  const [showFilters, setShowFilters] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
   
 
   // --------------------------------------------------------------------------------
 
 
   // 🛠️ Maintenance Mode Toggle
-  // const MAINTENANCE_MODE = true;
+  const MAINTENANCE_MODE = true;
 
 
   // ---------------------------------------------------------------------------------
@@ -268,182 +268,215 @@ useEffect(() => {
 
 if (typeof MAINTENANCE_MODE !== 'undefined' && MAINTENANCE_MODE) {
   return (
-    <div className="container">
+    <div style={{
+      minHeight: '100vh',
+      width: '100vw', 
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      
+    }}>
+      
       <div style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        background: 'white',
+        borderRadius: '20px',
         padding: '20px',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        margin: '-20px',
-        borderRadius: '0'
+        maxWidth: '400px',
+        width: '100%',
+        textAlign: 'center',
+        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)'
       }}>
         
-        {/* Simple Card */}
+        {/* โลโก้ */}
         <div style={{
-          background: 'white',
-          borderRadius: '20px',
-          padding: '40px 30px',
-          maxWidth: '400px',
-          width: '100%',
-          textAlign: 'center',
-          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)'
+          marginBottom: '20px',
+          display: 'flex',
+          justifyContent: 'center'
         }}>
-          
-          {/* Simple Icon */}
+          <img 
+            src="/VipStoreLogo.png"
+            alt="VipStore Logo"
+            style={{
+              width: '100px',
+              height: '100px',
+              objectFit: 'contain',
+              borderRadius: '15px'
+            }}
+          />
+        </div>
+
+        {/* Title */}
+        <h1 style={{
+          color: '#4c63d2',
+          fontSize: '2rem',
+          fontWeight: '700',
+          margin: '0 0 16px 0'
+        }}>
+          ระบบปรับปรุง
+        </h1>
+
+        {/* Message */}
+        <p style={{
+          color: '#6b7280',
+          fontSize: '1.1rem',
+          margin: '0 0 24px 0',
+          lineHeight: '1.6'
+        }}>
+          กำลังอัพเดทระบบให้ดีขึ้น<br/>
+          ขอบคุณที่รอคอย
+        </p>
+
+        {/* รายการอัพเดท */}
+        <div style={{
+          background: '#f3f4f6',
+          padding: '16px',
+          borderRadius: '12px',
+          margin: '0 0 24px 0',
+          border: '1px solid #e5e7eb'
+        }}>
           <div style={{
-            marginBottom: '20px',
             display: 'flex',
-            justifyContent: 'center'
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            marginBottom: '8px'
           }}>
-            <div style={{
-              animation: 'spin 3s linear infinite'
+            <Megaphone size={20} color="#667eea" />
+            <span style={{
+              color: '#4c63d2',
+              fontWeight: '600'
             }}>
-              <Settings size={60} color="#667eea" />
-            </div>
+              ระบบที่มาใหม่! ,เปลี่ยนแปลงข้อมูลระบบ
+            </span>
           </div>
-
-          {/* Title */}
-          <h1 style={{
-            color: '#4c63d2',
-            fontSize: '2rem',
-            fontWeight: '700',
-            margin: '0 0 16px 0'
+          <div style={{ 
+              marginTop: '8px', 
+              textAlign: 'left',
+              fontSize: '0.9rem', 
+              color: '#4b5563' 
           }}>
-            ระบบปรับปรุง
-          </h1>
+              <ul style={{ 
+                  listStyleType: 'disc', 
+                  margin: '0', 
+                  paddingLeft: '15px' 
+              }}>
+                  <li>ระบบ UI Interface ใหม่: ใช้งานง่ายและปรับสีให้สวยงามยิ่งขึ้น</li>
+                  <li>ปรับระบบค้นหา: ลดการรบกวนและเพิ่มประสิทธิภาพการค้นหา</li>
+                  <li>ปรับหน้า Ui ของ Chat System: ใช้งานง่ายและสวยงามยิ่งขึ้น</li>
+                  <li>ปรับหน้าตั้งค่า: ประวัติการสั่งซื้อจัด Ui ให้ดูง่ายขึ้น</li>
+                 <hr style={{ 
+                     margin: '10px 0', 
+                     border: '0', 
+                     borderTop: '1px solid #e5e7eb',
+                  }}/>
+                  <li>เพิ่มค่าจัดส่งเริ่มต้น: ปรับเป็น 250 บาท</li>
+                  <li>ปรับขั้นต่ำจัดส่งฟรี: ปรับเป็น 2,000 บาท</li>
+              </ul>
+          </div>
+        </div>
 
-          {/* Message */}
-          <p style={{
-            color: '#6b7280',
-            fontSize: '1.1rem',
-            margin: '0 0 24px 0',
-            lineHeight: '1.6'
-          }}>
-            กำลังอัพเดทระบบให้ดีขึ้น<br/>
-            ขอบคุณที่รอคอย
-          </p>
-
-          {/* Time */}
-          <div style={{
-            background: '#f3f4f6',
-            padding: '16px',
+        {/* Alert Box */}
+        <div style={{
+            background: '#fee2e2',
+            color: '#991b1b',
+            padding: '7px',
             borderRadius: '12px',
-            margin: '0 0 24px 0',
-            border: '1px solid #e5e7eb'
-          }}>
-            <div style={{
+            margin: '16px 0 16px 0',
+            border: '1px solid #fca5a5',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '5px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+        }}>
+            <CircleAlert size={20} color="#dc2626" style={{ marginTop: '2px', flexShrink: 0 }} />
+            <p style={{
+                margin: '0',
+                fontSize: '1rem',
+                fontWeight: '400',
+                lineHeight: '1.4'
+            }}>
+                เมื่อเข้าสู่ระบบ สามารถกดที่ปุ่ม **ตั้งค่า** เพื่อ ติดตามรายละเอียดสินค้า, ประวัติการสั่งซื้อ, ติดต่อ Admin ร้านค้า, และ แก้ไขข้อมูลส่วนบุคคลได้
+            </p>
+        </div>
+
+        {/* Buttons */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px'
+        }}>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: '8px',
-              marginBottom: '8px'
-            }}>
-              <Clock size={20} color="#667eea" />
-              <span style={{
-                color: '#4c63d2',
-                fontWeight: '600'
-              }}>
-                เวลาที่คาดการณ์
-              </span>
-            </div>
-            <p style={{
-              color: '#6b7280',
-              margin: '0',
-              fontSize: '0.9rem'
-            }}>
-              1-2 ชั่วโมง
-            </p>
-          </div>
-
-          {/* Buttons */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px'
-          }}>
-            <button
-              onClick={() => window.location.reload()}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                background: '#667eea',
-                color: 'white',
-                border: 'none',
-                padding: '14px 24px',
-                fontSize: '1rem',
-                fontWeight: '600',
-                borderRadius: '12px',
-                cursor: 'pointer',
-                width: '100%'
-              }}
-            >
-              <RefreshCw size={18} />
-              ตรวจสอบอีกครั้ง
-            </button>
-
-            <button
-              onClick={() => window.open('https://vippersonalwebsite.vercel.app/contact', '_blank')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                background: 'white',
-                color: '#667eea',
-                border: '2px solid #667eea',
-                padding: '12px 24px',
-                fontSize: '0.9rem',
-                fontWeight: '600',
-                borderRadius: '12px',
-                cursor: 'pointer',
-                width: '100%'
-              }}
-            >
-              <User size={16} />
-              ติดต่อนักพัฒนา
-            </button>
-          </div>
-
-          {/* Contact Info */}
-          <div style={{
-            marginTop: '24px',
-            padding: '16px',
-            background: '#f8fafc',
-            borderRadius: '12px',
-            fontSize: '0.85rem',
-            color: '#6b7280'
-          }}>
-            <div style={{
+              background: '#667eea',
+              color: 'white',
+              border: 'none',
+              padding: '14px 24px',
+              fontSize: '1rem',
+              fontWeight: '600',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              width: '100%'
+            }}
+          >
+            <RefreshCw size={18} />
+            ตรวจสอบอีกครั้ง
+          </button>
+          <button
+            onClick={() => window.open('https://vippersonalwebsite.vercel.app/contact', '_blank')}
+            style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '6px',
-              marginBottom: '4px',
-              fontWeight: '600'
-            }}>
-              <Code size={14} />
-              วิป (Phatra Wongsapsakul)
-            </div>
-            <div>นักศึกษา ICT มหาวิทยาลัยมหิดล</div>
-          </div>
+              gap: '8px',
+              background: 'white',
+              color: '#667eea',
+              border: '2px solid #667eea',
+              padding: '12px 24px',
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              borderRadius: '12px',
+              cursor: 'pointer',
+              width: '100%'
+            }}
+          >
+            <User size={16} />
+            ติดต่อนักพัฒนา
+          </button>
         </div>
 
-        {/* Simple CSS */}
-        <style jsx>{`
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
+        {/* Contact Info */}
+        <div style={{
+          marginTop: '24px',
+          padding: '16px',
+          background: '#f8fafc',
+          borderRadius: '12px',
+          fontSize: '0.85rem',
+          color: '#6b7280'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            marginBottom: '4px',
+            fontWeight: '600'
+          }}>
+            <Code size={14} />
+            วิป (Phatra Wongsapsakul)
+          </div>
+          <div>นักศึกษา ICT มหาวิทยาลัยมหิดล</div>
+        </div>
       </div>
     </div>
   );
 }
-
 // --------------------------------------------------------------------------------------
 
 
@@ -1376,7 +1409,7 @@ if (loading && !showRealError) {
             e.target.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
           }}
         >
-          🔄 โหลดสินค้าใหม่
+           โหลดสินค้าใหม่
         </button>
       </div>
     )}

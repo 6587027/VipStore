@@ -1,33 +1,44 @@
 // frontend/src/components/admin/AdminStats.jsx
 import React from 'react';
+import './AdminPanel.css';
+
+import { 
+  Package, 
+  CheckCircle, 
+  Grid3x3, 
+  AlertTriangle,
+  Tags,
+  ChartNoAxesCombined,
+  SquareKanban,
+} from 'lucide-react';
 
 const AdminStats = ({ stats }) => {
   const statCards = [
     {
       title: 'Total Products',
       value: stats.totalProducts,
-      icon: '📦',
+      icon: <Package size={33} />,
       color: '#3b82f6',
       bgColor: '#eff6ff'
     },
     {
       title: 'Active Products',
       value: stats.activeProducts,
-      icon: '✅',
+      icon: <CheckCircle size={33} />,
       color: '#10b981',
       bgColor: '#f0fdf4'
     },
     {
       title: 'Categories',
       value: stats.categories.length,
-      icon: '🏷️',
+      icon: <Tags size={33} />,
       color: '#8b5cf6',
       bgColor: '#faf5ff'
     },
     {
       title: 'Low Stock Alert',
       value: stats.lowStock,
-      icon: '⚠️',
+      icon: <AlertTriangle size={33} />,
       color: '#f59e0b',
       bgColor: '#fffbeb'
     }
@@ -35,7 +46,7 @@ const AdminStats = ({ stats }) => {
 
   return (
     <div className="admin-stats">
-      <h3>📊 Overview</h3>
+      <h3><SquareKanban size={22} className="section-icon" />Overview</h3>
       <div className="stats-grid">
         {statCards.map((stat, index) => (
           <div key={index} className="stat-card" style={{
@@ -61,7 +72,7 @@ const AdminStats = ({ stats }) => {
       {/* Categories Breakdown */}
       {stats.categories.length > 0 && (
         <div className="categories-breakdown">
-          <h4>📁 Categories</h4>
+          <h4><Tags size={22} className="section-icon" /> Categories</h4>
           <div className="categories-list">
             {stats.categories.map((category, index) => (
               <span key={index} className="category-tag">

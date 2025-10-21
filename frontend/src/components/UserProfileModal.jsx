@@ -7,7 +7,7 @@ import { ordersAPI } from '../services/api'; // 🆕 Import ordersAPI
 // ✅ Use Environment Variable or Fallback to Production URL
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com/api';
 
-console.log('🔗 UserProfileModal API_BASE_URL:', API_BASE_URL);
+// console.log('🔗 UserProfileModal API_BASE_URL:', API_BASE_URL);
 
 const UserProfileModal = ({ isOpen, onClose }) => {
   const { user: currentUser, updateUser } = useAuth();

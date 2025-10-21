@@ -512,7 +512,7 @@ const SimpleShareLinkUpload = ({ onImageSelect, currentImage }) => {
             className="add-btn"
             onClick={handleSubmit}
           >
-            {loading ? '⏳ กำลังตรวจสอบ...' : '🚀 ลองดู'}
+            {loading ? '⏳ กำลังตรวจสอบ...' : '🚀 ทดสอบ'}
           </button>
         </div>
 
@@ -541,7 +541,8 @@ const SimpleShareLinkUpload = ({ onImageSelect, currentImage }) => {
         )}
 
         {/* Enhanced Quick Tips */}
-        <div className="quick-tips">
+
+        {/* <div className="quick-tips">
           <strong>🎯 รองรับ URL จากทุกที่! (รวม Corporate Sites)</strong><br/>
           
           <div style={{marginTop: '8px', fontSize: '0.8rem'}}>
@@ -563,7 +564,8 @@ const SimpleShareLinkUpload = ({ onImageSelect, currentImage }) => {
             • <strong>E-commerce:</strong> ลองเปลี่ยน .webp เป็น .jpg ใน URL<br/>
             • <strong>WordPress Sites:</strong> อาจมี hotlink protection - ใช้ image hosting
           </div>
-        </div>
+        </div> */}
+        
       </div>
     </div>
   );
