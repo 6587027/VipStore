@@ -33,6 +33,7 @@ backend/.env
 frontend/.env
 frontend/.env.local
 
+
 # Database
 *.db
 *.sqlite
@@ -91,3 +92,6 @@ backend/uploads/
 # Error files
 error.log
 combined.log
+
+
+!**/.env.example
