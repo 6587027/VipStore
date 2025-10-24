@@ -7,10 +7,36 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+node_modules/
+*/node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Build outputs
 dist
 dist-ssr
+build
 *.local
+
+# Environment variables - CRITICAL
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+.ENV
+*.env
+backend/.ENV
+backend/.env
+frontend/.env
+frontend/.env.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
 
 # Editor directories and files
 .vscode/*
@@ -22,3 +48,46 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+.cache
+.temp
+
+# Coverage reports
+coverage
+.nyc_output
+*.lcov
+
+# Production files
+*.tgz
+*.zip
+*.tar.gz
+
+# Package manager lock files (optional - ถ้าต้องการเก็บก็ comment ออก)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# MongoDB local
+data/
+mongodb/
+
+# Session files
+sessions/
+*.session
+
+# Uploads (ถ้ามีระบบอัพโหลดไฟล์)
+uploads/
+public/uploads/
+backend/uploads/
+
+# Error files
+error.log
+combined.log
