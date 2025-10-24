@@ -1,0 +1,20 @@
+{
+  "translation": {
+    "maintenanceTitle": "System Maintenance",
+    "maintenanceMessage": "Updating the system for a better experience<br/>Thank you for your patience - we'll be back soon",
+    "updatesTitle": "New Features! & System Changes",
+    "update1": "New UI Interface: Easier to use and improved color scheme",
+    "update2": "Improved Search System: Reduced noise and optimized performance",
+    "update3": "Improved Chat System UI: Easier to use and more beautiful",
+    "update4": "Improved Settings Page: Order history UI is now clearer",
+    "update4.1": "Fixed minor bugs in the settings page",
+    "update5": "Increased Base Shipping Fee: Adjusted to 250 THB",
+    "update6": "Adjusted Free Shipping Minimum: Adjusted to 2,000 THB",
+    "alertMessage": "Once logged in, you can press the <strong>**Settings**</strong> button to track product details, view order history, contact the store admin, and edit personal information.",
+    "settingsClose": "The settings button has been temporarily disabled to improve the user experience. Please wait for future updates.",
+    "reloadButton": "Check Again (Reload)",
+    "contactButton": "Contact Developer",
+    "developerName": "Vip (Phatra Wongsapsakul)",
+    "developerRole": "ICT Student, Mahidol University"
+  }
+}

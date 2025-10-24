@@ -1,4 +1,4 @@
-// frontend/src/components/Header.jsx - FIXED VERSION
+// frontend/src/components/Header.jsx
 import React, { useState , useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -27,11 +27,14 @@ const Header = ({
   onProfileClick, 
   onSettingsClick, 
   currentView,
-  // ✨ เพิ่ม Props ใหม่สำหรับ Product Preview
   showProductBackButton = false,
   onProductBack = null,
   productName = ''
 }) => {
+
+  // Enable Settings Button
+  const ENABLE_SETTINGS_BUTTON = false;
+
   const { user, logout, isAdmin, isLoggedIn } = useAuth();
   const { totalItems, toggleCart, formatCurrency, totalAmount } = useCart();
   
@@ -147,7 +150,7 @@ const Header = ({
                       }}
                     />
                     <Store className="w-10 h-10 text-blue-500 logo-fallback" />
-                    <h1 className="logo-title">Vip Store Website</h1>
+                    <h1 className="logo-title">VipStore Website</h1>
                     {/* <p>( DEMO Version )</p> */}
                   </div>
                   
@@ -271,12 +274,17 @@ const Header = ({
                           {/* Settings Button (Customer only, Home view only) */}
                           {user && user.role === 'customer' && currentView === 'home' && (
                             <button 
-                              className="btn-primary btn-settings"
+                              className={clsx(
+                                'btn-primary', 
+                                'btn-settings',
+                                {'btn-disabled': !ENABLE_SETTINGS_BUTTON } 
+                              )}
                               onClick={() => {
                                 console.log('🔧 Settings button physical click!');
                                 handleSettingsClick();
                               }}
                               title="การตั้งค่า"
+                              disabled={!ENABLE_SETTINGS_BUTTON}
                             >
                               <span className="btn-text">การตั้งค่า</span>
                               <Settings className="w-4 h-4" />
@@ -289,7 +297,7 @@ const Header = ({
                               className="btn-primary btn-admin"
                               onClick={handleAdminClick}
                             >
-                              <Settings className="w-4 h-4" /> จัดการ
+                              <Settings className="w-4 h-4" /> Management
                             </button>
                           )}
                         </>
@@ -373,8 +381,8 @@ const Header = ({
   }
 
   .logo-image {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     object-fit: contain;
     border-radius: 6px;
     flex-shrink: 0;
@@ -385,6 +393,7 @@ const Header = ({
   }
 
   .logo-title {
+    font-family: "Bruno Ace", sans-serif;
     font-size: 0.9rem;
     font-weight: 700;
     color: #059669;
@@ -514,6 +523,17 @@ const Header = ({
     display: flex;
     gap: 4px;
     align-items: center;
+  }
+
+  .btn-disabled,
+  .btn-disabled:hover {
+    background: #adb5bd !important; /* สีเทา */
+    color: #f8f9fa !important;
+    cursor: not-allowed !important; /* เปลี่ยนเมาส์ */
+    opacity: 0.7 !important;
+    border: none !important;
+    transform: none !important;
+    box-shadow: none !important;
   }
 
   .btn-primary,

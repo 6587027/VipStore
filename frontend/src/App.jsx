@@ -1,4 +1,4 @@
-// frontend/src/App.jsx - FIXED: Integrate with Vip's Code + State Preservation
+// frontend/src/App.jsx 
 import React, { useState } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';

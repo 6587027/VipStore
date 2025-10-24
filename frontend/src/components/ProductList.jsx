@@ -5,6 +5,9 @@ import ProductCard from './ProductCard';
 import { productsAPI } from '../services/api';
 import { Search, Filter, Package, DollarSign, BarChart3, RotateCcw, Sparkles, ChevronDown } from 'lucide-react';
 import { Settings, RefreshCw, Clock, User, Code , Megaphone , CircleAlert } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+
+
 // import ChatButton from './chat/ChatButton';
 
 const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = true }) => {
@@ -31,7 +34,7 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
   const [sortOption, setSortOption] = useState(savedState?.sortOption || '');
   const [showFilters, setShowFilters] = useState(false);
   
-
+  const { t } = useTranslation();
   // --------------------------------------------------------------------------------
 
 
@@ -264,7 +267,13 @@ useEffect(() => {
   const categories = ['Electronics', 'Clothing', 'Books', 'Home', 'Sports', 'Beauty', 'Toys', 'Watches', 'Other'];
   const priceStats = getPriceStats();
 
+
+
+
+// -------------------------------------------------------------------------------------- 
 // Maintenance Mode Check
+
+
 
 if (typeof MAINTENANCE_MODE !== 'undefined' && MAINTENANCE_MODE) {
   return (
@@ -274,22 +283,27 @@ if (typeof MAINTENANCE_MODE !== 'undefined' && MAINTENANCE_MODE) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '20px',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      
+      padding: '0px',
+      background: '#f3f4f6', 
+      position: 'relative'
     }}>
       
+      <LanguageSwitcher />
+
+      {/* --- 2. เปลี่ยน Card กลับเป็นสีขาวทึบ --- */}
       <div style={{
-        background: 'white',
-        borderRadius: '20px',
-        padding: '20px',
+        background: '#ffffff', // 🌟
+        border: '1px solid #e5e7eb', // 🌟
+        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)', // 🌟
+        
+        borderRadius: '16px',
+        padding: '15px',
         maxWidth: '400px',
         width: '100%',
         textAlign: 'center',
-        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)'
+        color: '#1f2937' // 🌟 เปลี่ยนสี Text เริ่มต้นเป็นสีเข้ม
       }}>
         
-        {/* โลโก้ */}
         <div style={{
           marginBottom: '20px',
           display: 'flex',
@@ -302,111 +316,115 @@ if (typeof MAINTENANCE_MODE !== 'undefined' && MAINTENANCE_MODE) {
               width: '100px',
               height: '100px',
               objectFit: 'contain',
-              borderRadius: '15px'
+              borderRadius: '15px',
+              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
             }}
           />
         </div>
 
-        {/* Title */}
         <h1 style={{
-          color: '#4c63d2',
+          color: '#1e40af', // 🌟 กลับเป็นสีน้ำเงิน
           fontSize: '2rem',
           fontWeight: '700',
           margin: '0 0 16px 0'
         }}>
-          ระบบปรับปรุง
+          {t('maintenanceTitle')}
         </h1>
 
-        {/* Message */}
-        <p style={{
-          color: '#6b7280',
-          fontSize: '1.1rem',
-          margin: '0 0 24px 0',
-          lineHeight: '1.6'
-        }}>
-          กำลังอัพเดทระบบให้ดีขึ้น<br/>
-          ขอบคุณที่รอคอย
-        </p>
+        <p 
+          style={{
+            color: '#6b7280', // 🌟 กลับเป็นสีเทาเข้ม
+            fontSize: '1.1rem',
+            margin: '0 0 24px 0',
+            lineHeight: '1.6'
+          }}
+          dangerouslySetInnerHTML={{ __html: t('maintenanceMessage') }}
+        />
 
-        {/* รายการอัพเดท */}
+        {/* --- กล่องอัปเดต (สีเทาอ่อน) --- */}
         <div style={{
-          background: '#f3f4f6',
+          background: '#f3f4f6', // 🌟
           padding: '16px',
           borderRadius: '12px',
-          margin: '0 0 24px 0',
-          border: '1px solid #e5e7eb'
+          margin: '0 0 1px 0',
+          border: '1px solid #e5e7eb', // 🌟
+          textAlign: 'left'
         }}>
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
+            justifyContent: 'flex-start',
             gap: '8px',
-            marginBottom: '8px'
+            marginBottom: '12px'
           }}>
-            <Megaphone size={20} color="#667eea" />
+            <Megaphone size={20} color="#1e40af" /> {/* 🌟 */}
             <span style={{
-              color: '#4c63d2',
+              color: '#1e40af', // 🌟
               fontWeight: '600'
             }}>
-              ระบบที่มาใหม่! ,เปลี่ยนแปลงข้อมูลระบบ
+              {t('updatesTitle')}
             </span>
           </div>
           <div style={{ 
-              marginTop: '8px', 
-              textAlign: 'left',
               fontSize: '0.9rem', 
-              color: '#4b5563' 
+              color: '#4b5563', // 🌟
+              lineHeight: '1.6'
           }}>
               <ul style={{ 
                   listStyleType: 'disc', 
                   margin: '0', 
-                  paddingLeft: '15px' 
+                  paddingLeft: '20px'
               }}>
-                  <li>ระบบ UI Interface ใหม่: ใช้งานง่ายและปรับสีให้สวยงามยิ่งขึ้น</li>
-                  <li>ปรับระบบค้นหา: ลดการรบกวนและเพิ่มประสิทธิภาพการค้นหา</li>
-                  <li>ปรับหน้า Ui ของ Chat System: ใช้งานง่ายและสวยงามยิ่งขึ้น</li>
-                  <li>ปรับหน้าตั้งค่า: ประวัติการสั่งซื้อจัด Ui ให้ดูง่ายขึ้น</li>
+                  <li>{t('update1')}</li>
+                  <li>{t('update2')}</li>
+                  <li>{t('update3')}</li>
+                  <li>{t('update4')}</li>
+                  <li>{t('update4.1')}</li>
                  <hr style={{ 
-                     margin: '10px 0', 
+                     margin: '12px 0', 
                      border: '0', 
-                     borderTop: '1px solid #e5e7eb',
+                     borderTop: '1px solid #e5e7eb', // 🌟
                   }}/>
-                  <li>เพิ่มค่าจัดส่งเริ่มต้น: ปรับเป็น 250 บาท</li>
-                  <li>ปรับขั้นต่ำจัดส่งฟรี: ปรับเป็น 2,000 บาท</li>
+                  <li>{t('update5')}</li>
+                  <li>{t('update6')}</li>
               </ul>
           </div>
         </div>
 
-        {/* Alert Box */}
+        {/* --- กล่อง Alert (สีแดงอ่อน) --- */}
         <div style={{
-            background: '#fee2e2',
-            color: '#991b1b',
-            padding: '7px',
+            background: '#fee2e2', // 🌟
+            color: '#991b1b', // 🌟
+            padding: '12px 16px',
             borderRadius: '12px',
             margin: '16px 0 16px 0',
-            border: '1px solid #fca5a5',
+            border: '1px solid #fca5a5', // 🌟
             display: 'flex',
-            alignItems: 'center',
-            gap: '5px',
+            alignItems: 'flex-start',
+            gap: '10px',
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
         }}>
-            <CircleAlert size={20} color="#dc2626" style={{ marginTop: '2px', flexShrink: 0 }} />
-            <p style={{
+            <CircleAlert size={20} color="#dc2626" style={{ flexShrink: 0, marginTop: '3px' }} /> {/* 🌟 */}
+            <p 
+              style={{
                 margin: '0',
                 fontSize: '1rem',
                 fontWeight: '400',
-                lineHeight: '1.4'
-            }}>
-                เมื่อเข้าสู่ระบบ สามารถกดที่ปุ่ม **ตั้งค่า** เพื่อ ติดตามรายละเอียดสินค้า, ประวัติการสั่งซื้อ, ติดต่อ Admin ร้านค้า, และ แก้ไขข้อมูลส่วนบุคคลได้
-            </p>
+                lineHeight: '1.5',
+                textAlign: 'left',
+                color: '#991b1b' // 🌟
+              }}
+              // dangerouslySetInnerHTML={{ __html: t('alertMessage') }}
+              dangerouslySetInnerHTML={{ __html: t('settingsClose') }}
+            />
         </div>
 
-        {/* Buttons */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
           gap: '12px'
         }}>
+          {/* --- ปุ่มหลัก (Primary) --- */}
           <button
             onClick={() => window.location.reload()}
             style={{
@@ -414,20 +432,31 @@ if (typeof MAINTENANCE_MODE !== 'undefined' && MAINTENANCE_MODE) {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '8px',
-              background: '#667eea',
+              background: '#1e40af', // 🌟
               color: 'white',
               border: 'none',
-              padding: '14px 24px',
+              padding: '12px 24px',
               fontSize: '1rem',
               fontWeight: '600',
               borderRadius: '12px',
               cursor: 'pointer',
-              width: '100%'
+              width: '100%',
+              transition: 'background-color 0.2s ease, transform 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = '#2563eb'; // 🌟
+              e.target.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = '#1e40af'; // 🌟
+              e.target.style.transform = 'translateY(0)';
             }}
           >
             <RefreshCw size={18} />
-            ตรวจสอบอีกครั้ง
+            {t('reloadButton')}
           </button>
+          
+          {/* --- ปุ่มรอง (Secondary) --- */}
           <button
             onClick={() => window.open('https://vippersonalwebsite.vercel.app/contact', '_blank')}
             style={{
@@ -435,30 +464,39 @@ if (typeof MAINTENANCE_MODE !== 'undefined' && MAINTENANCE_MODE) {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '8px',
-              background: 'white',
-              color: '#667eea',
-              border: '2px solid #667eea',
+              background: 'transparent',
+              color: '#1e40af', // 🌟
+              border: '2px solid #1e40af', // 🌟
               padding: '12px 24px',
-              fontSize: '0.9rem',
+              fontSize: '1rem',
               fontWeight: '600',
               borderRadius: '12px',
               cursor: 'pointer',
-              width: '100%'
+              width: '100%',
+              transition: 'background-color 0.2s ease, transform 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = '#eff6ff'; // 🌟
+              e.target.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'transparent';
+              e.target.style.transform = 'translateY(0)';
             }}
           >
             <User size={16} />
-            ติดต่อนักพัฒนา
+            {t('contactButton')}
           </button>
         </div>
 
-        {/* Contact Info */}
+        {/* --- Footer --- */}
         <div style={{
-          marginTop: '24px',
+          marginTop: '32px',
           padding: '16px',
-          background: '#f8fafc',
+          background: '#f3f4f6', // 🌟
           borderRadius: '12px',
           fontSize: '0.85rem',
-          color: '#6b7280'
+          color: '#6b7280' // 🌟
         }}>
           <div style={{
             display: 'flex',
@@ -466,18 +504,25 @@ if (typeof MAINTENANCE_MODE !== 'undefined' && MAINTENANCE_MODE) {
             justifyContent: 'center',
             gap: '6px',
             marginBottom: '4px',
-            fontWeight: '600'
+            fontWeight: '600',
+            color: '#1e40af' // 🌟
           }}>
             <Code size={14} />
-            วิป (Phatra Wongsapsakul)
+            {t('developerName')}
           </div>
-          <div>นักศึกษา ICT มหาวิทยาลัยมหิดล</div>
+          <div>{t('developerRole')}</div>
         </div>
       </div>
     </div>
   );
 }
+
 // --------------------------------------------------------------------------------------
+
+
+
+
+
 
 
 // 🚀 VipStore Enhanced Loading State
@@ -1610,6 +1655,72 @@ if (loading && !showRealError) {
   }
 }
       `}</style>
+    </div>
+  );
+};
+
+
+const LanguageSwitcher = () => {
+  const { i18n } = useTranslation();
+
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng);
+  };
+  const currentLang = i18n.language;
+
+  return (
+    <div style={{
+      // --- 🌟 Liquid Glass Frame Styles 🌟 ---
+      background: 'rgba(255, 255, 255, 0.25)',      // สีพื้นหลังโปร่งแสง
+      backdropFilter: 'blur(10px)',              // เอฟเฟกต์เบลอ
+      WebkitBackdropFilter: 'blur(10px)',        // สำหรับ Safari
+      border: '1px solid rgba(255, 255, 255, 0.18)', // ขอบจางๆ
+      borderRadius: '12px',                         // ทำให้กรอบมน
+      padding: '6px',                               // ระยะห่างภายในกรอบ
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',    // เงาจางๆ
+      
+      // --- Original Styles ---
+      position: 'absolute',
+      top: '20px',
+      right: '20px',
+      display: 'flex',
+      gap: '5px', // ลดระยะห่างปุ่มเล็กน้อย
+      zIndex: 100
+    }}>
+      <button
+        onClick={() => changeLanguage('th')}
+        style={{
+          padding: '8px 12px',
+          cursor: 'pointer',
+          borderRadius: '8px', // ความมนของปุ่ม
+          fontWeight: 'bold',
+          transition: 'all 0.2s ease', // เพิ่ม Animation
+          
+          // --- 🌟 ปรับ Style ปุ่มให้เข้ากับกรอบ 🌟 ---
+          background: currentLang === 'th' ? '#1e40af' : 'transparent', // (Active = ทึบ, Inactive = โปร่งใส)
+          color: currentLang === 'th' ? 'white' : '#f0f2ff', // (Inactive = สีขาวนวล)
+          border: currentLang === 'th' ? '2px solid #1e40af' : '2px solid transparent',
+        }}
+      >
+        TH 
+      </button>
+      <button
+        onClick={() => changeLanguage('en')}
+        style={{
+          padding: '8px 12px',
+          cursor: 'pointer',
+          borderRadius: '8px',
+          fontWeight: 'bold',
+          transition: 'all 0.2s ease',
+
+          // --- 🌟 ปรับ Style ปุ่มให้เข้ากับกรอบ 🌟 ---
+          background: currentLang === 'en' ? '#1e40af' : 'transparent',
+          color: currentLang === 'en' ? 'white' : '#f0f2ff',
+          border: currentLang === 'en' ? '2px solid #1e40af' : '2px solid transparent',
+        }}
+      >
+        EN
+      </button>
     </div>
   );
 };
