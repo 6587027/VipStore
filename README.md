@@ -221,100 +221,175 @@ npm run dev
 - Live order status updates
 - User presence and activity tracking
 
-## 📁 Complete Project Architecture
+## 📁 Complete Project Architecture 
+Last Updated: 25 October 2025 
 
 ```
 VipStore/
-├── backend/
-│   ├── models/
-│   │   ├── ChatMessage.js       # Chat message schema
-│   │   ├── ChatRoom.js          # Chat room schema  
-│   │   ├── Order.js             # Order schema with status tracking
-│   │   ├── Product.js           # Product schema with stock management
-│   │   └── User.js              # User schema with roles
-│   ├── routes/
-│   │   ├── auth.js              # Authentication & user management
-│   │   ├── chat.js              # Chat system API endpoints
-│   │   ├── orders.js            # Order management system
-│   │   ├── products.js          # Product CRUD operations
-│   │   └── reports.js           # Analytics and reporting system
-│   ├── socket/
-│   │   └── chatSocket.js        # Socket.IO chat implementation
-│   ├── utils/
-│   │   └── dbMonitor.js         # Database monitoring utilities
-│   ├── server.js                # Express server configuration
-│   ├── package.json
-│   └── .env
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── AddToCartButton.jsx      # Smart add to cart with validation
-│   │   │   ├── AddToCartButton.css      # Add to cart styling
-│   │   │   ├── CartModal.jsx            # Complete shopping cart interface
-│   │   │   ├── CartModal.css            # Cart modal styling
-│   │   │   ├── Header.jsx               # Navigation with cart badge
-│   │   │   ├── LoginForm.jsx            # Authentication modal
-│   │   │   ├── LoginForm.css            # Login form styling
-│   │   │   ├── LogoutModal.jsx          # Logout confirmation
-│   │   │   ├── ProductCard.jsx          # Product display component
-│   │   │   ├── ProductDetails.jsx       # Detailed product information
-│   │   │   ├── ProductImageGallery.jsx  # Image gallery with zoom
-│   │   │   ├── ProductList.jsx          # Product grid layout
-│   │   │   ├── ProductPreview.jsx       # Product preview modal
-│   │   │   ├── ProductPreview.css       # Product preview styling
-│   │   │   ├── UserProfileModal.jsx     # User profile management
-│   │   │   └── WelcomeAnimation.jsx     # Welcome page animation
-│   │   ├── components/admin/
-│   │   │   ├── AddProductForm.jsx       # Product creation form
-│   │   │   ├── AdminDashboard.jsx       # Admin navigation hub
-│   │   │   ├── AdminStats.jsx           # Admin statistics dashboard
-│   │   │   ├── EditProductModal.jsx     # Product editing interface
-│   │   │   ├── OrderManager.jsx         # Order management with status tracking
-│   │   │   ├── ProductManager.jsx       # Product CRUD interface
-│   │   │   ├── ReportsManager.jsx       # Real-time analytics dashboard
-│   │   │   ├── SimpleShareLinkUpload.jsx # File upload component
-│   │   │   ├── SimpleShareLinkUpload.css # File upload styling
-│   │   │   └── UserManager.jsx          # Complete user management
-│   │   ├── components/chat/
-│   │   │   ├── AdminChatTab.jsx         # Admin chat management interface
-│   │   │   ├── AdminChatTab.css         # Admin chat styling
-│   │   │   ├── ChatButton.jsx           # Floating chat button
-│   │   │   ├── ChatButton.css           # Chat button styling
-│   │   │   ├── ChatModal.jsx            # Customer chat interface
-│   │   │   ├── ChatModal.css            # Chat modal styling
-│   │   │   ├── ChatStatus.jsx           # Chat connection status
-│   │   │   ├── ChatWindow.jsx           # Main chat window component
-│   │   │   ├── MessageInput.jsx         # Message input with emoji support
-│   │   │   └── MessageList.jsx          # Message history display
-│   │   ├── components/payment/
-│   │   │   ├── PaymentChoiceModal.jsx   # Payment method selection
-│   │   │   ├── PaymentChoiceModal.css   # Payment choice styling
-│   │   │   ├── PaymentModal.jsx         # Payment processing interface
-│   │   │   └── PaymentModal.css         # Payment modal styling
-│   │   ├── components/settings/
-│   │   │   ├── CustomerSettings.jsx     # User settings dashboard
-│   │   │   ├── PaymentSettings.jsx      # Payment preferences
-│   │   │   └── ProfileSettings.jsx      # Profile management
-│   │   ├── components/user/
-│   │   │   └── PasswordRequestDashboard.jsx # Password change requests
-│   │   ├── context/
-│   │   │   ├── AuthContext.jsx          # Authentication state management
-│   │   │   ├── CartContext.jsx          # Shopping cart state management
-│   │   │   └── ChatContext.jsx          # Chat state management
-│   │   ├── services/
-│   │   │   ├── api.js                   # Complete API service layer
-│   │   │   └── socketClient.js          # Socket.IO client implementation
-│   │   ├── styles/
-│   │   │   ├── AdminPanel.css           # Admin panel styling
-│   │   │   └── Chat.css                 # Chat system styling
-│   │   ├── App.jsx                      # Main application component
-│   │   ├── App.css                      # Global application styles
-│   │   ├── index.css                    # Global CSS and responsive design
-│   │   └── main.jsx                     # Application entry point
-│   ├── package.json
-│   ├── tailwind.config.js
-│   └── vite.config.js
-└── README.md
+├── README.md                                # Project documentation
+│
+├── backend/                                 # Node.js + Express Backend
+│   ├── models/                             # Database Models (MongoDB)
+│   │   ├── ChatMessage.js                  # Chat message schema
+│   │   ├── ChatRoom.js                     # Chat room schema
+│   │   ├── Order.js                        # Order schema with status tracking
+│   │   ├── Product.js                      # Product schema with stock management
+│   │   └── User.js                         # User schema with roles
+│   ├── routes/                             # API Route Handlers
+│   │   ├── auth.js                         # Authentication & user management
+│   │   ├── chat.js                         # Chat system API endpoints
+│   │   ├── orders.js                       # Order management system
+│   │   ├── products.js                     # Product CRUD operations
+│   │   └── reports.js                      # Analytics and reporting system
+│   ├── socket/                             # Real-time Communication
+│   │   └── chatSocket.js                   # Socket.IO chat implementation
+│   ├── utils/                              # Utility Functions
+│   │   └── dbMonitor.js                    # Database monitoring utilities
+│   ├── server.js                           # Express server entry point
+│   ├── package.json                        # Backend dependencies
+│   ├── package-lock.json                   # Dependency lock file
+│   └── .env                                # Environment variables (not tracked)
+│
+├── frontend/                                # React + Vite Frontend
+│   ├── public/                             # Static Assets
+│   │   ├── VipStoreLogo.png                # Store logo (PNG)
+│   │   ├── VipStoreLogo.svg                # Store logo (SVG)
+│   │   └── vite.svg                        # Vite logo
+│   ├── src/                                # Source Code
+│   │   ├── components/                     # React Components
+│   │   │   ├── AddToCartButton.jsx         # Smart add to cart with validation
+│   │   │   ├── AddToCartButton.css         # Add to cart styling
+│   │   │   ├── CartModal.jsx               # Complete shopping cart interface
+│   │   │   ├── CartModal.css               # Cart modal styling
+│   │   │   ├── Header.jsx                  # Navigation with cart badge
+│   │   │   ├── LoginForm.jsx               # Authentication modal
+│   │   │   ├── LoginForm.css               # Login form styling
+│   │   │   ├── LogoutModal.jsx             # Logout confirmation
+│   │   │   ├── ProductCard.jsx             # Product display component
+│   │   │   ├── ProductDetails.jsx          # Detailed product information
+│   │   │   ├── ProductImageGallery.jsx     # Image gallery with zoom
+│   │   │   ├── ProductList.jsx             # Product grid layout
+│   │   │   ├── ProductPreview.jsx          # Product preview modal
+│   │   │   ├── ProductPreview.css          # Product preview styling
+│   │   │   ├── UserProfileModal.jsx        # User profile management
+│   │   │   ├── WelcomeAnimation.jsx        # Welcome page animation
+│   │   │   │
+│   │   │   ├── admin/                      # Admin Panel Components
+│   │   │   │   ├── AddProductForm.jsx      # Product creation form
+│   │   │   │   ├── AdminDashboard.jsx      # Admin navigation hub
+│   │   │   │   ├── AdminPanel.css          # Admin panel styling
+│   │   │   │   ├── AdminStats.jsx          # Admin statistics dashboard
+│   │   │   │   ├── EditProductModal.jsx    # Product editing interface
+│   │   │   │   ├── OrderManager.jsx        # Order management with status
+│   │   │   │   ├── ProductManager.jsx      # Product CRUD interface
+│   │   │   │   ├── ReportsManager.jsx      # Real-time analytics dashboard
+│   │   │   │   ├── SimpleShareLinkUpload.jsx  # File upload component
+│   │   │   │   ├── SimpleShareLinkUpload.css  # File upload styling
+│   │   │   │   └── UserManager.jsx         # Complete user management
+│   │   │   │
+│   │   │   ├── chat/                       # Live Chat System
+│   │   │   │   ├── AdminChatTab.jsx        # Admin chat management interface
+│   │   │   │   ├── AdminChatTab.css        # Admin chat styling
+│   │   │   │   ├── ChatButton.jsx          # Floating chat button
+│   │   │   │   ├── ChatButton.css          # Chat button styling
+│   │   │   │   ├── ChatModal.jsx           # Customer chat interface
+│   │   │   │   ├── ChatModal.css           # Chat modal styling
+│   │   │   │   ├── ChatStatus.jsx          # Chat connection status
+│   │   │   │   ├── ChatWindow.jsx          # Main chat window component
+│   │   │   │   ├── MessageInput.jsx        # Message input with emoji
+│   │   │   │   └── MessageList.jsx         # Message history display
+│   │   │   │
+│   │   │   ├── payment/                    # Payment System
+│   │   │   │   ├── PaymentChoiceModal.jsx  # Payment method selection
+│   │   │   │   ├── PaymentChoiceModal.css  # Payment choice styling
+│   │   │   │   ├── PaymentModal.jsx        # Payment processing interface
+│   │   │   │   └── PaymentModal.css        # Payment modal styling
+│   │   │   │
+│   │   │   ├── settings/                   # User Settings
+│   │   │   │   ├── CustomerSettings.jsx    # User settings dashboard
+│   │   │   │   ├── PaymentSettings.jsx     # Payment preferences
+│   │   │   │   └── ProfileSettings.jsx     # Profile management
+│   │   │   │
+│   │   │   └── user/                       # User Management
+│   │   │       └── PasswordRequestDashboard.jsx  # Password change requests
+│   │   │
+│   │   ├── context/                        # React Context API
+│   │   │   ├── AuthContext.jsx             # Authentication state management
+│   │   │   ├── CartContext.jsx             # Shopping cart state management
+│   │   │   └── ChatContext.jsx             # Chat state management
+│   │   │
+│   │   ├── services/                       # API Services
+│   │   │   ├── api.js                      # Complete API service layer
+│   │   │   └── socketClient.js             # Socket.IO client implementation
+│   │   │
+│   │   ├── styles/                         # Global Styles
+│   │   │   └── AdminPanel.css              # Admin panel global styles
+│   │   │
+│   │   ├── locales/                        # Internationalization (i18n)
+│   │   │   ├── en.json                     # English translations
+│   │   │   └── th.json                     # Thai translations
+│   │   │
+│   │   ├── assets/                         # Static Assets
+│   │   │   └── react.svg                   # React logo
+│   │   │
+│   │   ├── App.jsx                         # Main application component
+│   │   ├── App.css                         # Global application styles
+│   │   ├── index.css                       # Global CSS and responsive design
+│   │   ├── main.jsx                        # Application entry point
+│   │   └── i18n.js                         # i18n configuration
+│   │
+│   ├── eslint.config.js                    # ESLint configuration
+│   ├── index.html                          # HTML entry point
+│   ├── package.json                        # Frontend dependencies
+│   ├── package-lock.json                   # Dependency lock file
+│   ├── postcss.config.js                   # PostCSS configuration
+│   ├── tailwind.config.js                  # Tailwind CSS configuration
+│   ├── vite.config.js                      # Vite build configuration
+│   ├── .env.local                          # Local environment variables (not tracked)
+│   └── README.md                           # Frontend documentation
+│
+├── .gitignore                              # Git ignore rules
+├── .env.example                            # Environment variables template
+├── package.json                            # Root package.json (if using workspaces)
+└── package-lock.json                       # Root dependency lock file
+
+📊 Project Statistics:
+├── Total Directories: 20
+├── Total Files: 88 (tracked)
+├── Backend Files: 13
+├── Frontend Files: 75
+├── Configuration Files: 8
+└── Documentation Files: 2
+
+🔧 Technology Stack:
+├── Frontend: React 18 + Vite + TailwindCSS
+├── Backend: Node.js + Express.js
+├── Database: MongoDB Atlas
+├── Real-time: Socket.IO
+├── State Management: Context API
+├── Internationalization: i18next
+└── Deployment: Vercel (Frontend) + Render (Backend)
+
+📝 Hidden Files (Not Tracked by Git):
+├── backend/.env                            # Backend environment variables
+├── frontend/.env.local                     # Frontend environment variables
+├── node_modules/                           # Dependencies (both root and subdirectories)
+├── .DS_Store                               # macOS system files
+├── frontend/dist/                          # Vite build output
+└── backend/logs/                           # Server logs (if exists)
+
+🌟 Key Features:
+├── E-commerce Platform (Complete)
+├── User Authentication & Authorization
+├── Shopping Cart & Checkout System
+├── Admin Dashboard & Management
+├── Real-time Chat System (Socket.IO)
+├── Order Management & Tracking
+├── Analytics & Reporting Dashboard
+├── Payment System Integration
+├── Multi-language Support (Thai/English)
+└── Responsive Mobile-First Design
+
 ```
 
 ## 🚀 Deployment Guide
