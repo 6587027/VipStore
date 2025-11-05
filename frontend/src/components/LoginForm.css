@@ -11,7 +11,7 @@
   --soft-blue: #e0f2fe;
   
   /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-primary: linear-gradient(135deg, #059669 0%, #1e40af 100%);
   --gradient-blue: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
   --gradient-soft: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);

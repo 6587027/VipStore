@@ -236,7 +236,7 @@ const LogoutModal = ({ isOpen, onConfirm, onCancel, user, roleDisplay }) => {
           left: 0;
           right: 0;
           height: 4px;
-          background: var(--gradient-primary);
+          background: linear-gradient(135deg, #059669 0%, #1e40af 100%);
         }
 
         /* ===== CLOSE BUTTON ===== */

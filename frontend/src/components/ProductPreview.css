@@ -39,7 +39,7 @@
 .main-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  /* object-fit: cover; */
   transition: transform 0.3s ease;
 }
 
@@ -360,7 +360,7 @@
 }
 
 .add-to-cart-main-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg,#10b981 0%,#059669 100%);
   border: none;
   padding: 16px 32px;
   border-radius: 12px;

@@ -23,7 +23,7 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
 
   // ✨ SCROLL TO TOP WHEN COMPONENT LOADS
   useEffect(() => {
-    console.log('🔝 Scrolling to top of page...');
+    // console.log('🔝 Scrolling to top of page...');
     window.scrollTo({
       top: 0,
       left: 0,
@@ -38,14 +38,14 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
   // ✨ Notify parent to show back button in header
   useEffect(() => {
     if (onShowBackButton && typeof onShowBackButton === 'function') {
-      console.log('📤 Notifying parent to show back button in header...');
+      // console.log('📤 Notifying parent to show back button in header...');
       onShowBackButton(true, handleBackClick);
     }
     
     // Cleanup: hide back button when component unmounts
     return () => {
       if (onShowBackButton && typeof onShowBackButton === 'function') {
-        console.log('🧹 Hiding back button on component unmount...');
+        // console.log('🧹 Hiding back button on component unmount...');
         onShowBackButton(false);
       }
     };
@@ -63,7 +63,7 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
 
   const fetchProductDetails = async () => {
     try {
-      console.log('📦 Fetching product details for ID:', productId);
+      // console.log('📦 Fetching product details for ID:', productId);
       setLoading(true);
       setError(null);
       
@@ -98,8 +98,7 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
       if (onBack && typeof onBack === 'function') {
         onBack();
       } else {
-        // Fallback: ถ้าไม่มี onBack prop ให้ reload หน้า
-        window.location.reload();
+        // window.location.reload();
       }
     }, 200); // รอ 200ms ให้ scroll animation เสร็จ
   };

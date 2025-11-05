@@ -222,7 +222,8 @@ npm run dev
 - User presence and activity tracking
 
 ## 📁 Complete Project Architecture 
-Last Updated: 25 October 2025 
+> [!NOTE]
+> Last Updated: 25 October 2025 
 
 ```
 VipStore/

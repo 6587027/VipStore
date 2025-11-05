@@ -60,6 +60,7 @@ import {
   Key,
   KeyIcon,
   KeyRoundIcon,
+  X,
   
 } from 'lucide-react';
 import { ChatBubbleBottomCenterIcon, ListBulletIcon } from '@heroicons/react/16/solid';
@@ -95,7 +96,9 @@ const [chatRoomId, setChatRoomId] = useState(null);
 const [adminTyping, setAdminTyping] = useState(false);
 const [unreadCount, setUnreadCount] = useState(0);
 const [lastRefresh, setLastRefresh] = useState(null);
-const messagesEndRef = useRef(null); // 🆕 ใช้สำหรับ scroll ไปยังข้อความล่าสุด
+const messagesEndRef = useRef(null); 
+const scrollContainerRef = useRef(null);
+
 
 // 🔧 เพิ่ม States สำหรับแก้ Bug
 const [isTyping, setIsTyping] = useState(false); // 🆕 ป้องกัน typing spam
@@ -129,7 +132,7 @@ const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('credit_card'
 
 // 🆕 เพิ่มฟังก์ชันนี้ก่อน return statement
 const scrollToBottomManual = () => {
-  console.log('🔽 === MANUAL SCROLL TRIGGERED ===');
+  // console.log('🔽 === MANUAL SCROLL TRIGGERED ===');
   
   try {
     // วิธีที่ 1: หาด้วย parent ของปุ่ม
@@ -163,6 +166,12 @@ const scrollToBottomManual = () => {
     
   } catch (error) {
     console.error('❌ Scroll error:', error);
+  }
+};
+
+const scrollToBottom = () => {
+  if (messagesEndRef.current) {
+    messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
   }
 };
 
@@ -295,10 +304,6 @@ const setupChatEventListeners = () => {
       setUnreadCount(unreadFromAdmin);
       
       console.log(`✅ Loaded ${messages.length} chat history messages, ${unreadFromAdmin} unread from admin`);
-      // 🆕 Auto-scroll ไปข้อความล่าสุด!
-    setTimeout(() => {
-      scrollToBottom();
-    }, 100);
     }
   });
 
@@ -328,12 +333,6 @@ const setupChatEventListeners = () => {
         timestamp: new Date(messageData.createdAt || Date.now()),
         isRead: false
       };
-
-      // 🆕 Auto-scroll เมื่อมีข้อความใหม่
-    setTimeout(() => {
-      scrollToBottom();
-    }, 50);
-
       return [...prev, newMessage];
     });
     
@@ -397,12 +396,7 @@ const sendMessage = () => {
   };
   
   setChatMessages(prev => [...prev, myMessage]);
-  setChatMessage(''); // เคลียร์ input ทันที
-
-  // 🆕 Auto-scroll หลังส่งข้อความ
-  setTimeout(() => {
-    scrollToBottom();
-  }, 50);
+  setChatMessage(''); 
   
   // Send via Socket.IO
   const success = chatSocket.sendMessage(chatRoomId, messageText);
@@ -442,7 +436,7 @@ const handleTyping = (value) => {
   
   // ถ้ามีข้อความและยังไม่ได้ส่ง typing
   if (value.trim() && !isTyping) {
-    setIsTyping(true);
+    setIsTyping(true);  
     chatSocket.startTyping(chatRoomId);
     console.log('⌨️ Started typing indicator');
   }
@@ -461,7 +455,7 @@ const handleTyping = (value) => {
     }
   }, 1000); // หยุด typing หลัง 1 วินาที
   
-  setTypingTimeout(timeout);
+  setTypingTimeout(timeout);    
   
   // ถ้าไม่มีข้อความแล้ว หยุด typing ทันที
   if (!value.trim() && isTyping) {
@@ -522,7 +516,7 @@ useEffect(() => {
       disconnectChat();
     }
   };
-}, []); // Empty dependency เพื่อให้ทำงานแค่ครั้งเดียว
+}, []); 
 
 // 🆕 Reset unread count เมื่อดูหน้าแชท
 useEffect(() => {
@@ -530,6 +524,56 @@ useEffect(() => {
     setUnreadCount(0);
   }
 }, [activeSection]);
+
+
+useEffect(() => {
+  if (activeSection !== 'menu' && activeSection !== 'chat') {
+    setTimeout(() => {
+      if (scrollContainerRef.current) {
+        console.log(`Scrolling main container to top for section: ${activeSection}`);
+        scrollContainerRef.current.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: 'auto' 
+        });
+      }
+    }, 0); 
+
+  }
+}, [activeSection]);
+
+
+useEffect(() => {
+  // ถ้าอยู่ในหน้าแชท และมีข้อความ
+  if (activeSection === 'chat' && chatMessages.length > 0) {
+    // ใช้ setTimeout เล็กน้อยเพื่อให้ DOM อัปเดตก่อน
+    setTimeout(scrollToBottom, 100);
+  }
+}, [chatMessages, activeSection]);
+
+// 🆕 [AUTO-CONNECT] เชื่อมต่อและตัดการเชื่อมต่ออัตโนมัติเมื่อเข้า/ออกจากหน้าแชท
+useEffect(() => {
+  // 1. ถ้าคลิกเข้ามาที่หน้าแชท
+  if (activeSection === 'chat') {
+    console.log('Chat section opened, auto-connecting...');
+    
+    // ถ้ายังไม่ได้เชื่อมต่อ ก็เชื่อมต่อเลย
+    if (!chatConnected && connectionStatus !== 'connecting') {
+      connectToChat();
+    }
+    
+    // 2. คืนค่าฟังก์ชันนี้ (cleanup function)
+    // จะทำงานเมื่อ "ออกจาก" หน้าแชท
+    return () => {
+      // ถ้าเชื่อมต่ออยู่ ก็ให้ตัดการเชื่อมต่อ
+      if (socketManager.isConnected()) {
+        console.log('Leaving chat section, auto-disconnecting...');
+        disconnectChat();
+      }
+    };
+  }
+}, [activeSection]);
+
 
 // 🆕 Enhanced message display with sending status
 const renderMessage = (msg) => (
@@ -2058,15 +2102,64 @@ const handleNewProfileInputChange = (e) => {
   // Render Profile Picture Section
   const renderProfilePictureSection = () => (
     <div style={{
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      padding: '24px',
-      borderRadius: '16px',
+      background: 'linear-gradient(135deg, #059669 0%, #1e40af 100%)',
+      padding: '20px', // ✅ [NEW] ปรับ Padding
+      // ✅ [NEW] ปรับ borderRadius (ให้ขอบล่างไม่โค้งถ้าเป็น menu)
+      borderRadius: activeSection === 'menu' ? '16px 16px 0 0' : '16px', 
       color: 'white',
-      textAlign: 'center',
-      marginBottom: '24px',
+      marginBottom: activeSection === 'menu' ? '0' : '24px', // ✅ [NEW] ลบ margin-bottom เมื่อเป็นเมนู
       position: 'relative',
       overflow: 'hidden'
     }}>
+      
+      {/* ✅ [NEW] START: เพิ่ม Header ใหม่ (ปุ่มกลับ + Title) */}
+      {/* (เราจะแสดง Header นี้เฉพาะเมื่อ activeSection === 'menu'
+         ซึ่งฟังก์ชันนี้จะถูกเรียกเฉพาะตอนนั้นอยู่แล้วจาก renderContent)
+      */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        position: 'relative',
+        zIndex: 2,
+        marginBottom: '16px' // เพิ่มระยะห่างก่อนรูป
+      }}>
+        <button
+          onClick={onClose}
+          style={{
+            background: 'rgba(255,255,255,0.2)',
+            color: 'white',
+            border: '1px solid rgba(255,255,255,0.3)',
+            borderRadius: '12px',
+            padding: '8px 12px',
+            cursor: 'pointer',
+            fontSize: '0.9rem',
+            fontWeight: '600',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseEnter={(e) => e.target.style.background = 'rgba(255,255,255,0.4)'}
+          onMouseLeave={(e) => e.target.style.background = 'rgba(255,255,255,0.2)'}
+        >
+          <ArrowLeft size={16} />
+        </button>
+
+        <h1 style={{
+          margin: 0,
+          fontSize: '1.5rem',
+          fontWeight: '700',
+          color: 'white',
+        }}>
+          การตั้งค่า
+        </h1>
+
+        {/* ตัวถ่วงน้ำหนักให้ Title อยู่กลาง */}
+        <div style={{ width: '44px' }}></div> 
+      </div>
+      {/* ✅ [NEW] END: เพิ่ม Header ใหม่ */}
+
       {/* Background Pattern */}
       <div style={{
         position: 'absolute',
@@ -2078,7 +2171,7 @@ const handleNewProfileInputChange = (e) => {
         pointerEvents: 'none'
       }}></div>
       
-      <div style={{ position: 'relative', zIndex: 1 }}>
+      <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
         {/* Profile Picture */}
         <div style={{
           width: '100px',
@@ -2156,46 +2249,29 @@ const handleNewProfileInputChange = (e) => {
         }}>
           <ShoppingBag size={14} className="inline-block mr-1" strokeWidth={2.5} /> : ลูกค้า VipStore
         </p>
-        
-        {/* Edit Profile Picture Button */}
-
-        {/* <button
-          onClick={() => setActiveSection('profile-picture')}
-          style={{
-            marginTop: '16px',
-            padding: '8px 16px',
-            background: 'rgba(255,255,255,0.2)',
-            color: 'white',
-            border: '1px solid rgba(255,255,255,0.3)',
-            borderRadius: '20px',
-            fontSize: '0.85rem',
-            fontWeight: '600',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-            backdropFilter: 'blur(10px)'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.background = 'rgba(255,255,255,0.3)';
-            e.target.style.transform = 'translateY(-1px)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.background = 'rgba(255,255,255,0.2)';
-            e.target.style.transform = 'translateY(0)';
-          }}
-        >
-          📷 เปลี่ยนรูปโปรไฟล์
-        </button> */}
       </div>
     </div>
   );
 
-  // Render Menu List
+  
+  // Render Menu List (Grid Version)
   const renderMenuList = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-      {menuItems.map((item) => (
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: 'column',
+      // ✅ [NEW] สร้างเส้นคั่นบางๆ ระหว่างเมนู
+      gap: '1px', 
+      backgroundColor: '#e2e8f0', // ✅ [NEW] สีเทาอ่อนสำหรับเส้นคั่น
+      // ✅ [NEW] ทำให้ขอบล่างโค้ง (เชื่อมกับ Profile Card)
+      borderRadius: '0 0 16px 16px', 
+      overflow: 'hidden', // ✅ [NEW] สำคัญมากสำหรับ BordeRadius
+      boxShadow: '0 4px 12px rgba(0,0,0,0.05)' // ✅ [NEW] เพิ่มเงาจางๆ
+    }}>
+      {menuItems.map((item, index) => (
         <div
           key={item.id}
           onClick={() => {
+            if (item.id === 'payment') return; // 🚧 กันไว้ก่อน
             setActiveSection(item.id);
             if (item.id === 'orders') {
               setActiveTab('orders');
@@ -2205,119 +2281,107 @@ const handleNewProfileInputChange = (e) => {
           }}
           style={{
             background: 'white',
-            border: activeSection === item.id ? '2px solid #667eea' : '2px solid #e5e7eb',
-            borderRadius: '16px',
-            padding: '20px',
+            padding: '16px 20px',
             cursor: item.id === 'payment' ? 'not-allowed' : 'pointer',
-            transition: 'all 0.3s ease',
+            transition: 'all 0.2s ease',
             position: 'relative',
-            opacity: item.id === 'payment' ? 0.6 : 1
+            opacity: item.id === 'payment' ? 0.6 : 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '16px',
           }}
           onMouseEnter={(e) => {
             if (item.id !== 'payment') {
-              e.target.style.borderColor = '#667eea';
-              e.target.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.15)';
-              e.target.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.backgroundColor = '#f8fafc'; // ✅ [NEW] Hover effect
             }
           }}
           onMouseLeave={(e) => {
             if (item.id !== 'payment') {
-              e.target.style.borderColor = activeSection === item.id ? '#667eea' : '#e5e7eb';
-              e.target.style.boxShadow = 'none';
-              e.target.style.transform = 'translateY(0)';
+              e.currentTarget.style.backgroundColor = 'white';
             }
           }}
         >
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}>
-            {/* Left Side */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
-              <div style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '12px',
-                background: activeSection === item.id 
-                  ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                  : 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.5rem',
-                transition: 'all 0.3s ease'
-              }}>
-                {item.icon}
-              </div>
-              
-              <div style={{ flex: 1 }}>
-                <h3 style={{
-                  margin: '0 0 4px',
-                  fontSize: '1.1rem',
-                  fontWeight: '700',
-                  color: '#1f2937'
-                }}>
-                  {item.title}
-                </h3>
-                <p style={{
-                  margin: 0,
-                  fontSize: '0.9rem',
-                  color: '#6b7280',
-                  lineHeight: 1.4
-                }}>
-                  {item.description}
-                </p>
-              </div>
-            </div>
-            
-            {/* Right Side */}
+          {/* 1. ไอคอน และ Text */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            {/* ✅ [NEW] ไอคอนแบบ List View */}
             <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '10px',
+              background: 'linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%)',
               display: 'flex',
               alignItems: 'center',
-              gap: '12px'
+              justifyContent: 'center',
+              flexShrink: 0
             }}>
-              {/* Badge */}
-              {item.badge && (
-                <span style={{
-                  background: item.badge.includes('🚧') 
-                    ? 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)'
-                    : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                  color: 'white',
-                  padding: '4px 12px',
-                  borderRadius: '12px',
-                  fontSize: '0.75rem',
-                  fontWeight: '600',
-                  whiteSpace: 'nowrap'
-                }}>
-                  {item.badge}
-                </span>
-              )}
-              
-              {/* Arrow */}
-              <div style={{
-                fontSize: '1.2rem',
-                color: '#9ca3af',
-                transition: 'transform 0.2s ease'
+              {React.cloneElement(item.icon, { 
+                color: '#475569',
+                size: 22
+              })}
+            </div>
+            
+            {/* ✅ [NEW] Text Content */}
+            <div>
+              <h3 style={{
+                margin: '0 0 2px',
+                fontSize: '1rem', // กระชับขึ้น
+                fontWeight: '600', // บางลงเล็กน้อย
+                color: '#1f2937'
               }}>
-                {item.id === 'payment' ? '🔒' : '→'}
-              </div>
+                {item.title}
+              </h3>
+              <p style={{
+                margin: 0,
+                fontSize: '0.85rem',
+                color: '#6b7280',
+                lineHeight: 1.4,
+                // ✅ [NEW] กันคำอธิบายยาวไป
+                display: '-webkit-box',
+                WebkitBoxOrient: 'vertical',
+                WebkitLineClamp: 1,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}>
+                {item.description}
+              </p>
             </div>
           </div>
-          
-          {/* Active Indicator */}
-          {activeSection === item.id && (
+
+          {/* 2. Badge และ ลูกศร */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+            {item.badge && (
+              <span style={{
+                // ✅ [NEW] ปรับสี Badge ให้อ่อนลง
+                background: item.badge.includes('🚧') 
+                  ? '#fef3c7'
+                  : (item.badge.includes('Online')
+                      ? '#dcfce7'
+                      : '#dbeafe'),
+                color: item.badge.includes('🚧') 
+                  ? '#92400e'
+                  : (item.badge.includes('Online')
+                      ? '#166534'
+                      : '#312e81'),
+                padding: '4px 10px',
+                borderRadius: '12px',
+                fontSize: '0.75rem',
+                fontWeight: '600',
+                whiteSpace: 'nowrap'
+              }}>
+                {item.badge}
+              </span>
+            )}
+
+            {/* 3. ลูกศร (อยู่มุมขวา) */}
             <div style={{
-              position: 'absolute',
-              left: '8px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              width: '4px',
-              height: '32px',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              borderRadius: '2px'
-            }}></div>
-          )}
+              fontSize: '1.5rem', // ✅ [NEW] ใช้ตัวอักษรนี้แทน icon
+              color: '#9ca3af',
+              fontWeight: 'bold'
+            }}>
+              {item.id === 'payment' ? '🔒' : '›'}
+            </div>
+          </div>
         </div>
       ))}
     </div>
@@ -2334,48 +2398,61 @@ const handleNewProfileInputChange = (e) => {
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
             overflow: 'hidden'
           }}>
-            {/* Header with Back Button */}
+            {/* Header (Orders) */}
             <div style={{
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', 
               color: 'white',
-              padding: '24px 30px',
-              textAlign: 'center',
-              position: 'relative'
+              padding: '16px 20px', 
+              textAlign: 'left',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexShrink: 0
             }}>
-              <button
-                onClick={() => setActiveSection('menu')}
-                style={{
-                  position: 'absolute',
-                  left: '20px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'rgba(255,255,255,0.2)',
-                  color: 'white',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  borderRadius: '8px',
-                  padding: '8px 12px',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  fontWeight: '600'
-                }}
-              >
-                   <ArrowLeft size={16} /> กลับ
-              </button>
+              {/* Left Side: Back + Title */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {/* Back Button */}
+                <button
+                  onClick={() => setActiveSection('menu')}
+                  style={{
+                    background: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    fontWeight: '600'
+                  }}
+                >
+                  <ArrowLeft size={16} />
+                </button>
+                
+                {/* Title & Subtitle */}
+                <div>
+                  <h2 style={{ 
+                    margin: 0, 
+                    fontSize: '1.2rem',
+                    fontWeight: '700',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <ShoppingCart size={20} />
+                    ประวัติการสั่งซื้อ
+                  </h2>
+                  <p style={{ 
+                    margin: '4px 0 0',
+                    opacity: 0.9, 
+                    fontSize: '0.8rem'
+                  }}>
+                    ดูประวัติและติดตามสถานะการสั่งซื้อของคุณ
+                  </p>
+                </div>
+              </div>
               
-              <h2 style={{ 
-                margin: '0 0 8px', 
-                fontSize: '1.8rem', 
-                fontWeight: '700' 
-              }}>
-                ประวัติการสั่งซื้อ
-              </h2>
-              <p style={{ 
-                margin: 0, 
-                opacity: 0.9, 
-                fontSize: '1rem' 
-              }}>
-                ดูประวัติและติดตามสถานะการสั่งซื้อของคุณ
-              </p>
+              {/* Right Side (Empty) */}
+              <div />
             </div>
 
             {/* Content */}
@@ -2423,48 +2500,61 @@ const handleNewProfileInputChange = (e) => {
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
             overflow: 'hidden'
           }}>
-            {/* Header with Back Button */}
+            {/* 🆕 Replaced Header (Profile) */}
             <div style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              background: 'linear-gradient(135deg,#10b981 0%, #059669 100%)',
               color: 'white',
-              padding: '24px 30px',
-              textAlign: 'center',
-              position: 'relative'
+              padding: '16px 20px', 
+              textAlign: 'left',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexShrink: 0
             }}>
-              <button
-                onClick={() => setActiveSection('menu')}
-                style={{
-                  position: 'absolute',
-                  left: '20px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'rgba(255,255,255,0.2)',
-                  color: 'white',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  borderRadius: '8px',
-                  padding: '8px 12px',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  fontWeight: '600'
-                }}
-              >
-                <ArrowLeft size={16} /> กลับ
-              </button>
+              {/* Left Side: Back + Title */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {/* Back Button */}
+                <button
+                  onClick={() => setActiveSection('menu')}
+                  style={{
+                    background: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    fontWeight: '600'
+                  }}
+                >
+                  <ArrowLeft size={16} />
+                </button>
+                
+                {/* Title & Subtitle */}
+                <div>
+                  <h2 style={{ 
+                    margin: 0, 
+                    fontSize: '1.2rem',
+                    fontWeight: '700',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <User size={20} />
+                    ข้อมูลส่วนตัว
+                  </h2>
+                  <p style={{ 
+                    margin: '4px 0 0',
+                    opacity: 0.9, 
+                    fontSize: '0.8rem'
+                  }}>
+                    แก้ไขข้อมูลส่วนตัวของคุณ
+                  </p>
+                </div>
+              </div>
               
-              <h2 style={{ 
-                margin: '0 0 8px', 
-                fontSize: '1.8rem', 
-                fontWeight: '700' 
-              }}>
-                <User size={26} strokeWidth={2.5} /> ข้อมูลส่วนตัว
-              </h2>
-              <p style={{ 
-                margin: 0, 
-                opacity: 0.9, 
-                fontSize: '1rem' 
-              }}>
-                แก้ไขข้อมูลส่วนตัวของคุณ
-              </p>
+              {/* Right Side (Empty) */}
+              <div />
             </div>
 
             {/* Content */}
@@ -3036,20 +3126,23 @@ case 'addresses':
       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
       overflow: 'hidden'
     }}>
-      <div style={{
-        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-        color: 'white',
-        padding: '24px 30px',
-        textAlign: 'center',
-        position: 'relative'
-      }}>
+     {/* 🆕 Replaced Header (Addresses) */}
+    <div style={{
+      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', 
+      color: 'white',
+      padding: '16px 20px', 
+      textAlign: 'left',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      flexShrink: 0
+    }}>
+      {/* Left Side: Back + Title */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Back Button */}
         <button
           onClick={() => setActiveSection('menu')}
           style={{
-            position: 'absolute',
-            left: '20px',
-            top: '50%',
-            transform: 'translateY(-50%)',
             background: 'rgba(255,255,255,0.2)',
             color: 'white',
             border: '1px solid rgba(255,255,255,0.3)',
@@ -3060,15 +3153,35 @@ case 'addresses':
             fontWeight: '600'
           }}
         >
-          <ArrowLeft size={16} /> กลับ
+          <ArrowLeft size={16} />
         </button>
-        <h2 style={{ margin: '0 0 8px', fontSize: '1.8rem', fontWeight: '700' }}>
-          <Home size={24} /> ที่อยู่จัดส่ง
-        </h2>
-        <p style={{ margin: 0, opacity: 0.9, fontSize: '1rem' }}>
-          จัดการที่อยู่สำหรับการสั่งซื้อ ({addressProfiles.length}/5)
-        </p>
+        
+        {/* Title & Subtitle */}
+        <div>
+          <h2 style={{ 
+            margin: 0, 
+            fontSize: '1.2rem',
+            fontWeight: '700',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <Home size={20} />
+            ที่อยู่จัดส่ง
+          </h2>
+          <p style={{ 
+            margin: '4px 0 0',
+            opacity: 0.9, 
+            fontSize: '0.8rem'
+          }}>
+            จัดการที่อยู่สำหรับการสั่งซื้อ ({addressProfiles.length}/5)
+          </p>
+        </div>
       </div>
+      
+      {/* Right Side (Empty) */}
+      <div />
+    </div>
 
       {/* Content */}
       <div style={{ padding: '5px' }}>
@@ -3389,7 +3502,8 @@ case 'addresses':
 
        {/* Create Profile Modal */}
     {showCreateProfile && (
-  <div style={{
+  <div
+  style={{
     position: 'fixed',
     top: 0,
     left: 0,
@@ -3415,7 +3529,7 @@ case 'addresses':
     }}>
       {/* 🎨 Enhanced Header */}
       <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg, #059669 0%, #1e40af 100%)',
         color: 'white',
         padding: '24px 24px 32px',
         borderRadius: '20px 20px 0 0',
@@ -4094,7 +4208,7 @@ case 'addresses':
               e.target.style.transform = 'translateY(0)';
             }}
           >
-            ❌ ยกเลิก
+            <X size={16} /> ยกเลิก
           </button>
           <button 
             onClick={createAddressProfile}
@@ -4458,39 +4572,62 @@ case 'addresses':
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
             overflow: 'hidden'
           }}>
-            <div style={{
-              background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
-              color: 'white',
-              padding: '24px 30px',
-              textAlign: 'center',
-              position: 'relative'
-            }}>
-              <button
-                onClick={() => setActiveSection('menu')}
-                style={{
-                  position: 'absolute',
-                  left: '20px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'rgba(255,255,255,0.2)',
-                  color: 'white',
-                  border: '1px solid rgba(255,255,255,0.3)',
-                  borderRadius: '8px',
-                  padding: '8px 12px',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  fontWeight: '600'
-                }}
-              >
-                <ArrowLeft size={16} /> กลับ
-              </button>
-              <h2 style={{ margin: '0 0 8px', fontSize: '1.8rem', fontWeight: '700' }}>
-                📷 รูปโปรไฟล์
+            {/* 🆕 Replaced Header (Profile Picture) */}
+        <div style={{
+          background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', // 🎨 สีม่วง
+          color: 'white',
+          padding: '16px 20px', 
+          textAlign: 'left',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexShrink: 0
+        }}>
+          {/* Left Side: Back + Title */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* Back Button */}
+            <button
+              onClick={() => setActiveSection('menu')}
+              style={{
+                background: 'rgba(255,255,255,0.2)',
+                color: 'white',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: '8px',
+                padding: '8px 12px',
+                cursor: 'pointer',
+                fontSize: '0.9rem',
+                fontWeight: '600'
+              }}
+            >
+              <ArrowLeft size={16} />
+            </button>
+            
+            {/* Title & Subtitle */}
+            <div>
+              <h2 style={{ 
+                margin: 0, 
+                fontSize: '1.2rem',
+                fontWeight: '700',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <Camera size={20} />
+                รูปโปรไฟล์
               </h2>
-              <p style={{ margin: 0, opacity: 0.9, fontSize: '1rem' }}>
+              <p style={{ 
+                margin: '4px 0 0',
+                opacity: 0.9, 
+                fontSize: '0.8rem'
+              }}>
                 อัปโหลดและจัดการรูปโปรไฟล์ของคุณ
               </p>
             </div>
+          </div>
+          
+          {/* Right Side (Empty) */}
+          <div />
+        </div>
             <div style={{ padding: '30px', textAlign: 'center' }}>
               <div style={{ fontSize: '4rem', marginBottom: '20px' }}>📷</div>
               <h3 style={{ margin: '0 0 8px', fontSize: '1.2rem', color: '#374151' }}>
@@ -4530,40 +4667,62 @@ case 'payment':
       boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
       overflow: 'hidden'
     }}>
-      {/* Header */}
-      <div style={{
-        background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+      {/* 🆕 Replaced Header (Payment) */}
+<div style={{
+  background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', // 🎨 สีม่วง
+  color: 'white',
+  padding: '16px 20px', 
+  textAlign: 'left',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  flexShrink: 0
+}}>
+  {/* Left Side: Back + Title */}
+  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+    {/* Back Button */}
+    <button
+      onClick={() => setActiveSection('menu')}
+      style={{
+        background: 'rgba(255,255,255,0.2)',
         color: 'white',
-        padding: '24px 30px',
-        textAlign: 'center',
-        position: 'relative'
+        border: '1px solid rgba(255,255,255,0.3)',
+        borderRadius: '8px',
+        padding: '8px 12px',
+        cursor: 'pointer',
+        fontSize: '0.9rem',
+        fontWeight: '600'
+      }}
+    >
+      <ArrowLeft size={16} />
+    </button>
+    
+    {/* Title & Subtitle */}
+    <div>
+      <h2 style={{ 
+        margin: 0, 
+        fontSize: '1.2rem',
+        fontWeight: '700',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px'
       }}>
-        <button
-          onClick={() => setActiveSection('menu')}
-          style={{
-            position: 'absolute',
-            left: '20px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            background: 'rgba(255,255,255,0.2)',
-            color: 'white',
-            border: '1px solid rgba(255,255,255,0.3)',
-            borderRadius: '8px',
-            padding: '8px 12px',
-            cursor: 'pointer',
-            fontSize: '0.9rem',
-            fontWeight: '600'
-          }}
-        >
-          <ArrowLeft size={16} /> กลับ
-        </button>
-        <h2 style={{ margin: '0 0 8px', fontSize: '1.8rem', fontWeight: '700' }}>
-          💳 วิธีชำระเงิน
-        </h2>
-        <p style={{ margin: 0, opacity: 0.9, fontSize: '1rem' }}>
-          จัดการวิธีการชำระเงินของคุณ
-        </p>
-      </div>
+        <CreditCard size={20} />
+        วิธีชำระเงิน
+      </h2>
+      <p style={{ 
+        margin: '4px 0 0',
+        opacity: 0.9, 
+        fontSize: '0.8rem'
+      }}>
+        จัดการวิธีการชำระเงินของคุณ
+      </p>
+    </div>
+  </div>
+  
+  {/* Right Side (Empty) */}
+  <div />
+</div>
 
       {/* Content */}
       <div style={{ padding: '30px' }}>
@@ -4869,291 +5028,209 @@ case 'payment':
     </div>
   );
 
-  case 'chat':
+
+   case 'chat':
   return (
     <div style={{
       background: 'white',
-      borderRadius: '12px',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
-      overflow: 'hidden'
+      flex: 1, 
+      display: 'flex',
+      flexDirection: 'column',
+      borderRadius: '0', 
+      boxShadow: 'none',
+      overflow: 'hidden', 
+      height: '100%'
     }}>
       {/* Header */}
-      <div style={{
-        background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+<div style={{
+  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+  color: 'white',
+  padding: '16px 20px', // 🆕 ลด padding ให้กระชับ
+  textAlign: 'left',
+  position: 'relative',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  flexShrink: 0 // 🆕 กัน Header หด
+}}>
+  {/* Left Side: Back + Title/Status */}
+  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+    {/* Back Button */}
+    <button
+      onClick={() => setActiveSection('menu')}
+      style={{
+        background: 'rgba(255,255,255,0.2)',
         color: 'white',
-        padding: '24px 30px',
-        textAlign: 'center',
-        position: 'relative'
-      }}>
-        <button
-          onClick={() => setActiveSection('menu')}
-          style={{
-            position: 'absolute',
-            left: '20px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            background: 'rgba(255,255,255,0.2)',
-            color: 'white',
-            border: '1px solid rgba(255,255,255,0.3)',
-            borderRadius: '8px',
-            padding: '8px 12px',
-            cursor: 'pointer',
-            fontSize: '0.9rem',
-            fontWeight: '600'
-          }}
-        >
-          <ArrowLeft size={16} /> กลับ
-        </button>
-        
-        {/* Real-time Connection Status */}
-        <div style={{
-          position: 'absolute',
-          right: '20px',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          <div style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            background: connectionStatus === 'connected' ? '#22c55e' : 
-                       connectionStatus === 'connecting' ? '#f59e0b' : '#ef4444',
-            animation: connectionStatus === 'connecting' ? 'pulse 1s infinite' : 'none'
-          }}></div>
-          {/* <span style={{ fontSize: '0.8rem', opacity: 0.9 }}>
-            {connectionStatus === 'connected' && '🟢 เชื่อมต่อแล้วววว'}
-            {connectionStatus === 'connecting' && '🟡 กำลังเชื่อมต่อ...'}
-            {connectionStatus === 'disconnected' && '🔴 ไม่ได้เชื่อมต่อ'}
-          </span> */}
-        </div>
+        border: '1px solid rgba(255,255,255,0.3)',
+        borderRadius: '8px',
+        padding: '8px 12px',
+        cursor: 'pointer',
+        fontSize: '0.9rem',
+        fontWeight: '600'
+      }}
+    >
+      <ArrowLeft size={16} />
+    </button>
 
-        <h2 style={{ margin: '0 0 8px', fontSize: '1.8rem', fontWeight: '700' }}>
-          <MessageCircle size={26} className="inline-block mr-1" strokeWidth={1.5} /> Chat With Admin
-          {/* 🆕 Unread Badge */}
-          {unreadCount > 0 && (
-            <span style={{
-              marginLeft: '12px',
-              background: '#ef4444',
-              color: 'white',
-              fontSize: '0.8rem',
-              fontWeight: '600',
-              padding: '4px 8px',
-              borderRadius: '12px',
-              minWidth: '20px',
-              height: '20px',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              animation: 'pulse 2s infinite'
-            }}>
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </h2>
-        <p style={{ margin: 0, opacity: 0.9, fontSize: '1rem' }}>
-          แชทสอบถามกับทีมสนับสนุน 24/7
-        </p>
+    {/* Title & Status (ย้ายมาจาก Header ด้านใน) */}
+    <div>
+      <h2 style={{ 
+        margin: 0, 
+        fontSize: '1.2rem',
+        fontWeight: '700',
+        display: 'flex',
+        alignItems: 'center'
+      }}>
+        Chat With Admin
+        {/* Unread Badge */}
+        {unreadCount > 0 && (
+          <span style={{
+            marginLeft: '10px',
+            background: '#ef4444',
+            color: 'white',
+            fontSize: '0.75rem',
+            padding: '2px 8px',
+            borderRadius: '12px',
+            animation: 'pulse 2s infinite'
+          }}>
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
+        )}
+      </h2>
+      {/* Connection Status (ย้ายมาจาก Header ด้านใน) */}
+      <div style={{ 
+        fontSize: '0.8rem', 
+        color: 'white',
+        opacity: 0.9,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
+        fontWeight: '500'
+      }}>
+        {connectionStatus === 'connected' && '🟢 Online • พร้อมตอบ'}
+        {connectionStatus === 'connecting' && '🟡 กำลังเชื่อมต่อ...'}
+        {connectionStatus === 'disconnected' && '🔴 ไม่ได้เชื่อมต่อ'}
+        {adminTyping && ' • กำลังพิมพ์...'}
       </div>
+    </div>
+  </div>
+</div>
 
       {/* Chat Content */}
-      <div style={{ padding: '5px' }}>
+      {/* ❌ ลบ div style={{ padding: '5px' }} ที่ครอบอยู่ออก */}
+
         {/* Connection Control */}
-        <div style={{
-          background: chatConnected 
-            ? 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)'
-            : 'linear-gradient(135deg, #fef3c7 0%, #fde047 100%)',
-          padding: '16px 20px',
-          borderRadius: '12px',
-          border: `1px solid ${chatConnected ? '#10b981' : '#f59e0b'}`,
-          marginTop: '17px',
-          marginBottom: '24px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '12px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{
-              width: '12px',
-              height: '12px',
-              borderRadius: '50%',
-              background: chatConnected ? '#10b981' : '#f59e0b',
-              animation: chatConnected ? 'pulse 2s infinite' : 'none'
-            }}></div>
-            <div>
-              <div style={{ 
-                fontWeight: '600', 
-                color: chatConnected ? '#166534' : '#92400e', 
-                marginBottom: '4px' 
-              }}>
-                {chatConnected ? '🟢 เชื่อมต่อแชทแล้ว' : '🟡 พร้อมเชื่อมต่อแชท'}
-              </div>
-              <div style={{ 
-                fontSize: '0.9rem', 
-                color: chatConnected ? '#059669' : '#451a03' 
-              }}>
-                {chatConnected 
-                  ? 'สามารถส่งข้อความถึง Admin ได้แล้ว'
-                  : 'กดปุ่มเชื่อมต่อเพื่อเริ่มแชท'
-                }
-                {lastRefresh && (
-                  <span style={{ marginLeft: '8px', fontSize: '0.8rem' }}>
-                    • รีเฟรชล่าสุด: {lastRefresh.toLocaleTimeString('th-TH')}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {/* 🆕 Manual Refresh Button */}
-            {chatConnected && (
-              <button
-                onClick={refreshChat}
-                style={{
-                  padding: '8px 16px',
-                  background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '0.8rem',
-                  fontWeight: '600'
-                }}
-              >
-                <RefreshCcw size={16} className="inline-block mr-1" /> รีเฟรชแชท
-              </button>
-            )}
-            
-            {/* Connect/Disconnect Button */}
-            <button
-              onClick={chatConnected ? disconnectChat : connectToChat}
-              disabled={connectionStatus === 'connecting'}
-              style={{
-                padding: '10px 20px',
-                background: chatConnected 
-                  ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
-                  : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: connectionStatus === 'connecting' ? 'not-allowed' : 'pointer',
-                fontSize: '0.9rem',
-                fontWeight: '600',
-                opacity: connectionStatus === 'connecting' ? 0.7 : 1
-              }}
-            >
-              {connectionStatus === 'connecting' && '⏳ กำลังเชื่อมต่อ...'}
-              {connectionStatus === 'connected' && <> <Unlink size={16} className="inline-block mr-1" strokeWidth={2.5} /> ตัดการเชื่อมต่อ</>}
-              {connectionStatus === 'disconnected' && <><Link size={16} className="inline-block mr-1" strokeWidth={2.5} /> เชื่อมต่อแชท</>}
-            </button>
-          </div>
-        </div>
+        {/* Chat Header */}
+<div style={{
+  background: '#f8fafc',
+  padding: '16px 20px',
+  borderBottom: '1px solid #e5e7eb',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
+  justifyContent: 'space-between', // 🆕 จัดชิดซ้าย-ขวา
+  flexShrink: 0 // ✅ [FIX] เพิ่ม flexShrink: 0 เพื่อตรึง Header นี้
+}}>
+  {/* 🆕 หุ้มฝั่งซ้ายไว้ด้วย div */}
+  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+    <div style={{
+      width: '40px',
+      height: '40px',
+      borderRadius: '50%',
+      background: 'linear-gradient(135deg, #10b981 0%, #1d4ed8 100%)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '1.2rem'
+    }}>
+      <UserCheck2Icon size={24} className="inline-block" color='White' strokeWidth={2.5} />
+    </div>
+    <div>
+      <div style={{ fontWeight: '600', color: '#1f2937' }}>
+        VipStore Support Team
+        {/* ... (Unread Badge เหมือนเดิม) ... */}
+      </div>
+
+      {/* 🆕 อัปเดตการแสดงสถานะให้ Real-time */}
+      <div style={{ 
+        fontSize: '0.8rem', 
+        color: connectionStatus === 'connected' ? '#10b981' : (connectionStatus === 'connecting' ? '#f59e0b' : '#6b7280'),
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
+        fontWeight: '600'
+      }}>
+        {connectionStatus === 'connected' && '🟢 Online • พร้อมตอบ'}
+        {connectionStatus === 'connecting' && '🟡 กำลังเชื่อมต่อ...'}
+        {connectionStatus === 'disconnected' && '🔴 ไม่ได้เชื่อมต่อ'}
+        {adminTyping && ' • กำลังพิมพ์...'}
+      </div>
+    </div>
+  </div>
+
+  {/* 🆕 ย้ายปุ่ม Refresh มาไว้ตรงนี้ */}
+  {chatConnected && (
+    <button
+      onClick={refreshChat}
+      style={{
+        padding: '8px 12px', // 
+        background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+        color: 'white',
+        border: 'none',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontSize: '0.8rem',
+        fontWeight: '600',
+        flexShrink: 0 // ป้องกันปุ่มหด
+      }}
+    >
+      <RefreshCcw size={14} className="inline-block mr-1" /> รีเฟรช
+    </button>
+  )}
+</div>
 
         {/* Chat Interface */}
         <div style={{
           border: '2px solid #e5e7eb',
           borderRadius: '16px',
           overflow: 'hidden',
-          minHeight: '500px',
+          flex: 1, // ✅ [FIX] เปลี่ยน minHeight: '500px' เป็น flex: 1
           display: 'flex',
           flexDirection: 'column',
-          opacity: chatConnected ? 1 : 0.6
+          opacity: chatConnected ? 1 : 0.6,
+          margin: '5px' // ✅ [FIX] ย้าย padding: '5px' มาเป็น margin ที่นี่แทน
         }}>
-          {/* Chat Header */}
-          <div style={{
-            background: '#f8fafc',
-            padding: '16px 20px',
-            borderBottom: '1px solid #e5e7eb',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px'
-          }}>
-            <div style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.2rem'
-            }}>
-              <UserCheck2Icon size={24} className="inline-block" color='White' strokeWidth={2.5} />
-            </div>
-            <div>
-              <div style={{ fontWeight: '600', color: '#1f2937' }}>
-                VipStore Support Team
-                {/* 🆕 New message indicator */}
-                {unreadCount > 0 && (
-                  <span style={{
-                    marginLeft: '8px',
-                    background: '#ef4444',
-                    color: 'white',
-                    fontSize: '0.7rem',
-                    fontWeight: '600',
-                    padding: '2px 6px',
-                    borderRadius: '10px',
-                    minWidth: '16px',
-                    height: '16px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    {unreadCount}
-                  </span>
-                )}
-              </div>
-              <div style={{ 
-                fontSize: '0.8rem', 
-                color: chatConnected ? '#10b981' : '#6b7280',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}>
-                {chatConnected ? '🟢 Online • พร้อมตอบ' : <><Unlink size={16} className="inline-block mr-1" strokeWidth={2.5} /> ไม่ได้เชื่อมต่อ</>}
-                {adminTyping && ' • กำลังพิมพ์...'}
-              </div>
-            </div>
-          </div>
-
           {/* Chat Messages Area */}
-<div style={{
-  flex: 1,
-  padding: '20px',
-  background: '#ffffff',
-  minHeight: '350px',
-  maxHeight: '400px',
-  overflowY: 'auto',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '16px',
-  position: 'relative' // 🔧 เพิ่ม comma ตรงนี้!
-}}>
-  {/* Welcome Message */}
-  {chatMessages.length === 0 && (
-    <div style={{
-      textAlign: 'center',
-      color: '#6b7280',
-      padding: '40px 20px'
-    }}>
-      <div style={{ fontSize: '3rem', marginBottom: '16px' }}><MessageCircle size={70} className="inline-block" color='#6b7280' /></div>
-      <h3 style={{ margin: '0 0 8px', fontSize: '1.2rem', color: '#374151' }}>
-        {chatConnected ? 'เริ่มการสนทนา' : 'เชื่อมต่อเพื่อเริ่มแชท'}
-      </h3>
-      <p style={{ margin: '0 0 20px', fontSize: '1rem' }}>
-        สวัสดี {user?.firstName || user?.username}! <br />
-        {chatConnected 
-          ? 'ส่งข้อความเพื่อเริ่มการสนทนากับทีมงาน'
-          : 'เชื่อมต่อแชทเพื่อสอบถามข้อมูล'
-        }
-      </p>
-    </div>
-  )}
+          <div style={{
+              flex: 1, 
+              padding: '20px',
+              background: '#ffffff',
+              overflowY: 'auto', 
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              position: 'relative'
+            }}>
+            {/* Welcome Message */}
+            {chatMessages.length === 0 && (
+              <div style={{
+                textAlign: 'center',
+                color: '#6b7280',
+                padding: '40px 20px'
+              }}>
+                <div style={{ fontSize: '3rem', marginBottom: '16px' }}><MessageCircle size={70} className="inline-block" color='#6b7280' /></div>
+                <h3 style={{ margin: '0 0 8px', fontSize: '1.2rem', color: '#374151' }}>
+                  {chatConnected ? 'เริ่มการสนทนา' : 'เชื่อมต่อเพื่อเริ่มแchatt'}
+                </h3>
+                <p style={{ margin: '0 0 20px', fontSize: '1rem' }}>
+                  สวัสดี {user?.firstName || user?.username}! <br />
+                  {chatConnected 
+                    ? 'ส่งข้อความเพื่อเริ่มการสนทนากับทีมงาน'
+                    : 'เชื่อมต่อแชทเพื่อสอบถามข้อมูล'
+                  }
+                </p>
+              </div>
+            )}
 
   {/* Real Messages */}
   {chatMessages.map((msg) => (
@@ -5226,7 +5303,7 @@ case 'payment':
         width: '32px',
         height: '32px',
         borderRadius: '50%',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg, #059669 0%, #1e40af 100%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -5247,8 +5324,9 @@ case 'payment':
     </div>
   )}
 
+  <div ref={messagesEndRef} style={{ float: 'left', clear: 'both' }} />
   {/* 🆕 ปุ่มลูกศรลง - Scroll to Bottom */}
-  {chatMessages.length > 5 && (
+  {/* {chatMessages.length > 5 && (
     <button
       onClick={scrollToBottomManual}
       style={{
@@ -5283,14 +5361,15 @@ boxShadow: '0 4px 12px rgba(255, 107, 107, 0.6)',
     >
       ⬇
     </button>
-  )}
+  )} */}
 </div>
 
           {/* Chat Input */}
           <div style={{
             padding: '16px 20px',
             borderTop: '1px solid #e5e7eb',
-            background: '#f8fafc'
+            background: '#f8fafc',
+            flexShrink: 0
           }}>
             <div style={{
               display: 'flex',
@@ -5359,7 +5438,7 @@ boxShadow: '0 4px 12px rgba(255, 107, 107, 0.6)',
               color: '#6b7280',
               textAlign: 'center'
             }}>
-              💡 กด Enter เพื่อส่งข้อความ • Shift+Enter สำหรับขึ้นบรรทัดใหม่
+              {/* 💡 กด Enter เพื่อส่งข้อความ • Shift+Enter สำหรับขึ้นบรรทัดใหม่ */}
               {chatRoomId && (
                 <span style={{ marginLeft: '8px', color: '#10b981' }}>
                   <KeyRoundIcon size={12} className="inline-block" strokeWidth={2.5} /> • ห้อง: {chatRoomId.slice(-8)}
@@ -5439,7 +5518,8 @@ boxShadow: '0 4px 12px rgba(255, 107, 107, 0.6)',
             </div>
           </div>
         </div> */}
-      </div>
+      
+      {/* ❌ ลบ </div> ปิดของ div style={{ padding: '5px' }} ออก */}
 
       {/* Add CSS for animations */}
       <style>{`
@@ -5479,7 +5559,7 @@ boxShadow: '0 4px 12px rgba(255, 107, 107, 0.6)',
 
   return (
     // 🎨 Full Screen Settings Page Modal
-    <div style={{
+    <div ref={scrollContainerRef} style={{
       position: 'fixed',
       top: 0,
       left: 0,
@@ -5487,64 +5567,84 @@ boxShadow: '0 4px 12px rgba(255, 107, 107, 0.6)',
       bottom: 0,
       background: 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)',
       zIndex: 1000,
-      overflow: 'auto',
+      overflow: activeSection === 'chat' ? 'hidden' : 'auto',
       padding: '0'
     }}>
       <div style={{
         minHeight: '100vh',
-        padding: '20px'
+        padding: activeSection === 'chat' ? '0' : '20px',
+        height: activeSection === 'chat' ? '100vh' : 'auto'
       }}>
         <div style={{
-          maxWidth: '900px',
-          margin: '0 auto'
+          maxWidth: activeSection === 'chat' ? 'none' : '900px',
+          margin: activeSection === 'chat' ? '0' : '0 auto',
+          height: activeSection === 'chat' ? '100%' : 'auto',
+          display: activeSection === 'chat' ? 'flex' : 'block',
+          flexDirection: activeSection === 'chat' ? 'column' : 'unset'
         }}>
+
+
           {/* Header - Only show on menu */}
           {activeSection === 'menu' && (
             <div style={{
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'space-between', 
               marginBottom: '24px',
-              gap: '16px'
+              gap: '16px',
+              // ✅ [NEW] ทำให้ Header เป็นการ์ดสีขาวสวยๆ
+              background: 'white',
+              padding: '10px 10px',
+              borderRadius: '16px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.05)'
             }}>
-              <button
-                onClick={onClose}
-                style={{
-                  padding: '12px 20px',
-                  background: 'white',
-                  border: '2px solid #667eea',
-                  borderRadius: '12px',
-                  color: '#667eea',
-                  fontSize: '0.95rem',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  transition: 'all 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = '#667eea';
-                  e.target.style.color = 'white';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'white';
-                  e.target.style.color = '#667eea';
-                }}
-              >
-                <ArrowLeft className="w-5 h-5" />กลับสู่ร้านค้า
-              </button>
-              
-              <h1 style={{
-                margin: 0,
-                fontSize: '1.8rem',
-                fontWeight: '700',
-                color: '#1f2937',
+
+              {/* === ฝั่งขวา: โลโก้ & ข้อความต้อนรับ === */}
+              <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px'
+                gap: '10px' // ระยะห่างระหว่างโลโก้กับข้อความ
               }}>
-                <Settings size={40}/> การตั้งค่า
-              </h1>
+                <img 
+                  src="/VipStoreLogo.png" 
+                  alt="VipStore Logo" 
+                  style={{
+                    width: '48px', // ✅ [NEW] ขยายโลโก้
+                    height: '48px',
+                    objectFit: 'contain',
+                    // ✅ [NEW] เพิ่มเงาให้โลโก้
+                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))', 
+                    borderRadius: '8px'
+                  }}
+                />
+                
+                {/* ✅ [NEW] ข้อความต้อนรับ + Gradient */}
+                <h1 style={{
+                  margin: 0,
+                  fontSize: '1.8rem',
+                  fontWeight: '700',
+                  color: '#1f2937',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px' // ระยะห่างระหว่าง "Welcome to" กับ "VipStore"
+                }}>
+                  {/* คำว่า "Welcome to" */}
+                  <span>Welcome to</span>
+                  
+                  {/* คำว่า "VipStore" (ที่ใส่ Gradient) */}
+                  <span style={{
+                    // ✅ [NEW] โค้ดสำหรับทำตัวอักษรไล่สี
+                    background: 'linear-gradient(135deg, #059669 0%, #1e40af 100%)',
+                    WebkitBackgroundClip: 'text',
+                    backgroundClip: 'text',
+                    color: 'transparent',
+                    // ✅ [NEW] เพิ่มเงาจางๆ ให้ตัวอักษร
+                    filter: 'drop-shadow(0 1px 2px rgba(5, 150, 105, 0.3))'
+                  }}>
+                    VipStore
+                  </span>
+                </h1>
+              </div>
             </div>
           )}
 

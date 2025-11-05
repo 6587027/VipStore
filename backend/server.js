@@ -17,6 +17,7 @@ const allowedOrigins = [
   'https://vipstore-sigma.vercel.app',  // Production Frontend
   'http://localhost:3000',              // Local Development
   'http://localhost:5173',              // Vite Dev Server
+  'https://vipstorewebsite.vercel.app',  // Production Frontend
 ];
 
 // 🆕 Socket.IO Setup with CORS
@@ -82,7 +83,7 @@ mongoose
       } catch (error) {
         console.log('📊 Database stats not available yet');
       }
-    }, 3000);
+    }, 10000);
   })
   .catch((error) => {
     console.error("❌ MongoDB connection error:", error);
@@ -227,14 +228,14 @@ app.use("*", (req, res) => {
 // 🚀 Start server (เปลี่ยนจาก app.listen เป็น server.listen)
 server.listen(PORT, () => {
   console.log(`🚀 Vip Store Server running on http://localhost:${PORT}`);
-  console.log(`🔗 Production URL: https://vipstore-backend.onrender.com`);
-  console.log(`🌐 Allowed Origins:`, allowedOrigins);
-  console.log(`📱 Products API: /api/products`);
-  console.log(`🔐 Auth API: /api/auth`);
-  console.log(`📦 Orders API: /api/orders`);
-  console.log(`📊 Reports API: /api/reports`);
-  console.log(`💬 Chat API: /api/chat`); // 🆕
-  console.log(`⚡ Socket.IO: Enabled on namespace /chat`); // 🆕
-  console.log(`🔧 Transports: websocket, polling`); // 🆕
+  // console.log(`🔗 Production URL: https://vipstore-backend.onrender.com`);
+  // console.log(`🌐 Allowed Origins:`, allowedOrigins);
+  // console.log(`📱 Products API: /api/products`);
+  // console.log(`🔐 Auth API: /api/auth`);
+  // console.log(`📦 Orders API: /api/orders`);
+  // console.log(`📊 Reports API: /api/reports`);
+  // console.log(`💬 Chat API: /api/chat`); // 🆕
+  // console.log(`⚡ Socket.IO: Enabled on namespace /chat`); // 🆕
+  // console.log(`🔧 Transports: websocket, polling`); // 🆕
   console.log(`✅ Global Error Handler: ENABLED`);
 });

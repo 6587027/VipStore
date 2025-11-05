@@ -33,7 +33,7 @@ const Header = ({
 }) => {
 
   // Enable Settings Button
-  const ENABLE_SETTINGS_BUTTON = false;
+  const ENABLE_SETTINGS_BUTTON = true;
 
   const { user, logout, isAdmin, isLoggedIn } = useAuth();
   const { totalItems, toggleCart, formatCurrency, totalAmount } = useCart();

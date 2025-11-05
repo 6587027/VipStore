@@ -1,6 +1,6 @@
 // src/components/ProductList.jsx  
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useRef } from 'react';
 import ProductCard from './ProductCard';
 import { productsAPI } from '../services/api';
 import { Search, Filter, Package, DollarSign, BarChart3, RotateCcw, Sparkles, ChevronDown } from 'lucide-react';
@@ -25,12 +25,16 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
   const [autoReloadEnabled, setAutoReloadEnabled] = useState(true);
   const [error, setError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
+  const loadingRef = useRef(loading);
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
 
 
   // ✅ Search & Filter States and 🆕 Advanced Filter States
   const [searchTerm, setSearchTerm] = useState(savedState?.searchTerm || '');
   const [filteredProducts, setFilteredProducts] = useState(savedState?.filteredProducts || []);
-  const [priceRange, setPriceRange] = useState(savedState?.priceRange || { min: 0, max: 3000000 });
+  const [priceRange, setPriceRange] = useState(savedState?.priceRange || { min: '', max: '' });
   const [sortOption, setSortOption] = useState(savedState?.sortOption || '');
   const [showFilters, setShowFilters] = useState(false);
   
@@ -39,11 +43,43 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
 
 
   // 🛠️ Maintenance Mode Toggle
-  const MAINTENANCE_MODE = true;
+  // const MAINTENANCE_MODE = true;
 
 
   // ---------------------------------------------------------------------------------
 
+
+  useEffect(() => {
+    // ถ้าไม่ได้เปิดใช้งาน auto-reload ก็ไม่ต้องทำอะไร
+    if (!autoReloadEnabled) {
+      return;
+    }
+
+    console.log('Setting up auto-reload interval (30 seconds)');
+
+    const intervalId = setInterval(() => {
+      // เช็กจาก Ref ว่าตอนนี้กำลังโหลดอยู่หรือเปล่า
+      if (loadingRef.current) {
+        // console.log('🔄 Auto-reload: Skipped, already loading.');
+        return;
+      }
+      
+      // console.log('🔄 Auto-reloading products (background)...');
+      
+      // ตั้งค่า isInitialLoad เป็น false เพื่อไม่ให้แสดงหน้า Loading เต็มจอ
+      setIsInitialLoad(false); 
+      
+      // เรียก fetchProducts เพื่อโหลดข้อมูลใหม่
+      fetchProducts();
+
+    }, 1000); // 10,000 ms = 10 วินาที 
+
+    // Cleanup function: เคลียร์ interval เมื่อ component ถูก unmount
+    return () => {
+      // console.log('Clearing auto-reload interval.');
+      clearInterval(intervalId);
+    };
+  }, [autoReloadEnabled]);
 
 
   // ดึงข้อมูลสินค้าจาก API
@@ -98,9 +134,20 @@ useEffect(() => {
     }
     
     // Filter by Price Range
-    filtered = filtered.filter(product => 
-      product.price >= priceRange.min && product.price <= priceRange.max
-    );
+    const minPrice = parseFloat(priceRange.min);
+    const maxPrice = parseFloat(priceRange.max);
+
+    filtered = filtered.filter(product => {
+      // ตรวจสอบเงื่อนไข Min:
+      // ถ้า minPrice ไม่ใช่ตัวเลข (เช่น ช่องว่าง) หรือราคาสินค้า >= minPrice
+      const minCondition = isNaN(minPrice) ? true : product.price >= minPrice;
+
+      // ตรวจสอบเงื่อนไข Max:
+      // ถ้า maxPrice ไม่ใช่ตัวเลข (เช่น ช่องว่าง) หรือราคาสินค้า <= maxPrice
+      const maxCondition = isNaN(maxPrice) ? true : product.price <= maxPrice;
+
+      return minCondition && maxCondition;
+    });
     
     // Sort Products
     if (sortOption) {
@@ -131,7 +178,7 @@ useEffect(() => {
   const clearAllFilters = () => {
     setSelectedCategory('');
     setSearchTerm('');
-    setPriceRange({ min: 0, max: 3000000 });
+    setPriceRange({ min: '', max: '' });
     setSortOption('');
   };
 
@@ -140,7 +187,7 @@ useEffect(() => {
     let count = 0;
     if (selectedCategory) count++;
     if (searchTerm.trim()) count++;
-    if (priceRange.min > 0 || priceRange.max < 3000000) count++;
+    if (priceRange.min !== '' || priceRange.max !== '') count++;
     if (sortOption) count++;
     return count;
   };
@@ -527,8 +574,7 @@ if (typeof MAINTENANCE_MODE !== 'undefined' && MAINTENANCE_MODE) {
 
 // 🚀 VipStore Enhanced Loading State
 
-if (loading && !showRealError) {
-  if (isInitialLoad) {
+  if (loading && isInitialLoad && !showRealError) {
     return (
       <div className="container">
         <div style={{
@@ -804,9 +850,6 @@ if (loading && !showRealError) {
         </div>
       </div>
     );
-  } else {
-    return null;
-  }
 }
 
 
@@ -1139,7 +1182,7 @@ if (loading && !showRealError) {
               type="number"
               placeholder="ต่ำสุด"
               value={priceRange.min}
-              onChange={(e) => setPriceRange({...priceRange, min: parseInt(e.target.value) || 0})}
+              onChange={(e) => setPriceRange({...priceRange, min: e.target.value})}
               style={{
                 width: '90px',
                 padding: '8px 10px',
@@ -1169,7 +1212,7 @@ if (loading && !showRealError) {
               type="number"
               placeholder="สูงสุด"
               value={priceRange.max}
-              onChange={(e) => setPriceRange({...priceRange, max: parseInt(e.target.value) || 3000000})}
+              onChange={(e) => setPriceRange({...priceRange, max: e.target.value})}
               style={{
                 width: '90px',
                 padding: '8px 10px',

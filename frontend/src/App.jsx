@@ -128,7 +128,7 @@ function AppContent() {
 
   // 🎯 ProductList State Management Function
   const updateProductListState = (updates) => {
-    console.log('🔄 Updating ProductList state:', updates);
+    // console.log('🔄 Updating ProductList state:', updates);
     setProductListState(prev => ({
       ...prev,
       ...updates,
@@ -229,7 +229,7 @@ function AppContent() {
               
               // Back Button ใน Header
               onShowBackButton={(show, handler) => {
-                console.log('📤 App.jsx - onShowBackButton:', { show, handler: !!handler });
+                // console.log('📤 App.jsx - onShowBackButton:', { show, handler: !!handler });
                 setShowProductBackButton(show);
                 setProductBackHandler(() => handler);
               }}
