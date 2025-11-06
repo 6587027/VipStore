@@ -2167,7 +2167,7 @@ const handleNewProfileInputChange = (e) => {
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundImage: 'radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%)',
+        // backgroundImage: 'radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%)',
         pointerEvents: 'none'
       }}></div>
       
@@ -5621,12 +5621,12 @@ boxShadow: '0 4px 12px rgba(255, 107, 107, 0.6)',
                 {/* ✅ [NEW] ข้อความต้อนรับ + Gradient */}
                 <h1 style={{
                   margin: 0,
-                  fontSize: '1.8rem',
-                  fontWeight: '700',
+                  fontSize: '1.5rem',
+                  fontWeight: '500',
                   color: '#1f2937',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '10px' // ระยะห่างระหว่าง "Welcome to" กับ "VipStore"
+                  gap: '6px' // ระยะห่างระหว่าง "Welcome to" กับ "VipStore"
                 }}>
                   {/* คำว่า "Welcome to" */}
                   <span>Welcome to</span>

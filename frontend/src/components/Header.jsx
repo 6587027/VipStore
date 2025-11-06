@@ -190,8 +190,9 @@ const Header = ({
                 {showProductBackButton && (
                   <button 
                     className="btn-secondary btn-product-back"
-                    // onClick={handleProductBackClick}
-                    onClick={onBackToHome}
+                    onClick={onProductBack}
+                    // onClick={onBackToHome}
+                    
                   >
                     <Home className="w-4 h-4" /> กลับไปหน้าหลัก
                   </button>

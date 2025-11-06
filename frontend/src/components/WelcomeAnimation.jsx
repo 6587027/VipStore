@@ -10,7 +10,7 @@ const WelcomeAnimation = ({ onAnimationComplete }) => {
     console.log('VipStore Welcome: Checking login status...');
     
     // ตรวจสอบสถานะ User Login
-    const possibleUserKeys = ['currentUser', 'user', 'loggedInUser', 'authUser'];
+    const possibleUserKeys = ['currentUser', 'user', 'authUser'];
     let currentUser = null;
     let userKey = null;
     

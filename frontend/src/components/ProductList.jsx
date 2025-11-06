@@ -342,7 +342,6 @@ if (typeof MAINTENANCE_MODE !== 'undefined' && MAINTENANCE_MODE) {
         background: '#ffffff', // 🌟
         border: '1px solid #e5e7eb', // 🌟
         boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)', // 🌟
-        
         borderRadius: '16px',
         padding: '15px',
         maxWidth: '400px',
@@ -425,15 +424,15 @@ if (typeof MAINTENANCE_MODE !== 'undefined' && MAINTENANCE_MODE) {
                   <li>{t('update1')}</li>
                   <li>{t('update2')}</li>
                   <li>{t('update3')}</li>
-                  <li>{t('update4')}</li>
-                  <li>{t('update4.1')}</li>
+                  {/* <li>{t('update4')}</li> */}
+                  {/* <li>{t('update4.1')}</li> */}
                  <hr style={{ 
                      margin: '12px 0', 
                      border: '0', 
                      borderTop: '1px solid #e5e7eb', // 🌟
                   }}/>
                   <li>{t('update5')}</li>
-                  <li>{t('update6')}</li>
+                  {/* <li>{t('update6')}</li> */}
               </ul>
           </div>
         </div>
@@ -461,8 +460,12 @@ if (typeof MAINTENANCE_MODE !== 'undefined' && MAINTENANCE_MODE) {
                 textAlign: 'left',
                 color: '#991b1b' // 🌟
               }}
-              // dangerouslySetInnerHTML={{ __html: t('alertMessage') }}
-              dangerouslySetInnerHTML={{ __html: t('settingsClose') }}
+
+
+              dangerouslySetInnerHTML={{ __html: t('alertMessage') }}
+              // dangerouslySetInnerHTML={{ __html: t('settingsClose') }}
+
+              
             />
         </div>
 
