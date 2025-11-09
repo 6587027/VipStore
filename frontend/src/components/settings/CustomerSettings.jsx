@@ -61,6 +61,7 @@ import {
   KeyIcon,
   KeyRoundIcon,
   X,
+  Eye,
   
 } from 'lucide-react';
 import { ChatBubbleBottomCenterIcon, ListBulletIcon } from '@heroicons/react/16/solid';

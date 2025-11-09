@@ -1,10 +1,10 @@
 {
   "translation": {
-    "maintenanceTitle": "System Maintenance",
+    "maintenanceTitle": "Store Closed for Maintenance",
     "maintenanceMessage": "Updating the system for a better experience<br/>Thank you for your patience - we'll be back soon",
 
-   "updatesTitle": "New System Fixes and Updates! (Minor)",
-    "update1": "New UI Interface Update: Easier to use and improved color scheme.",
+   "updatesTitle": "Updates",
+    "update1": "Fixed system errors and improved usability.",
     "update2": "Adjusted display of the chat window header bar.",
     "update3": "Fixed minor bugs in the settings page.",
     "update4": "Settings Page Update: Order history UI rearranged to be easier to view.",

@@ -109,7 +109,7 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
       // เรียก fetchProducts เพื่อโหลดข้อมูลใหม่
       fetchProducts();
 
-    }, 1000); // 10,000 ms = 10 วินาที 
+    }, 30000); // 1,000 ms = 1 วินาที 
 
     // Cleanup function: เคลียร์ interval เมื่อ component ถูก unmount
     return () => {
@@ -506,8 +506,8 @@ if (isMaintenance) {
                   paddingLeft: '20px'
               }}>
                   <li>{t('update1')}</li>
-                  <li>{t('update2')}</li>
-                  <li>{t('update3')}</li>
+                  {/* <li>{t('update2')}</li> */}
+                  {/* <li>{t('update3')}</li> */}
                   {/* <li>{t('update4')}</li> */}
                   {/* <li>{t('update4.1')}</li> */}
                  <hr style={{ 

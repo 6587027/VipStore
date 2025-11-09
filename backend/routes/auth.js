@@ -834,8 +834,6 @@ router.put('/admin/change-password/:userId', async (req, res) => {
 
       // Update password
       user.password = newPassword; // In production: hash with bcrypt
-      user.lastPasswordChange = new Date();
-      user.passwordChangedBy = adminId;
       await user.save();
 
       // Log the password change
