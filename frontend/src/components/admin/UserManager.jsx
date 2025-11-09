@@ -5,8 +5,8 @@ import { useAuth } from '../../context/AuthContext';
 import { 
   Users, UserCheck, UserCog, Shield, Mail, Calendar, 
   Search, RefreshCw, Plus, Eye, Edit, Trash2, Lock,
-  X, Check, AlertTriangle, Clock, CheckCircle,
-  User,Settings, 
+  X, Check, AlertTriangle, Clock, CheckCircle, XCircle,
+  User, Settings, 
   ChevronDown, 
   ChevronUp,
   Key,
@@ -54,15 +54,23 @@ const UserManager = () => {
   });
 
   const { user: currentUser } = useAuth();
-  // const [showPasswordModal, setShowPasswordModal] = useState(false);
+
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [passwordModalData, setPasswordModalData] = useState(null); 
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [modalError, setModalError] = useState(''); 
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
   // const [passwordModalData, setPasswordModalData] = useState({
   //   requestId: null,
   //   userName: '',
   //   userEmail: '',
   //   reason: ''
   // });
-//   const [newPassword, setNewPassword] = useState('');
-//   const [confirmPassword, setConfirmPassword] = useState('');
+
+
 //   const [showNewPassword, setShowNewPassword] = useState(false);
 //   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 //   const [passwordValidation, setPasswordValidation] = useState({
@@ -101,17 +109,19 @@ useEffect(() => {
 
 // Open Password Modal
 
-// const openPasswordModal = (request) => {
-//   setPasswordModalData({
-//     requestId: request.id,
-//     userName: request.userName,
-//     userEmail: request.userEmail,
-//     reason: request.reason
-//   });
-//   setNewPassword('');
-//   setConfirmPassword('');
-//   setShowNewPassword(false);
-//   setShowConfirmPassword(false);
+const openPasswordModal = (request) => {
+  setModalError('');
+  setPasswordModalData({
+    requestId: request.id,
+    userName: request.userName,
+    userEmail: request.userEmail,
+    reason: request.reason
+  });
+setNewPassword('');
+setConfirmPassword('');
+setShowNewPassword(false);
+setShowConfirmPassword(false);
+
 //   setPasswordValidation({
 //     length: false,
 //     lowercase: false,
@@ -119,9 +129,48 @@ useEffect(() => {
 //     number: false,
 //     special: false
 //   });
-//   setShowPasswordModal(true);
-// };
+setShowPasswordModal(true);
+};
 
+
+const handleAdminSetPassword = async (e) => {
+  e.preventDefault();
+  setModalError('');
+
+  if (newPassword.length < 6) {
+    setModalError('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    setModalError('รหัสผ่านและการยืนยันไม่ตรงกัน');
+    return;
+  }
+
+  setOperationLoading(true);
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/approve-password-request/${passwordModalData.requestId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        newPassword: newPassword, // 👈 ส่งรหัสผ่านใหม่ไปด้วย
+        approvedBy: currentUser.id
+      })
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      alert(data.message || '✅ ตั้งรหัสผ่านใหม่ให้ User สำเร็จ');
+      setShowPasswordModal(false);
+      fetchPasswordRequests(); // รีเฟรชรายการ
+    } else {
+      setModalError(data.message || 'เกิดข้อผิดพลาด');
+    }
+  } catch (error) {
+    setModalError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+  } finally {
+    setOperationLoading(false);
+  }
+};
 
 const [createAdminPasswordValidation, setCreateAdminPasswordValidation] = useState({
   length: false,
@@ -263,7 +312,6 @@ const approvePasswordRequest = async (request) => {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        // ❗️ ไม่ต้องส่ง newPassword 
         approvedBy: currentUser.id 
       })
     });
@@ -2029,68 +2077,69 @@ const handleDeleteUser = async (user) => {
                         <div style={{ 
                           display: 'flex', 
                           gap: '8px',
-                          flexShrink: 0
+                          flexShrink: 0,
+                          flexWrap: 'wrap' // 👈 (เผื่อจอแคบ)
                         }}>
-                          {/* Approve Button */}
+                          
+                          {/* 🆕 (3.1) ปุ่ม "Approve (User Reset)" */}
                           <button
-                            onClick={() => {
-                              // setShowPasswordRequests(false);
-                              // openPasswordModal(request);
-                              approvePasswordRequest(request);
-                            }}
+                            onClick={() => approvePasswordRequest(request)}
                             style={{
-                              padding: '10px 18px',
+                              padding: '8px 14px',
                               background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                               color: 'white',
                               border: 'none',
                               borderRadius: '8px',
-                              fontSize: '0.9rem',
+                              fontSize: '0.85rem',
                               fontWeight: '600',
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '6px',
-                              transition: 'all 0.2s ease',
-                              boxShadow: '0 2px 4px rgba(16, 185, 129, 0.3)'
+                              gap: '6px'
                             }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = 'translateY(-2px)';
-                              e.currentTarget.style.boxShadow = '0 4px 8px rgba(16, 185, 129, 0.4)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = 'translateY(0)';
-                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(16, 185, 129, 0.3)';
-                            }}
+                            title="อนุมัติให้ User ตั้งรหัสผ่านเอง"
                           >
                             <Check size={16} />
-                            Approve
+                            Approve (User Reset)
+                          </button>
+                          
+                          {/* 🆕 (3.2) ปุ่ม "Set Manually" */}
+                          <button
+                            onClick={() => openPasswordModal(request)}
+                            style={{
+                              padding: '8px 14px',
+                              background: 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontSize: '0.85rem',
+                              fontWeight: '600',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px'
+                            }}
+                            title="Admin ตั้งรหัสผ่านให้"
+                          >
+                            <Key size={16} />
+                            Set Manually
                           </button>
 
-                          {/* Reject Button */}
+                          {/* 🆕 (3.3) ปุ่ม "Reject" */}
                           <button
                             onClick={() => rejectPasswordRequest(request.id)}
                             style={{
-                              padding: '10px 18px',
+                              padding: '8px 14px',
                               background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
                               color: 'white',
                               border: 'none',
                               borderRadius: '8px',
-                              fontSize: '0.9rem',
+                              fontSize: '0.85rem',
                               fontWeight: '600',
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '6px',
-                              transition: 'all 0.2s ease',
-                              boxShadow: '0 2px 4px rgba(239, 68, 68, 0.3)'
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = 'translateY(-2px)';
-                              e.currentTarget.style.boxShadow = '0 4px 8px rgba(239, 68, 68, 0.4)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = 'translateY(0)';
-                              e.currentTarget.style.boxShadow = '0 2px 4px rgba(239, 68, 68, 0.3)';
+                              gap: '6px'
                             }}
                           >
                             <X size={16} />
@@ -2130,6 +2179,243 @@ const handleDeleteUser = async (user) => {
                 ))}
               </div>
             )}
+          </div>
+        </div>
+      )}
+ {showPasswordModal && passwordModalData && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1001,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            padding: '24px',
+            maxWidth: '500px',
+            width: '100%',
+            maxHeight: '80vh',
+            overflowY: 'auto'
+          }}>
+            <form onSubmit={handleAdminSetPassword}>
+              {/* Header */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '20px',
+                paddingBottom: '16px',
+                borderBottom: '2px solid #e5e7eb'
+              }}>
+                <h3 style={{ 
+                  margin: 0, 
+                  fontSize: '1.5rem', 
+                  fontWeight: '700',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  color: '#1e293b'
+                }}>
+                  {/* 👇 (แก้ไข) เปลี่ยนสีไอคอน Key ให้ตรงกับสีปุ่ม */}
+                  <Key size={24} style={{ color: '#3b82f6' }} />
+                  Set New Password
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordModal(false)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                >
+                  <X size={24} style={{ color: '#6b7280' }} />
+                </button>
+              </div>
+
+              {/* User Info */}
+              <div style={{
+                background: '#f8fafc',
+                padding: '16px',
+                borderRadius: '12px',
+                border: '1px solid #e2e8f0',
+                marginBottom: '16px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px'
+              }}>
+                <div>
+                  <strong style={{ color: '#374151' }}>User:</strong> {passwordModalData.userName}
+                </div>
+                <div>
+                  <strong style={{ color: '#374151' }}>Email:</strong> {passwordModalData.userEmail}
+                </div>
+                <div>
+                  <strong style={{ color: '#374151' }}>Reason:</strong> {passwordModalData.reason}
+                </div>
+              </div>
+
+              {/* Modal Error */}
+              {modalError && (
+                <div style={{
+                  background: '#fee2e2',
+                  border: '1px solid #fecaca',
+                  color: '#dc2626',
+                  padding: '12px 16px',
+                  borderRadius: '8px',
+                  marginBottom: '16px',
+                  fontSize: '0.9rem'
+                }}>
+                  ⚠️ {modalError}
+                </div>
+              )}
+
+              {/* Form Fields */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                
+                {/* === FIELD 1: NEW PASSWORD (แก้ไข) === */}
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                    New Password (min. 6 chars):
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showNewPassword ? 'text' : 'password'} 
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '12px 40px 12px 12px', 
+                        border: '2px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '1rem',
+                        boxSizing: 'border-box' 
+                      }}
+                      placeholder="Enter new password"
+                    />
+                    {/* 👇 ปุ่ม Toggle ของช่องแรก */}
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px'
+                      }}
+                    >
+                      {showNewPassword ? <Eye size={20} /> : <Lock size={20} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* === FIELD 2: CONFIRM NEW PASSWORD (แก้ไข) === */}
+                <div>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600' }}>
+                    Confirm New Password:
+                  </label>
+                  {/* 👇 เพิ่ม div relative หุ้มช่องที่ 2 */}
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'} 
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '12px 40px 12px 12px', 
+                        border: '2px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '1rem',
+                        boxSizing: 'border-box' 
+                      }}
+                      placeholder="Confirm new password"
+                    />
+                    {/* 👇 เพิ่มปุ่ม Toggle ของช่องที่ 2 */}
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px'
+                      }}
+                    >
+                      {showConfirmPassword ? <Eye size={20} /> : <Lock size={20} />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordModal(false)}
+                  style={{
+                    padding: '12px 20px',
+                    background: '#6b7280',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontWeight: '600'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={operationLoading}
+                  style={{
+                    padding: '12px 20px',
+                    // 👇 (แก้ไข) เปลี่ยนสีปุ่ม Submit ให้เป็นสีน้ำเงิน
+                    background: operationLoading ? '#9ca3af' : 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: operationLoading ? 'not-allowed' : 'pointer',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  {operationLoading ? (
+                    <>
+                      <RefreshCw size={16} className="spinner" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Check size={16} />
+                      Set Password
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

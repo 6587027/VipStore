@@ -1043,7 +1043,7 @@ router.post('/request-password-change', async (req, res) => {
 router.put('/approve-password-request/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { newPassword, approvedBy } = req.body; // newPassword สามารถเป็น undefined ได้
+    const { newPassword, approvedBy } = req.body; 
 
     // Find notification
     if (!global.adminNotifications) {
@@ -1102,9 +1102,7 @@ router.put('/approve-password-request/:id', async (req, res) => {
         });
       }
 
-      user.password = newPassword; // ในระบบจริงควร hash
-      user.lastPasswordChange = new Date();
-      user.passwordChangedBy = approvedBy;
+      user.password = newPassword; 
       await user.save();
 
       // 🆕 เก็บประวัติการอนุมัติ (สถานะเดิม)
@@ -1816,8 +1814,6 @@ router.post('/complete-password-change', async (req, res) => {
       }
 
       user.password = newPassword; // ในระบบจริงควร hash
-      user.lastPasswordChange = new Date();
-      user.passwordChangedBy = userId; // User เปลี่ยนเอง
       await user.save();
 
       // 4. อัปเดตสถานะใน History

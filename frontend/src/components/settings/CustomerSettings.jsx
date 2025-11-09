@@ -672,7 +672,7 @@ const handleCompletePasswordChange = async (e, approvedRequest) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        userId: user.id, // หรือ user.userId, user._id
+        userId: user._id || user.id,
         requestId: approvedRequest.id,
         newPassword: newPassword,
       }),
@@ -684,6 +684,8 @@ const handleCompletePasswordChange = async (e, approvedRequest) => {
       setPasswordSuccess('✅ เปลี่ยนรหัสผ่านสำเร็จ!');
       setNewPassword('');
       setConfirmPassword('');
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
       // รีเฟรชประวัติเพื่อให้ฟอร์มหายไป
       fetchPasswordHistory(); 
     } else {
@@ -696,6 +698,8 @@ const handleCompletePasswordChange = async (e, approvedRequest) => {
   }
 };
 
+const [showNewPassword, setShowNewPassword] = useState(false);
+const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
 // 🆕 New Profile Form State
 const [newProfileData, setNewProfileData] = useState({
@@ -2810,19 +2814,40 @@ const handleNewProfileInputChange = (e) => {
                               <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', fontSize: '0.9rem' }}>
                                 รหัสผ่านใหม่:
                               </label>
-                              <input
-                                type="password"
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                                required
-                                style={{
-                                  width: '100%',
-                                  padding: '10px',
-                                  border: '2px solid #e5e7eb',
-                                  borderRadius: '8px',
-                                }}
-                                placeholder="อย่างน้อย 6 ตัวอักษร"
-                              />
+                              {/* 👇 (1) เพิ่ม div หุ้ม */}
+                              <div style={{ position: 'relative' }}>
+                                <input
+                                  type={showNewPassword ? 'text' : 'password'} 
+                                  value={newPassword}
+                                  onChange={(e) => setNewPassword(e.target.value)}
+                                  required
+                                  style={{
+                                    width: '100%',
+                                    padding: '10px 40px 10px 10px', 
+                                    border: '2px solid #e5e7eb',
+                                    borderRadius: '8px',
+                                    boxSizing: 'border-box' 
+                                  }}
+                                  placeholder="อย่างน้อย 6 ตัวอักษร"
+                                />
+                                {/* 👇 (5) เพิ่มปุ่ม Toggle */}
+                                <button
+                                  type="button"
+                                  onClick={() => setShowNewPassword(!showNewPassword)}
+                                  style={{
+                                    position: 'absolute',
+                                    right: '12px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    padding: '4px'
+                                  }}
+                                >
+                                  {showNewPassword ? <Eye size={20} /> : <Lock size={20} />}
+                                </button>
+                              </div>
                             </div>
 
                             {/* Confirm Password */}
@@ -2830,19 +2855,40 @@ const handleNewProfileInputChange = (e) => {
                               <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', fontSize: '0.9rem' }}>
                                 ยืนยันรหัสผ่านใหม่:
                               </label>
-                              <input
-                                type="password"
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                required
-                                style={{
-                                  width: '100%',
-                                  padding: '10px',
-                                  border: '2px solid #e5e7eb',
-                                  borderRadius: '8px',
-                                }}
-                                placeholder="ป้อนรหัสผ่านใหม่อีกครั้ง"
-                              />
+                              {/* 👇 (1) เพิ่ม div หุ้ม */}
+                              <div style={{ position: 'relative' }}>
+                                <input
+                                  type={showConfirmPassword ? 'text' : 'password'} 
+                                  value={confirmPassword}
+                                  onChange={(e) => setConfirmPassword(e.target.value)}
+                                  required
+                                  style={{
+                                    width: '100%',
+                                    padding: '10px 40px 10px 10px', 
+                                    border: '2px solid #e5e7eb',
+                                    borderRadius: '8px',
+                                    boxSizing: 'border-box' 
+                                  }}
+                                  placeholder="ป้อนรหัสผ่านใหม่อีกครั้ง"
+                                />
+                                {/* 👇 (5) เพิ่มปุ่ม Toggle */}
+                                <button
+                                  type="button"
+                                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                  style={{
+                                    position: 'absolute',
+                                    right: '12px',
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    padding: '4px'
+                                  }}
+                                >
+                                  {showConfirmPassword ? <Eye size={20} /> : <Lock size={20} />}
+                                </button>
+                              </div>
                             </div>
 
                             <button
