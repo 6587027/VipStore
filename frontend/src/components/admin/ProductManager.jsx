@@ -15,7 +15,8 @@ import {
   AlertCircle,
   CheckCircle,
   XCircle,
-  Pencil
+  Pencil,
+  RefreshCw 
 } from 'lucide-react';
 
 const ProductManager = ({ products, onProductsChange }) => {
@@ -24,6 +25,7 @@ const ProductManager = ({ products, onProductsChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [loading, setLoading] = useState(false);
+  // ❌ REMOVED: const [showProductList, setShowProductList] = useState(true);
 
   // Filter products based on search and category
   const filteredProducts = products.filter(product => {
@@ -103,12 +105,13 @@ const ProductManager = ({ products, onProductsChange }) => {
         </button>
       </div>
 
-      {/* Filters and Search */}
+      {/* 👇 (2) MODIFIED: Filters and Search (New Search Box + Refresh Button) */}
       <div className="filters-section">
         <div className="search-box">  
+          <Search size={18} className="search-icon" /> 
           <input
             type="text"
-            placeholder="🔍 Search products..."
+            placeholder="Search products..." // 👈 Removed emoji
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
@@ -133,6 +136,14 @@ const ProductManager = ({ products, onProductsChange }) => {
         <div className="results-info">
           Showing {filteredProducts.length} of {products.length} products
         </div>
+        <button
+          className="btn-primary"
+          onClick={onProductsChange} // This calls fetchProducts from AdminDashboard
+          disabled={loading}
+        >
+          <RefreshCw size={18} />
+          Refresh
+        </button>
       </div>
 
       {/* Products Table */}

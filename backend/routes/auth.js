@@ -940,7 +940,6 @@ router.delete('/admin-notifications/:id', async (req, res) => {
   }
 });
 
-// เพิ่มก่อน module.exports = router;
 
 // 🆕 GET /api/auth/password-requests - Get all password requests
 router.get('/password-requests', async (req, res) => {
@@ -1044,7 +1043,7 @@ router.post('/request-password-change', async (req, res) => {
 router.put('/approve-password-request/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { newPassword, approvedBy } = req.body;
+    const { newPassword, approvedBy } = req.body; // newPassword สามารถเป็น undefined ได้
 
     // Find notification
     if (!global.adminNotifications) {
@@ -1054,35 +1053,24 @@ router.put('/approve-password-request/:id', async (req, res) => {
       });
     }
 
-    const notification = global.adminNotifications.find(n => n.id === id);
-    if (!notification || notification.type !== 'password_change_request') {
+    const notificationIndex = global.adminNotifications.findIndex(n => n.id === id);
+    if (notificationIndex === -1) {
       return res.status(404).json({
         success: false,
         message: 'ไม่พบคำขอเปลี่ยนรหัสผ่าน'
       });
     }
 
-    // Update user password
-    try {
-      const user = await User.findById(notification.details.userId);
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'ไม่พบผู้ใช้ในระบบ'
-        });
-      }
+    const notification = global.adminNotifications[notificationIndex];
 
-      user.password = newPassword;
-      user.lastPasswordChange = new Date();
-      user.passwordChangedBy = approvedBy;
-      await user.save();
-
-      // 🆕 เก็บประวัติการอนุมัติ
+    // 1. กรณี Admin "อนุมัติ" ให้ User ตั้งรหัสผ่านเอง (ไม่มี newPassword)
+    if (!newPassword) {
+      // 🆕 เก็บประวัติการอนุมัติ (แต่สถานะใหม่)
       const historyRecord = {
         id: notification.id,
         userId: notification.details.userId,
         reason: notification.details.reason,
-        status: 'approved',
+        status: 'approved_awaiting_user', // 👈 สถานะใหม่: รอ User ยืนยัน
         createdAt: notification.timestamp,
         approvedAt: new Date().toISOString(),
         approvedBy: approvedBy,
@@ -1094,9 +1082,51 @@ router.put('/approve-password-request/:id', async (req, res) => {
       global.passwordRequestHistory.push(historyRecord);
 
       // ลบออกจาก notifications (เพราะดำเนินการแล้ว)
-      global.adminNotifications = global.adminNotifications.filter(n => n.id !== id);
+      global.adminNotifications.splice(notificationIndex, 1);
 
-      console.log(`✅ Password approved and saved to history for: ${user.username}`);
+      console.log(`✅ Request approved (awaiting user) for: ${notification.details.username}`);
+
+      return res.json({
+        success: true,
+        message: 'อนุมัติคำขอสำเร็จ (รอ User ตั้งรหัสผ่านใหม่)'
+      });
+    }
+
+    // 2. กรณี Admin ตั้งรหัสผ่านให้เลย (มี newPassword)
+    try {
+      const user = await User.findById(notification.details.userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'ไม่พบผู้ใช้ในระบบ'
+        });
+      }
+
+      user.password = newPassword; // ในระบบจริงควร hash
+      user.lastPasswordChange = new Date();
+      user.passwordChangedBy = approvedBy;
+      await user.save();
+
+      // 🆕 เก็บประวัติการอนุมัติ (สถานะเดิม)
+      const historyRecord = {
+        id: notification.id,
+        userId: notification.details.userId,
+        reason: notification.details.reason,
+        status: 'approved', // 👈 สถานะเดิม: Admin เปลี่ยนให้เลย
+        createdAt: notification.timestamp,
+        approvedAt: new Date().toISOString(),
+        approvedBy: approvedBy,
+        userName: notification.details.fullName || notification.details.username,
+        userEmail: notification.details.email
+      };
+
+      // เพิ่มเข้า history
+      global.passwordRequestHistory.push(historyRecord);
+
+      // ลบออกจาก notifications (เพราะดำเนินการแล้ว)
+      global.adminNotifications.splice(notificationIndex, 1);
+
+      console.log(`✅ Password approved and changed by admin for: ${user.username}`);
 
       res.json({
         success: true,
@@ -1120,7 +1150,8 @@ router.put('/approve-password-request/:id', async (req, res) => {
   }
 });
 
-// 3. แทนที่ router.put('/reject-password-request/:id') เดิม (ประมาณบรรทัดที่ 850+)
+
+// router.put('/reject-password-request/:id') 
 router.put('/reject-password-request/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -1736,6 +1767,84 @@ router.post('/change-password', async (req, res) => {
     res.json({ success: true, message: 'Password changed successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+
+// 🆕 POST /api/auth/complete-password-change - User completes their own password change
+router.post('/complete-password-change', async (req, res) => {
+  try {
+    const { userId, requestId, newPassword } = req.body;
+
+    // Validation
+    if (!userId || !requestId || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'ข้อมูลไม่ครบถ้วน'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'
+      });
+    }
+    
+    // 1. ค้นหาคำขอใน History
+    const historyRecord = global.passwordRequestHistory.find(
+      record => record.id === requestId && 
+                record.userId.toString() === userId.toString()
+    );
+
+    // 2. ตรวจสอบว่ามีสิทธิ์เปลี่ยนหรือไม่
+    if (!historyRecord || historyRecord.status !== 'approved_awaiting_user') {
+      return res.status(403).json({
+        success: false,
+        message: 'ไม่พบคำขอเปลี่ยนรหัสผ่านที่ถูกต้อง หรือคำขอยังไม่ได้รับการอนุมัติ'
+      });
+    }
+
+    // 3. อัปเดตรหัสผ่าน
+    try {
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'ไม่พบผู้ใช้'
+        });
+      }
+
+      user.password = newPassword; // ในระบบจริงควร hash
+      user.lastPasswordChange = new Date();
+      user.passwordChangedBy = userId; // User เปลี่ยนเอง
+      await user.save();
+
+      // 4. อัปเดตสถานะใน History
+      historyRecord.status = 'completed_by_user';
+      historyRecord.completedAt = new Date().toISOString();
+      
+      console.log(`✅ User completed password change: ${user.username}`);
+
+      res.json({
+        success: true,
+        message: 'เปลี่ยนรหัสผ่านสำเร็จ'
+      });
+
+    } catch (dbError) {
+      console.error('Complete password change DB error:', dbError);
+      return res.status(500).json({
+        success: false,
+        message: 'ไม่สามารถอัปเดตรหัสผ่านได้'
+      });
+    }
+
+  } catch (error) {
+    console.error('Complete password change error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'เกิดข้อผิดพลาดในระบบ'
+    });
   }
 });
 

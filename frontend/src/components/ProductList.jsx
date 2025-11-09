@@ -8,6 +8,8 @@ import { Settings, RefreshCw, Clock, User, Code , Megaphone , CircleAlert } from
 import { useTranslation } from 'react-i18next';
 
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com/api';
+
 // import ChatButton from './chat/ChatButton';
 
 const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = true }) => {
@@ -44,6 +46,41 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
 
   // 🛠️ Maintenance Mode Toggle
   // const MAINTENANCE_MODE = true;
+
+  // 🆕 (1.1) เพิ่ม State เหล่านี้:
+  const [isMaintenance, setIsMaintenance] = useState(true); // 👈 เริ่มต้นเป็น true (ปิดร้าน)
+  const [loadingStatus, setLoadingStatus] = useState(true); // 👈 State สำหรับโหลด status
+  const [statusError, setStatusError] = useState(null);
+
+  // 🆕 (1.2) เพิ่ม useEffect นี้ (สำหรับ Fetch สถานะ Maintenance):
+  useEffect(() => {
+    const checkMaintenanceStatus = async () => {
+      try {
+        console.log('📡 Checking store maintenance status...');
+        setLoadingStatus(true);
+        // ❗️ ใช้ /orders/settings/status
+        const response = await fetch(`${API_BASE_URL}/orders/settings/status`);
+        const data = await response.json();
+        
+        if (data.success) {
+          console.log(`🔧 Maintenance Mode is: ${data.isMaintenanceMode ? 'ON' : 'OFF'}`);
+          setIsMaintenance(data.isMaintenanceMode);
+        } else {
+          console.error('Failed to fetch maintenance status, defaulting to ON');
+          setStatusError('Cannot verify store status');
+          setIsMaintenance(true);
+        }
+      } catch (err) {
+        console.error('Error fetching maintenance status:', err);
+        setStatusError('Error connecting to server');
+        setIsMaintenance(true); // ปิดร้านไว้ก่อนถ้าเช็คไม่ได้
+      } finally {
+        setLoadingStatus(false);
+      }
+    };
+    
+    checkMaintenanceStatus();
+  }, []);
 
 
   // ---------------------------------------------------------------------------------
@@ -84,13 +121,18 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
 
   // ดึงข้อมูลสินค้าจาก API
   useEffect(() => {
-  if (shouldFetch && (isInitialLoad || !products.length)) {
-    console.log('📡 Fetching products...');
-    fetchProducts();
-  } else if (savedState?.products?.length && !shouldFetch) {
-    console.log('✅ Using saved product data, no fetch needed');
-  }
-}, [shouldFetch, selectedCategory]);
+  if (shouldFetch && !isMaintenance && !loadingStatus && (isInitialLoad || !products.length)) {
+      console.log('📡 Store is ONLINE. Fetching products...');
+      fetchProducts();
+    } else if (savedState?.products?.length && !shouldFetch) {
+      console.log('✅ Using saved product data, no fetch needed');
+    } else if (isMaintenance) {
+      console.log('🛑 Store is in MAINTENANCE. Skipping product fetch.');
+      setLoading(false); // หยุด Loading
+    } else if (loadingStatus) {
+      console.log('⏳ Waiting for maintenance status check...');
+    }
+  }, [shouldFetch, selectedCategory, isMaintenance, loadingStatus]);
 
   // เพิ่มตรงนี้หลัง useState ทั้งหมด:
 useEffect(() => {
@@ -314,15 +356,57 @@ useEffect(() => {
   const categories = ['Electronics', 'Clothing', 'Books', 'Home', 'Sports', 'Beauty', 'Toys', 'Watches', 'Other'];
   const priceStats = getPriceStats();
 
-
+  if (loadingStatus) {
+  return (
+    <div style={{
+      minHeight: '100vh',
+      width: '100vw', 
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '20px',
+      background: '#f3f4f6'
+    }}>
+      <div style={{
+        width: '50px',
+        height: '50px',
+        border: '4px solid #f3f3f3',
+        borderTop: '4px solid #1e40af', 
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite'
+      }}></div>
+      <h2 style={{ color: '#1e40af', marginTop: '20px' }}>
+        {statusError ? 'Connection Error' : 'Verifying Store Status...'}
+      </h2>
+      <p style={{ color: '#6b7280' }}>
+        {statusError ? statusError : 'กำลังตรวจสอบสถานะร้านค้า...'}
+      </p>
+      {statusError && (
+        <button
+          onClick={() => window.location.reload()}
+          style={{
+            background: '#1e40af',
+            color: 'white',
+            border: 'none',
+            padding: '10px 16px',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            marginTop: '10px'
+          }}
+        >
+          Try Again
+        </button>
+      )}
+    </div>
+  );
+}
 
 
 // -------------------------------------------------------------------------------------- 
 // Maintenance Mode Check
 
-
-
-if (typeof MAINTENANCE_MODE !== 'undefined' && MAINTENANCE_MODE) {
+if (isMaintenance) {
   return (
     <div style={{
       minHeight: '100vh',
@@ -568,9 +652,6 @@ if (typeof MAINTENANCE_MODE !== 'undefined' && MAINTENANCE_MODE) {
 }
 
 // --------------------------------------------------------------------------------------
-
-
-
 
 
 

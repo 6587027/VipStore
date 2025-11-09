@@ -54,24 +54,24 @@ const UserManager = () => {
   });
 
   const { user: currentUser } = useAuth();
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [passwordModalData, setPasswordModalData] = useState({
-    requestId: null,
-    userName: '',
-    userEmail: '',
-    reason: ''
-  });
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [passwordValidation, setPasswordValidation] = useState({
-    length: false,
-    lowercase: false,
-    uppercase: false,
-    number: false,
-    special: false
-});
+  // const [showPasswordModal, setShowPasswordModal] = useState(false);
+  // const [passwordModalData, setPasswordModalData] = useState({
+  //   requestId: null,
+  //   userName: '',
+  //   userEmail: '',
+  //   reason: ''
+  // });
+//   const [newPassword, setNewPassword] = useState('');
+//   const [confirmPassword, setConfirmPassword] = useState('');
+//   const [showNewPassword, setShowNewPassword] = useState(false);
+//   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+//   const [passwordValidation, setPasswordValidation] = useState({
+//     length: false,
+//     lowercase: false,
+//     uppercase: false,
+//     number: false,
+//     special: false
+//   });
 
 useEffect(() => {
     const handleClickOutside = (event) => {
@@ -87,39 +87,40 @@ useEffect(() => {
   }, [openDropdown]);
 
 // Password Validation Function
-const validatePassword = (password) => {
-  const validation = {
-    length: password.length >= 8,
-    lowercase: /[a-z]/.test(password),
-    uppercase: /[A-Z]/.test(password),
-    number: /[0-9]/.test(password),
-    special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
-  };
-  setPasswordValidation(validation);
-  return Object.values(validation).every(v => v);
-};
+// const validatePassword = (password) => {
+//   const validation = {
+//     length: password.length >= 8,
+//     lowercase: /[a-z]/.test(password),
+//     uppercase: /[A-Z]/.test(password),
+//     number: /[0-9]/.test(password),
+//     special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
+//   };
+//   setPasswordValidation(validation);
+//   return Object.values(validation).every(v => v);
+// };
 
 // Open Password Modal
-const openPasswordModal = (request) => {
-  setPasswordModalData({
-    requestId: request.id,
-    userName: request.userName,
-    userEmail: request.userEmail,
-    reason: request.reason
-  });
-  setNewPassword('');
-  setConfirmPassword('');
-  setShowNewPassword(false);
-  setShowConfirmPassword(false);
-  setPasswordValidation({
-    length: false,
-    lowercase: false,
-    uppercase: false,
-    number: false,
-    special: false
-  });
-  setShowPasswordModal(true);
-};
+
+// const openPasswordModal = (request) => {
+//   setPasswordModalData({
+//     requestId: request.id,
+//     userName: request.userName,
+//     userEmail: request.userEmail,
+//     reason: request.reason
+//   });
+//   setNewPassword('');
+//   setConfirmPassword('');
+//   setShowNewPassword(false);
+//   setShowConfirmPassword(false);
+//   setPasswordValidation({
+//     length: false,
+//     lowercase: false,
+//     uppercase: false,
+//     number: false,
+//     special: false
+//   });
+//   setShowPasswordModal(true);
+// };
 
 
 const [createAdminPasswordValidation, setCreateAdminPasswordValidation] = useState({
@@ -249,41 +250,36 @@ const requestPasswordChange = async (userId, username) => {
   }
 };
 
-const approvePasswordRequest = async () => {
-  // Validate password
-  if (!validatePassword(newPassword)) {
-    alert('Password does not meet all requirements');
-    return;
-  }
 
-  if (newPassword !== confirmPassword) {
-    alert('Passwords do not match');
+const approvePasswordRequest = async (request) => {
+  const { id, userName } = request;
+
+  if (!window.confirm(`คุณต้องการ "อนุมัติ" ให้ ${userName} ตั้งรหัสผ่านใหม่เองใช่หรือไม่?`)) {
     return;
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/auth/approve-password-request/${passwordModalData.requestId}`, {
+    const response = await fetch(`${API_BASE_URL}/auth/approve-password-request/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
-        newPassword: newPassword,
+        // ❗️ ไม่ต้องส่ง newPassword 
         approvedBy: currentUser.id 
       })
     });
 
     const data = await response.json();
     if (data.success) {
-      alert('Password changed successfully');
-      setShowPasswordModal(false);
-      setShowPasswordRequests(false);
-      fetchPasswordRequests();
+      alert(data.message || '✅ อนุมัติคำขอเรียบร้อย');
+      fetchPasswordRequests(); 
     } else {
-      alert('Error: ' + data.message);
+      alert('❌ เกิดข้อผิดพลาด: ' + data.message);
     }
   } catch (error) {
-    alert('Error approving request');
+    alert('❌ เกิดข้อผิดพลาดในการอนุมัติ');
   }
 };
+
 
 const rejectPasswordRequest = async (requestId) => {
   const reason = prompt('เหตุผลในการปฏิเสธ:');
@@ -2038,8 +2034,9 @@ const handleDeleteUser = async (user) => {
                           {/* Approve Button */}
                           <button
                             onClick={() => {
-                              setShowPasswordRequests(false);
-                              openPasswordModal(request);
+                              // setShowPasswordRequests(false);
+                              // openPasswordModal(request);
+                              approvePasswordRequest(request);
                             }}
                             style={{
                               padding: '10px 18px',
@@ -2133,263 +2130,6 @@ const handleDeleteUser = async (user) => {
                 ))}
               </div>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* 🆕 Change Password Modal */}
-      {showPasswordModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1001,
-          padding: '20px'
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '16px',
-            padding: '24px',
-            maxWidth: '500px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflowY: 'auto'
-          }}>
-            {/* Header */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '20px',
-              paddingBottom: '16px',
-              borderBottom: '2px solid #e5e7eb'
-            }}>
-              <h3 style={{ 
-                margin: 0, 
-                fontSize: '1.5rem', 
-                fontWeight: '700',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <Lock size={24} style={{ color: '#3b82f6' }} />
-                Change Password
-              </h3>
-              <button
-                onClick={() => setShowPasswordModal(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '4px'
-                }}
-              >
-                <X size={24} style={{ color: '#6b7280' }} />
-              </button>
-            </div>
-
-            {/* User Info */}
-            <div style={{
-              background: '#f8fafc',
-              padding: '16px',
-              borderRadius: '12px',
-              marginBottom: '20px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <UserCheck size={16} style={{ color: '#3b82f6' }} />
-                <strong>User:</strong> {passwordModalData.userName}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <Mail size={16} style={{ color: '#3b82f6' }} />
-                <strong>Email:</strong> {passwordModalData.userEmail}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'start', gap: '8px' }}>
-                <AlertTriangle size={16} style={{ color: '#f59e0b', marginTop: '2px' }} />
-                <div>
-                  <strong>Reason:</strong>
-                  <div style={{ color: '#6b7280', marginTop: '4px' }}>{passwordModalData.reason}</div>
-                </div>
-              </div>
-            </div>
-
-            {/* New Password Input */}
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ 
-                marginBottom: '8px', 
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}>
-                <Lock size={16} />
-                New Password
-              </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showNewPassword ? 'text' : 'password'}
-                  value={newPassword}
-                  onChange={(e) => {
-                    setNewPassword(e.target.value);
-                    validatePassword(e.target.value);
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '12px 40px 12px 12px',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
-                    boxSizing: 'border-box'
-                  }}
-                  placeholder="Enter new password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '4px'
-                  }}
-                >
-                  {showNewPassword ? <Eye size={20} /> : <Lock size={20} />}
-                </button>
-              </div>
-            </div>
-
-            {/* Confirm Password Input */}
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ 
-                marginBottom: '8px', 
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}>
-                <CheckCircle size={16} />
-                Confirm Password
-              </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  style={{
-                    width: '100%',
-                    padding: '12px 40px 12px 12px',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
-                    boxSizing: 'border-box'
-                  }}
-                  placeholder="Confirm new password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '4px'
-                  }}
-                >
-                  {showConfirmPassword ? <Eye size={20} /> : <Lock size={20} />}
-                </button>
-              </div>
-              {confirmPassword && newPassword !== confirmPassword && (
-                <div style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '4px' }}>
-                  Passwords do not match
-                </div>
-              )}
-            </div>
-
-            {/* Password Requirements */}
-            <div style={{
-              background: '#f8fafc',
-              padding: '16px',
-              borderRadius: '12px',
-              marginBottom: '20px'
-            }}>
-              <div style={{ fontWeight: '600', marginBottom: '12px', color: '#374151' }}>
-                Password Requirements:
-              </div>
-              <div style={{ display: 'grid', gap: '8px' }}>
-                {[
-                  { key: 'length', text: 'At least 8 characters' },
-                  { key: 'lowercase', text: 'Lowercase letter (a-z)' },
-                  { key: 'uppercase', text: 'Uppercase letter (A-Z)' },
-                  { key: 'number', text: 'Number (0-9)' },
-                  { key: 'special', text: 'Special character (!@#$...)' }
-                ].map(req => (
-                  <div 
-                    key={req.key}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      color: passwordValidation[req.key] ? '#10b981' : '#6b7280'
-                    }}
-                  >
-                    {passwordValidation[req.key] ? <Check size={16} /> : <X size={16} />}
-                    {req.text}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setShowPasswordModal(false)}
-                style={{
-                  padding: '12px 20px',
-                  background: '#6b7280',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontWeight: '600'
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={approvePasswordRequest}
-                disabled={!Object.values(passwordValidation).every(v => v) || newPassword !== confirmPassword}
-                style={{
-                  padding: '12px 20px',
-                  background: Object.values(passwordValidation).every(v => v) && newPassword === confirmPassword
-                    ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                    : '#9ca3af',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: Object.values(passwordValidation).every(v => v) && newPassword === confirmPassword ? 'pointer' : 'not-allowed',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}
-              >
-                <Check size={18} />
-                Approve & Change Password
-              </button>
-            </div>
           </div>
         </div>
       )}

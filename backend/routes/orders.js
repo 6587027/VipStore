@@ -5,6 +5,12 @@ const router = express.Router();
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 
+
+if (typeof global.isMaintenanceMode === 'undefined') {
+  global.isMaintenanceMode = true; // 👈 ตั้งค่าเริ่มต้นให้ปิดร้านไว้ก่อน
+  console.log('🔧 Initializing Maintenance Mode: ON');
+}
+
 // ✅ POST /api/orders - Create new order - FIXED VERSION
 router.post('/', async (req, res) => {
   try {
@@ -1358,6 +1364,48 @@ router.get('/admin/refund-requests/stats', async (req, res) => {
       success: false,
       message: 'เกิดข้อผิดพลาดในการดึงสถิติคำขอคืนเงิน'
     });
+  }
+});
+
+
+// ----------------------------------------------------
+// 🆕 SETTINGS / MAINTENANCE MODE API
+// ----------------------------------------------------
+
+// GET /api/orders/settings/status - (Public) Get current store status
+router.get('/settings/status', (req, res) => {
+  try {
+    res.json({
+      success: true,
+      isMaintenanceMode: global.isMaintenanceMode || false
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error checking status' });
+  }
+});
+
+// PUT /api/orders/settings/maintenance - (Admin) Toggle maintenance mode
+router.put('/settings/maintenance', (req, res) => {
+  try {
+    const { isMaintenanceMode } = req.body;
+    
+    if (typeof isMaintenanceMode !== 'boolean') {
+      return res.status(400).json({ success: false, message: 'Invalid value for isMaintenanceMode' });
+    }
+
+    global.isMaintenanceMode = isMaintenanceMode;
+    
+    console.log(`🔧 Maintenance Mode ${isMaintenanceMode ? 'ENABLED' : 'DISABLED'} by Admin`);
+    
+    res.json({
+      success: true,
+      message: `Store status updated: ${isMaintenanceMode ? 'MAINTENANCE (CLOSED)' : 'ONLINE (OPEN)'}`,
+      isMaintenanceMode: global.isMaintenanceMode
+    });
+
+  } catch (error) {
+    console.error('Update maintenance mode error:', error);
+    res.status(500).json({ success: false, message: 'Failed to update status' });
   }
 });
 

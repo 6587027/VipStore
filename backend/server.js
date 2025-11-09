@@ -15,7 +15,7 @@ const PORT = process.env.PORT || 3001;
 // ✅ CORS Configuration
 const allowedOrigins = [
   'https://vipstore-sigma.vercel.app',  // Production Frontend
-  'http://localhost:3000',              // Local Development
+  // 'http://localhost:3001',              // Local Development
   'http://localhost:5173',              // Vite Dev Server
   'https://vipstorewebsite.vercel.app',  // Production Frontend
 ];

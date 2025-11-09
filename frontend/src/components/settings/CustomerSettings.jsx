@@ -87,7 +87,7 @@ const CustomerSettings = ({ isOpen, onClose }) => {
   const [refundAmount, setRefundAmount] = useState('');
   const [isSubmittingRefund, setIsSubmittingRefund] = useState(false);
 
-// 🆕 เพิ่ม States เหล่านี้ (ใส่ร่วมกับ States เดิม)
+// เพิ่ม States เหล่านี้ (ใส่ร่วมกับ States เดิม)
 const [chatConnected, setChatConnected] = useState(false);
 const [connectionStatus, setConnectionStatus] = useState('disconnected');
 const [chatMessages, setChatMessages] = useState([]);
@@ -98,6 +98,14 @@ const [unreadCount, setUnreadCount] = useState(0);
 const [lastRefresh, setLastRefresh] = useState(null);
 const messagesEndRef = useRef(null); 
 const scrollContainerRef = useRef(null);
+
+
+// ( Password Change States)
+const [newPassword, setNewPassword] = useState('');
+const [confirmPassword, setConfirmPassword] = useState('');
+const [passwordError, setPasswordError] = useState('');
+const [passwordSuccess, setPasswordSuccess] = useState('');
+const [passwordLoading, setPasswordLoading] = useState(false);
 
 
 // 🔧 เพิ่ม States สำหรับแก้ Bug
@@ -640,6 +648,53 @@ const renderMessage = (msg) => (
     </div>
   </div>
 );
+
+// (reset password handlers (user initiated))
+const handleCompletePasswordChange = async (e, approvedRequest) => {
+  e.preventDefault();
+  setPasswordError('');
+  setPasswordSuccess('');
+
+  if (newPassword.length < 6) {
+    setPasswordError('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+    return;
+  }
+  if (newPassword !== confirmPassword) {
+    setPasswordError('รหัสผ่านและการยืนยันไม่ตรงกัน');
+    return;
+  }
+
+  setPasswordLoading(true);
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/complete-password-change`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId: user.id, // หรือ user.userId, user._id
+        requestId: approvedRequest.id,
+        newPassword: newPassword,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      setPasswordSuccess('✅ เปลี่ยนรหัสผ่านสำเร็จ!');
+      setNewPassword('');
+      setConfirmPassword('');
+      // รีเฟรชประวัติเพื่อให้ฟอร์มหายไป
+      fetchPasswordHistory(); 
+    } else {
+      setPasswordError(data.message || 'เกิดข้อผิดพลาด ไม่สามารถเปลี่ยนรหัสผ่านได้');
+    }
+  } catch (err) {
+    setPasswordError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+  } finally {
+    setPasswordLoading(false);
+  }
+};
 
 
 // 🆕 New Profile Form State
@@ -2493,6 +2548,9 @@ const handleNewProfileInputChange = (e) => {
 
       // ✅ เก็บ sections อื่นๆ ไว้เดิม
       case 'profile':
+        const approvedRequest = passwordHistory.find(
+            req => req.status === 'approved_awaiting_user'
+          );
         return (
           <div style={{
             background: 'white',
@@ -2719,43 +2777,129 @@ const handleNewProfileInputChange = (e) => {
 
                     {/* Password Change Section */}
                     <div style={{
-                      background: '#fef3c7',
-                      padding: '16px',
-                      borderRadius: '12px',
-                      border: '1px solid #f59e0b'
-                    }}>
-                      <p style={{ margin: '0 0 8px', fontSize: '0.95rem', color: '#374151', fontWeight: '600' }}>
-                        <Lock size={16} className="inline-block mr-1" /> เปลี่ยนรหัสผ่าน
-                      </p>
-                      <p style={{ margin: '0 0 12px', fontSize: '0.85rem', color: '#6b7280' }}>
-                        สำหรับการเปลี่ยนรหัสผ่าน กรุณาแจ้งขอต่อ Admin เพื่อความปลอดภัย
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => setShowPasswordRequest(true)}
-                        style={{
-                          background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                          color: 'white',
-                          border: 'none',
-                          padding: '10px 16px',
-                          borderRadius: '8px',
-                          fontSize: '0.9rem',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.target.style.background = 'linear-gradient(135deg, #d97706 0%, #b45309 100%)';
-                          e.target.style.transform = 'translateY(-1px)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.target.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
-                          e.target.style.transform = 'translateY(0)';
-                        }}
-                      >
-                        <Send size={16} className="inline-block mr-1" /> ส่งคำขอเปลี่ยนรหัสผ่าน
-                      </button>
+                        background: approvedRequest ? '#dcfce7' : '#fef3c7',
+                        padding: '16px',
+                        borderRadius: '12px',
+                        border: `1px solid ${approvedRequest ? '#10b981' : '#f59e0b'}`
+                      }}>
+
+                        {/* === 1. ถ้ามีคำขอที่อนุมัติแล้ว === */}
+                        {approvedRequest ? (
+                          <form onSubmit={(e) => handleCompletePasswordChange(e, approvedRequest)}>
+                            <h4 style={{ margin: '0 0 12px', fontSize: '1.1rem', color: '#166534', fontWeight: '600' }}>
+                              <CheckCircle size={20} className="inline-block mr-1" /> คำขอของคุณได้รับการอนุมัติแล้ว
+                            </h4>
+                            <p style={{ margin: '0 0 12px', fontSize: '0.9rem', color: '#166534' }}>
+                              กรุณาตั้งรหัสผ่านใหม่ของคุณ:
+                            </p>
+
+                            {/* Alert */}
+                            {passwordError && (
+                              <div style={{ background: '#fee2e2', color: '#dc2626', padding: '10px', borderRadius: '8px', marginBottom: '10px', fontSize: '0.9rem' }}>
+                                {passwordError}
+                              </div>
+                            )}
+                            {passwordSuccess && (
+                              <div style={{ background: '#dcfce7', color: '#166534', padding: '10px', borderRadius: '8px', marginBottom: '10px', fontSize: '0.9rem' }}>
+                                {passwordSuccess}
+                              </div>
+                            )}
+
+                            {/* New Password */}
+                            <div style={{ marginBottom: '12px' }}>
+                              <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', fontSize: '0.9rem' }}>
+                                รหัสผ่านใหม่:
+                              </label>
+                              <input
+                                type="password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                required
+                                style={{
+                                  width: '100%',
+                                  padding: '10px',
+                                  border: '2px solid #e5e7eb',
+                                  borderRadius: '8px',
+                                }}
+                                placeholder="อย่างน้อย 6 ตัวอักษร"
+                              />
+                            </div>
+
+                            {/* Confirm Password */}
+                            <div style={{ marginBottom: '12px' }}>
+                              <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', fontSize: '0.9rem' }}>
+                                ยืนยันรหัสผ่านใหม่:
+                              </label>
+                              <input
+                                type="password"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                required
+                                style={{
+                                  width: '100%',
+                                  padding: '10px',
+                                  border: '2px solid #e5e7eb',
+                                  borderRadius: '8px',
+                                }}
+                                placeholder="ป้อนรหัสผ่านใหม่อีกครั้ง"
+                              />
+                            </div>
+
+                            <button
+                              type="submit"
+                              disabled={passwordLoading}
+                              style={{
+                                background: passwordLoading ? '#9ca3af' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                color: 'white',
+                                border: 'none',
+                                padding: '10px 16px',
+                                borderRadius: '8px',
+                                fontSize: '0.9rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              {passwordLoading ? '⏳ กำลังบันทึก...' : 'บันทึกรหัสผ่านใหม่'}
+                            </button>
+                          </form>
+
+                        ) : (
+
+                          /* === 2. ถ้ายังไม่มีคำขอ (ปุ่ม Request ปกติ) === */
+                          <>
+                            <p style={{ margin: '0 0 8px', fontSize: '0.95rem', color: '#374151', fontWeight: '600' }}>
+                              <Lock size={16} className="inline-block mr-1" /> เปลี่ยนรหัสผ่าน
+                            </p>
+                            <p style={{ margin: '0 0 12px', fontSize: '0.85rem', color: '#6b7280' }}>
+                              สำหรับการเปลี่ยนรหัสผ่าน กรุณาแจ้งขอต่อ Admin เพื่อความปลอดภัย
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => setShowPasswordRequest(true)}
+                              disabled={passwordHistory.some(req => req.status === 'pending')} // 👈 (เพิ่ม) ปิดปุ่มถ้ามีคำขอค้างอยู่
+                              style={{
+                                background: passwordHistory.some(req => req.status === 'pending')
+                                  ? '#9ca3af'
+                                  : 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                                color: 'white',
+                                border: 'none',
+                                padding: '10px 16px',
+                                borderRadius: '8px',
+                                fontSize: '0.9rem',
+                                fontWeight: '600',
+                                cursor: passwordHistory.some(req => req.status === 'pending') ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s ease'
+                              }}
+                            >
+                              {passwordHistory.some(req => req.status === 'pending')
+                                ? '⏳ มีคำขอค้างอยู่'
+                                : <><Send size={16} className="inline-block mr-1" /> ส่งคำขอเปลี่ยนรหัสผ่าน</>
+                              }
+                            </button>
+                          </>
+                        )}
                     </div>
+
                     {/* 📋 ประวัติคำขอเปลี่ยนรหัสผ่าน - เพิ่มส่วนนี้ */}
                     <div style={{
                       background: '#f8fafc',
@@ -2886,7 +3030,7 @@ const handleNewProfileInputChange = (e) => {
                                   </div>
                                 </div>
                                 
-                                <div>
+                               <div>
                                   {request.status === 'pending' && (
                                     <span style={{
                                       background: '#fef3c7',
@@ -2902,6 +3046,21 @@ const handleNewProfileInputChange = (e) => {
                                       ⏳ รอดำเนินการ
                                     </span>
                                   )}
+                                  {request.status === 'approved_awaiting_user' && (
+                                    <span style={{
+                                      background: '#dbeafe',
+                                      color: '#1e40af',
+                                      padding: '3px 8px',
+                                      borderRadius: '10px',
+                                      fontSize: '0.7rem',
+                                      fontWeight: '600',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '3px'
+                                    }}>
+                                      🔑 อนุมัติแล้ว (รอคุณตั้งรหัสใหม่)
+                                    </span>
+                                  )}
                                   {request.status === 'approved' && (
                                     <span style={{
                                       background: '#dcfce7',
@@ -2914,7 +3073,22 @@ const handleNewProfileInputChange = (e) => {
                                       alignItems: 'center',
                                       gap: '3px'
                                     }}>
-                                      ✅ อนุมัติแล้ว
+                                      ✅ อนุมัติแล้ว (Admin ตั้งให้)
+                                    </span>
+                                  )}
+                                  {request.status === 'completed_by_user' && (
+                                    <span style={{
+                                      background: '#dcfce7',
+                                      color: '#166534',
+                                      padding: '3px 8px',
+                                      borderRadius: '10px',
+                                      fontSize: '0.7rem',
+                                      fontWeight: '600',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '3px'
+                                    }}>
+                                      ✅ เปลี่ยนรหัสผ่านสำเร็จ
                                     </span>
                                   )}
                                   {request.status === 'rejected' && (
@@ -3066,7 +3240,7 @@ const handleNewProfileInputChange = (e) => {
                       placeholder="เช่น: ลืมรหัสผ่าน, ต้องการเปลี่ยนเพื่อความปลอดภัย, ฯลฯ"
                     />
                     
-                    <div style={{
+                    {/* <div style={{
                       marginTop: '6px',
                       fontSize: '0.9rem',
                       color: '#dc2626',
@@ -3074,7 +3248,7 @@ const handleNewProfileInputChange = (e) => {
                       fontStyle: 'italic'
                     }}>
                       (!!อย่าลืม โปรดระบุ "Password" ที่ต้องการเปลี่ยนด้วย (ห้ามต่ำกว่า 6 ตัวอักษร) เช่น "เปลี่ยนเป็น: newpassword123" หรือ "ต้องการเปลี่ยนรหัสผ่านเป็น: myNewPass456) 
-                    </div>
+                    </div> */}
                   </div>
 
                   {/* Password Request Actions */}
@@ -3116,6 +3290,8 @@ const handleNewProfileInputChange = (e) => {
             </div>
           </div>
         );
+
+
 
       // 🏠 Complete Address Management Case for CustomerSettings.jsx
 case 'addresses':
