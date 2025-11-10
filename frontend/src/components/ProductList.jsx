@@ -20,7 +20,7 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
   const [loadingPhase, setLoadingPhase] = useState('initializing');
   const [serverWakeAttempts, setServerWakeAttempts] = useState(0);
   const [showRealError, setShowRealError] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(savedState?.isInitialLoad !== undefined ? savedState.isInitialLoad : true);
   const [isHotReloading, setIsHotReloading] = useState(false);
   const [lastReloadTime, setLastReloadTime] = useState(null);
   const [reloadCount, setReloadCount] = useState(0);
@@ -48,12 +48,16 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
   // const MAINTENANCE_MODE = true;
 
   // 🆕 (1.1) เพิ่ม State เหล่านี้:
-  const [isMaintenance, setIsMaintenance] = useState(true); // 👈 เริ่มต้นเป็น true (ปิดร้าน)
-  const [loadingStatus, setLoadingStatus] = useState(true); // 👈 State สำหรับโหลด status
+  const [isMaintenance, setIsMaintenance] = useState(savedState?.isMaintenance !== undefined ? savedState.isMaintenance : true);
+  const [loadingStatus, setLoadingStatus] = useState(savedState?.loadingStatus !== undefined ? savedState.loadingStatus : true);
   const [statusError, setStatusError] = useState(null);
 
   // 🆕 (1.2) เพิ่ม useEffect นี้ (สำหรับ Fetch สถานะ Maintenance):
   useEffect(() => {
+    if (!loadingStatus) {
+      console.log('✅ Skipping maintenance check, using saved state.');
+      return;
+    }
     const checkMaintenanceStatus = async () => {
       try {
         console.log('📡 Checking store maintenance status...');
@@ -109,7 +113,7 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
       // เรียก fetchProducts เพื่อโหลดข้อมูลใหม่
       fetchProducts();
 
-    }, 30000); // 1,000 ms = 1 วินาที 
+    }, 5000); // 1,000 ms = 1 วินาที 
 
     // Cleanup function: เคลียร์ interval เมื่อ component ถูก unmount
     return () => {
@@ -149,10 +153,18 @@ useEffect(() => {
       loadingPhase,
       serverWakeAttempts,
       showRealError,
-      isInitialLoad
+      isInitialLoad,
+      isMaintenance,  
+      loadingStatus
+
     });
   }
-}, [products, loading, selectedCategory, searchTerm, filteredProducts, priceRange, sortOption]);
+}, [
+    products, loading, selectedCategory, searchTerm, filteredProducts, 
+    priceRange, sortOption, retryCount, loadingPhase, serverWakeAttempts, 
+    showRealError, isInitialLoad, 
+    isMaintenance, loadingStatus
+]);
 
 
   // ✅ Enhanced Filter Effect

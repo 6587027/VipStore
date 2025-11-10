@@ -1,5 +1,5 @@
 // frontend/src/App.jsx 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react'; // ✅ 1. เพิ่ม useCallback
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import Header from './components/Header';
@@ -90,7 +90,8 @@ function AppContent() {
   };
 
   // 🎯 FIXED: Enhanced Back from Product Handler - NO RELOAD
-  const handleBackFromProduct = () => {
+  // ✅ 2. หุ้ม handleBackFromProduct ด้วย useCallback
+  const handleBackFromProduct = useCallback(() => {
     console.log('⬅️ App.jsx - handleBackFromProduct called - PRESERVING STATE');
     
     // ✅ Return to home WITHOUT resetting ProductList state
@@ -114,7 +115,7 @@ function AppContent() {
         });
       }
     }, 100);
-  };
+  }, [productListState.scrollPosition]); // ✅ ใส่ dependency ที่จำเป็น
 
   // Product Back Button Handler (from Header)
   const handleProductBackClick = () => {
@@ -183,6 +184,13 @@ function AppContent() {
     setShowProfile(false);
   };
 
+  // ✅ 3. สร้างฟังก์ชัน onShowBackButton ที่เสถียร (Stable)
+  const onShowBackButton = useCallback((show, handler) => {
+    // console.log('📤 App.jsx - onShowBackButton:', { show, handler: !!handler });
+    setShowProductBackButton(show);
+    setProductBackHandler(() => handler);
+  }, []); // ✅ ใส่ [] เพื่อให้ฟังก์ชันนี้ถูกสร้างแค่ครั้งเดียว
+
   return (
     <div className="App">
       {/* Welcome Animation */}
@@ -225,14 +233,10 @@ function AppContent() {
           {currentView === 'product' && selectedProductId && (
             <ProductPreview 
               productId={selectedProductId}
-              onBack={handleBackFromProduct}
+              onBack={handleBackFromProduct} // ✅ ใช้ฟังก์ชันจาก useCallback
               
               // Back Button ใน Header
-              onShowBackButton={(show, handler) => {
-                // console.log('📤 App.jsx - onShowBackButton:', { show, handler: !!handler });
-                setShowProductBackButton(show);
-                setProductBackHandler(() => handler);
-              }}
+              onShowBackButton={onShowBackButton} // ✅ 4. ใช้ฟังก์ชันใหม่จาก useCallback
             />
           )}
           

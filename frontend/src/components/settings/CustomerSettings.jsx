@@ -2790,7 +2790,7 @@ const handleNewProfileInputChange = (e) => {
 
                         {/* === 1. ถ้ามีคำขอที่อนุมัติแล้ว === */}
                         {approvedRequest ? (
-                          <form onSubmit={(e) => handleCompletePasswordChange(e, approvedRequest)}>
+                          <div>
                             <h4 style={{ margin: '0 0 12px', fontSize: '1.1rem', color: '#166534', fontWeight: '600' }}>
                               <CheckCircle size={20} className="inline-block mr-1" /> คำขอของคุณได้รับการอนุมัติแล้ว
                             </h4>
@@ -2810,12 +2810,11 @@ const handleNewProfileInputChange = (e) => {
                               </div>
                             )}
 
-                            {/* New Password */}
+                            {/* New Password (...โค้ดส่วนนี้เหมือนเดิม...) */}
                             <div style={{ marginBottom: '12px' }}>
                               <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', fontSize: '0.9rem' }}>
                                 รหัสผ่านใหม่:
                               </label>
-                              {/* 👇 (1) เพิ่ม div หุ้ม */}
                               <div style={{ position: 'relative' }}>
                                 <input
                                   type={showNewPassword ? 'text' : 'password'} 
@@ -2831,7 +2830,6 @@ const handleNewProfileInputChange = (e) => {
                                   }}
                                   placeholder="อย่างน้อย 6 ตัวอักษร"
                                 />
-                                {/* 👇 (5) เพิ่มปุ่ม Toggle */}
                                 <button
                                   type="button"
                                   onClick={() => setShowNewPassword(!showNewPassword)}
@@ -2851,12 +2849,11 @@ const handleNewProfileInputChange = (e) => {
                               </div>
                             </div>
 
-                            {/* Confirm Password */}
+                            {/* Confirm Password (...โค้ดส่วนนี้เหมือนเดิม...) */}
                             <div style={{ marginBottom: '12px' }}>
                               <label style={{ display: 'block', marginBottom: '4px', fontWeight: '600', fontSize: '0.9rem' }}>
                                 ยืนยันรหัสผ่านใหม่:
                               </label>
-                              {/* 👇 (1) เพิ่ม div หุ้ม */}
                               <div style={{ position: 'relative' }}>
                                 <input
                                   type={showConfirmPassword ? 'text' : 'password'} 
@@ -2872,7 +2869,6 @@ const handleNewProfileInputChange = (e) => {
                                   }}
                                   placeholder="ป้อนรหัสผ่านใหม่อีกครั้ง"
                                 />
-                                {/* 👇 (5) เพิ่มปุ่ม Toggle */}
                                 <button
                                   type="button"
                                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
@@ -2892,8 +2888,11 @@ const handleNewProfileInputChange = (e) => {
                               </div>
                             </div>
 
+                            {/* ❌ BUG: <button type="submit" ...> */}
+                            {/* ✅ FIX: <button type="button" onClick={...}> (บรรทัดที่ 2454) */}
                             <button
-                              type="submit"
+                              type="button"
+                              onClick={(e) => handleCompletePasswordChange(e, approvedRequest)}
                               disabled={passwordLoading}
                               style={{
                                 background: passwordLoading ? '#9ca3af' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
@@ -2908,7 +2907,9 @@ const handleNewProfileInputChange = (e) => {
                             >
                               {passwordLoading ? '⏳ กำลังบันทึก...' : 'บันทึกรหัสผ่านใหม่'}
                             </button>
-                          </form>
+                          {/* ❌ BUG: </form> */}
+                          {/* ✅ FIX: </div> (บรรทัดที่ 2468) */}
+                          </div>
 
                         ) : (
 
@@ -5262,7 +5263,6 @@ case 'payment':
       borderRadius: '0', 
       boxShadow: 'none',
       overflow: 'hidden', 
-      height: '100%'
     }}>
       {/* Header */}
 <div style={{
