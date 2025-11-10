@@ -48,7 +48,7 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
   // const MAINTENANCE_MODE = true;
 
   // 🆕 (1.1) เพิ่ม State เหล่านี้:
-  const [isMaintenance, setIsMaintenance] = useState(savedState?.isMaintenance !== undefined ? savedState.isMaintenance : true);
+  const [isMaintenance, setIsMaintenance] = useState(savedState?.isMaintenance !== undefined ? savedState.isMaintenance : false);
   const [loadingStatus, setLoadingStatus] = useState(savedState?.loadingStatus !== undefined ? savedState.loadingStatus : true);
   const [statusError, setStatusError] = useState(null);
 
@@ -77,7 +77,7 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
       } catch (err) {
         console.error('Error fetching maintenance status:', err);
         setStatusError('Error connecting to server');
-        setIsMaintenance(true); // ปิดร้านไว้ก่อนถ้าเช็คไม่ได้
+        setIsMaintenance(false);
       } finally {
         setLoadingStatus(false);
       }
