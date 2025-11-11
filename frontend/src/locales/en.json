@@ -2,8 +2,8 @@
   "translation": {
     "maintenanceTitle": "Store Closed for Maintenance",
     "maintenanceMessage": "Updating the system for a better experience<br/>Thank you for your patience - we'll be back soon",
-
-   "updatesTitle": "Updates",
+    "updatesTitle": "Updates",
+    
     "update1": "Fixed system errors and improved usability.",
     "update2": "Adjusted display of the chat window header bar.",
     "update3": "Fixed minor bugs in the settings page.",

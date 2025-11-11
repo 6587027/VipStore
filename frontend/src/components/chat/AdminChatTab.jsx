@@ -1,9 +1,9 @@
-// AdminChatTab.jsx - Complete Updated Version with Real-time & New Design
+// AdminChatTab.jsx - src/components/chat/AdminChatTab.jsx
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { socketManager, chatSocket, socketUtils } from '../../services/socketClient';
-import './AdminChatTab.css';
+import './AdminChatTab.css'; 
 
 // Lucide Icons
 import { 
@@ -54,6 +54,26 @@ const AdminChatTab = () => {
   };
 
   useEffect(scrollToBottom, [chatMessages]);
+
+  // [🌟 JAVIS NOTE: This is the Sync Effect we added]
+  // This useEffect synchronizes the displayed messages with the global map
+  // whenever the selected room or the global map itself changes.
+  useEffect(() => {
+    if (selectedChatRoom) {
+      // 1. ดึงข้อความล่าสุดจาก "Source of Truth"
+      const messages = allRoomMessages.get(selectedChatRoom._id) || [];
+      
+      // 2. อัปเดต State ที่ใช้แสดงผล
+      setChatMessages(messages);
+      
+      console.log(`🔄 Synced messages for room ${selectedChatRoom._id}, found ${messages.length}`);
+      
+      // 3. เลื่อนลงล่างสุด (เพราะอาจมีข้อความใหม่)
+      setTimeout(() => scrollToBottom(), 100); 
+    } else {
+      setChatMessages([]); // ถ้าไม่ได้เลือกห้อง ก็เคลียร์แชท
+    }
+  }, [selectedChatRoom, allRoomMessages]); // 👈 ให้มันทำงานเมื่อ 2 ค่านี้เปลี่ยน
 
   // Request notification permission on mount
   useEffect(() => {
@@ -208,38 +228,44 @@ const AdminChatTab = () => {
         return newMap;
       });
 
-      // Update current chat window if selected
-      if (selectedChatRoom && messageData.chatRoomId === selectedChatRoom._id) {
-        setChatMessages(prev => {
-          const isDuplicate = prev.some(msg => 
-            msg.id === newMessage.id || 
-            (msg.message === newMessage.message && 
-             msg.senderType === newMessage.senderType &&
-             Math.abs(new Date(msg.timestamp) - new Date(newMessage.timestamp)) < 1000)
-          );
-          
-          if (!isDuplicate) {
-            console.log('🔥 Adding message to current chat window');
-            setTimeout(() => scrollToBottom(), 100);
-            return [...prev, newMessage];
-          }
-          return prev;
-        });
-      }
+      // [ ❌ JAVIS NOTE: We removed the old logic here to rely on the useEffect Sync ❌ ]
+      // // Update current chat window if selected
+      // if (selectedChatRoom && messageData.chatRoomId === selectedChatRoom._id) {
+      //   ... (old code deleted) ...
+      // }
 
+      // [🌟 JAVIS NOTE: This is the "Bouncing Chat" fix we added 🌟]
       // Update chat rooms list
-      setActiveChatRooms(prev => prev.map(room => {
-        if (room._id === messageData.chatRoomId) {
-          return { 
-            ...room, 
+      setActiveChatRooms(prev => {
+        // 1. หา Room ที่มีข้อความใหม่เข้ามา
+        const roomToUpdate = prev.find(room => room._id === messageData.chatRoomId);
+        
+        // 2. กรอง Room นั้นออกจาก List เดิม (สร้าง Array ใหม่ที่ไม่มี Room นั้น)
+        const otherRooms = prev.filter(room => room._id !== messageData.chatRoomId);
+
+        // 3. ถ้าเจอ Room ที่ว่า
+        if (roomToUpdate) {
+          // 4. สร้าง Room ที่อัปเดตข้อมูลล่าสุดแล้ว
+          const updatedRoom = { 
+            ...roomToUpdate, 
             lastMessage: messageData.message,
             lastMessageTime: new Date(messageData.createdAt || Date.now()),
-            unreadCount: messageData.senderType === 'customer' ? 
-              (room.unreadCount || 0) + 1 : room.unreadCount
+            
+            // ✨ [BONUS] พี่ปรับ logic unreadCount ให้นิดหน่อยครับ
+            // จะนับ unread (เด้ง Badge) ก็ต่อเมื่อ:
+            // 1. เป็นข้อความจากลูกค้า
+            // 2. Admin *ไม่ได้* กำลังเปิดแชทนั้นค้างไว้
+            unreadCount: (messageData.senderType === 'customer' && selectedChatRoom?._id !== messageData.chatRoomId) ? 
+              (roomToUpdate.unreadCount || 0) + 1 : roomToUpdate.unreadCount
           };
+
+          // 5. คืนค่า Array ใหม่ โดยเอา Room ที่เพิ่งอัปเดตมาไว้บนสุด
+          return [updatedRoom, ...otherRooms];
         }
-        return room;
-      }));
+        
+        // 6. ถ้าไม่เจอ (ซึ่งไม่น่าเกิด) ก็คืนค่าเดิมไปก่อน
+        return prev;
+      });
 
       // Play notification if customer message
       if (messageData.senderType === 'customer') {
@@ -291,9 +317,10 @@ const AdminChatTab = () => {
           });
         }
         
-        setChatMessages(messages);
-        console.log(`✅ Loaded ${messages.length} room messages`);
-        setTimeout(() => scrollToBottom(), 100);
+        // [ ❌ JAVIS NOTE: We let the useEffect Sync handle this now ❌ ]
+        // setChatMessages(messages); 
+        console.log(`✅ Loaded ${messages.length} room messages into Global Map`);
+        // setTimeout(() => scrollToBottom(), 100);
       }
     });
 
@@ -350,9 +377,10 @@ const AdminChatTab = () => {
     
     setSelectedChatRoom(chatRoom);
     
-    // Use existing messages from global map
-    const existingMessages = allRoomMessages.get(chatRoom._id) || [];
-    setChatMessages(existingMessages);
+    // [ ❌ JAVIS NOTE: We let the useEffect Sync handle this now ❌ ]
+    // // Use existing messages from global map
+    // const existingMessages = allRoomMessages.get(chatRoom._id) || [];
+    // setChatMessages(existingMessages);
     
     // Join the specific chat room
     if (connected) {
@@ -368,7 +396,7 @@ const AdminChatTab = () => {
     ));
     
     console.log(`✅ Selected chat room: ${chatRoom.customerName}`);
-    setTimeout(() => scrollToBottom(), 100);
+    // setTimeout(() => scrollToBottom(), 100); // <-- useEffect Sync handles scrolling now
   };
 
   const handleSendMessage = () => {
@@ -393,8 +421,9 @@ const AdminChatTab = () => {
       chatRoomId: selectedChatRoom._id
     };
     
-    // Update UI immediately
-    setChatMessages(prev => [...prev, adminMessage]);
+    // [ ❌ JAVIS NOTE: We let the useEffect Sync handle this now ❌ ]
+    // // Update UI immediately
+    // setChatMessages(prev => [...prev, adminMessage]);
     
     // Update global messages map
     setAllRoomMessages(prev => {
@@ -412,13 +441,14 @@ const AdminChatTab = () => {
     
     if (success) {
       setTimeout(() => {
-        setChatMessages(prev => 
-          prev.map(msg => 
-            msg.id === messageId 
-              ? { ...msg, sending: false, sent: true }
-              : msg
-          )
-        );
+        // [ ❌ JAVIS NOTE: We let the useEffect Sync handle this now ❌ ]
+        // setChatMessages(prev => 
+        //   prev.map(msg => 
+        //     msg.id === messageId 
+        //       ? { ...msg, sending: false, sent: true }
+        //       : msg
+        //   )
+        // );
         
         // Update global map
         setAllRoomMessages(prev => {
@@ -437,7 +467,17 @@ const AdminChatTab = () => {
       console.log('✅ Admin message sent successfully');
     } else {
       console.error('❌ Failed to send admin message');
-      setChatMessages(prev => prev.filter(msg => msg.id !== messageId));
+      // [ ❌ JAVIS NOTE: We let the useEffect Sync handle this now ❌ ]
+      // setChatMessages(prev => prev.filter(msg => msg.id !== messageId));
+      
+      // Remove failed message from global map
+      setAllRoomMessages(prev => {
+          const newMap = new Map(prev);
+          const roomId = selectedChatRoom._id;
+          const messages = newMap.get(roomId) || [];
+          newMap.set(roomId, messages.filter(msg => msg.id !== messageId));
+          return newMap;
+      });
       setNewMessage(messageText);
     }
   };
@@ -480,10 +520,10 @@ const AdminChatTab = () => {
   };
 
   const getUnreadCount = (roomId) => {
-    const roomMessages = allRoomMessages.get(roomId) || [];
-    return roomMessages.filter(msg => 
-      msg.senderType === 'customer' && !msg.isRead
-    ).length;
+    // This function can be simplified or removed if we fully trust the room.unreadCount
+    // But it's good for a double-check
+    const room = activeChatRooms.find(r => r._id === roomId);
+    return room?.unreadCount || 0;
   };
 
   // Notification functions
@@ -520,7 +560,7 @@ const AdminChatTab = () => {
 
   return (
     <div className="admin-chat-container">
-      {/* Header */}
+      {/* Header - [🌟 ADJUSTED] ย้ายปุ่ม Control มาไว้ที่นี่ */}
       <div className="chat-header-improved">
         <div className="header-left">
           <div className="header-title">
@@ -539,68 +579,7 @@ const AdminChatTab = () => {
           )}
         </div>
         
-        {/* Stats Cards */}
-        <div className="stats-grid">
-          <div className="stat-card stat-total">
-            <div className="stat-icon">
-              <MessageSquare size={24} />
-            </div>
-            <div className="stat-content">
-              <div className="stat-number">{chatStats.total}</div>
-              <div className="stat-label">ทั้งหมด</div>
-            </div>
-          </div>
-          
-          <div className="stat-card stat-active">
-            <div className="stat-icon">
-              <Circle size={24} />
-            </div>
-            <div className="stat-content">
-              <div className="stat-number">{chatStats.active}</div>
-              <div className="stat-label">กำลังแชท</div>
-            </div>
-          </div>
-          
-          <div className="stat-card stat-waiting">
-            <div className="stat-icon">
-              <Clock size={24} />
-            </div>
-            <div className="stat-content">
-              <div className="stat-number">{chatStats.waiting}</div>
-              <div className="stat-label">รอตอบ</div>
-            </div>
-          </div>
-          
-          <div className="stat-card stat-resolved">
-            <div className="stat-icon">
-              <CheckCircle size={24} />
-            </div>
-            <div className="stat-content">
-              <div className="stat-number">{chatStats.resolved}</div>
-              <div className="stat-label">เสร็จสิ้น</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Control Panel */}
-      <div className="control-panel-improved">
-        <div className="control-left">
-          <div className={`admin-status ${isOnline ? 'online' : 'offline'}`}>
-            {isOnline ? <Wifi size={16} /> : <WifiOff size={16} />}
-            <span className="status-text">
-              Admin {isOnline ? 'Online' : 'Offline'}
-            </span>
-          </div>
-
-          {lastRefresh && (
-            <div className="last-refresh">
-              <Clock size={14} />
-              รีเฟรชล่าสุด: {lastRefresh.toLocaleTimeString('th-TH')}
-            </div>
-          )}
-        </div>
-
+        {/* [🌟 MOVED] ย้ายปุ่ม Control มาไว้ที่นี่ */}
         <div className="control-buttons">
           <button
             onClick={manualRefreshChatRooms}
@@ -650,10 +629,63 @@ const AdminChatTab = () => {
         </div>
       </div>
 
+      {/* Stats Cards - [🌟 MOVED] ย้าย Stats Grid ออกมาเป็น Section ของตัวเอง */}
+      <div className="stats-grid-container">
+        <div className="stats-grid">
+          <div className="stat-card stat-total">
+            <div className="stat-icon">
+              <MessageSquare size={24} />
+            </div>
+            <div className="stat-content">
+              <div className="stat-number">{chatStats.total}</div>
+              <div className="stat-label">ทั้งหมด</div>
+            </div>
+          </div>
+          
+          <div className="stat-card stat-active">
+            <div className="stat-icon">
+              <Circle size={24} />
+            </div>
+            <div className="stat-content">
+              <div className="stat-number">{chatStats.active}</div>
+              <div className="stat-label">กำลังแชท</div>
+            </div>
+          </div>
+          
+          <div className="stat-card stat-waiting">
+            <div className="stat-icon">
+              <Clock size={24} />
+            </div>
+            <div className="stat-content">
+              <div className="stat-number">{chatStats.waiting}</div>
+              <div className="stat-label">รอตอบ</div>
+            </div>
+          </div>
+          
+          <div className="stat-card stat-resolved">
+            <div className="stat-icon">
+              <CheckCircle size={24} />
+            </div>
+            <div className="stat-content">
+              <div className="stat-number">{chatStats.resolved}</div>
+              <div className="stat-label">เสร็จสิ้น</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      {/* [ ❌ DELETED] ลบ Control Panel ของเดิมทิ้งไป ❌ ] */}
+      {/* <div className="control-panel-improved">
+        ... (old code deleted) ...
+      </div>
+      */}
+
       {/* Chat Content */}
       <div className="chat-content-improved">
         {/* Chat List */}
         <div className="chat-list-improved">
+          {/* [🌟 ADJUSTED] Header ของ Chat List */}
           <div className="chat-list-header-improved">
             <div className="header-content">
               <h3>
@@ -661,6 +693,21 @@ const AdminChatTab = () => {
                 Active Chats
               </h3>
               <span className="chat-count-badge">{activeChatRooms.length}</span>
+            </div>
+            {/* [🌟 MOVED] ย้าย Admin Status และ Last Refresh มาไว้ที่นี่ */}
+            <div className="header-status-controls">
+              {lastRefresh && (
+                <div className="last-refresh">
+                  <Clock size={14} />
+                  รีเฟรชล่าสุด: {lastRefresh.toLocaleTimeString('th-TH')}
+                </div>
+              )}
+              <div className={`admin-status ${isOnline ? 'online' : 'offline'}`}>
+                {isOnline ? <Wifi size={16} /> : <WifiOff size={16} />}
+                <span className="status-text">
+                  {isOnline ? 'Online' : 'Offline'}
+                </span>
+              </div>
             </div>
           </div>
           
@@ -682,7 +729,8 @@ const AdminChatTab = () => {
             )}
 
             {activeChatRooms.map(chatRoom => {
-              const unreadCount = getUnreadCount(chatRoom._id) || chatRoom.unreadCount || 0;
+              // [🌟 JAVIS NOTE: ใช้ unreadCount จาก state โดยตรง]
+              const unreadCount = chatRoom.unreadCount || 0;
               
               return (
                 <div 
@@ -738,18 +786,19 @@ const AdminChatTab = () => {
         <div className="chat-window-improved">
           {selectedChatRoom ? (
             <div className="selected-chat-improved">
-              {/* Chat Header */}
+              {/* [🌟 ADJUSTED] Chat Header ของ Chat Window (CSS จะปรับสี) */}
               <div className="chat-window-header-improved">
                 <div className="selected-customer">
+                  {/* [🌟 THEME FIX] CSS จะเปลี่ยนสี Avatar นี้ */}
                   <div className="customer-avatar-large">
                     {selectedChatRoom.customerName?.charAt(0)?.toUpperCase() || '?'}
                   </div>
+                  {/* [🌟 THEME FIX] CSS จะลบพื้นหลัง/ขอบ ของ customer-info */}
                   <div className="customer-info">
                     <h4>{selectedChatRoom.customerName || 'ลูกค้า'}</h4>
                     <p>{selectedChatRoom.customerEmail || 'ไม่ระบุอีเมล'}</p>
                   </div>
                 </div>
-                    
               </div>
               
               {/* Messages Area */}

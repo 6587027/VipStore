@@ -9,7 +9,7 @@ const SOCKET_URL = 'https://vipstore-backend.onrender.com';
 // const SOCKET_URL = API_BASE_URL.replace('/api', ''); // Remove /api for socket connection
 
 // const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
-// const SOCKET_URL = 'http://localhost:3001'; // ✅ Socket server URL
+// const SOCKET_URL = 'http://localhost:3001';
 
 
 // console.log('🔌 Socket connecting to:', SOCKET_URL);

@@ -1,4 +1,4 @@
-/* src/components/chat/AdminChatTab.css */
+/* src/components/chat/AdminChatTab.css - [🌟 JAVIS REDESIGN 🌟] */
 
 
 /* ===== GLOBAL CHAT CONTAINER ===== */
@@ -14,12 +14,14 @@
   background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
   border-radius: 15px;
   padding: 30px;
-  margin-bottom: 30px;
+  /* [🌟 ADJUSTED] ปรับ margin-bottom */
+  margin-bottom: 20px; 
   box-shadow: 0 10px 30px rgba(30, 64, 175, 0.3);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 24px;
+  /* [🌟 ADJUSTED] ปรับ gap */
+  gap: 24px; 
 }
 
 .header-left {
@@ -68,11 +70,17 @@
 }
 
 /* ===== STATS GRID (Match Admin Panel) ===== */
+
+/* [🌟 ADDED] เพิ่ม Container สำหรับ Stats Grid */
+.stats-grid-container {
+  margin-bottom: 20px;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  min-width: 420px;
+  /* [🌟 REMOVED] ลบ min-width ออก */
 }
 
 .stat-card {
@@ -191,34 +199,20 @@
   letter-spacing: 0.5px;
 }
 
-/* ===== CONTROL PANEL (Match Admin Panel) ===== */
-.control-panel-improved {
-  background: white;
-  border-radius: 12px;
-  padding: 16px 24px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  border: 2px solid #e2e8f0;
-}
+/* [ ❌ DELETED ❌ ] */
+/* ลบ .control-panel-improved, .control-left ทั้งหมดทิ้งไป */
+/* .control-panel-improved { ... } */
+/* .control-left { ... } */
 
-.control-left {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
+/* [🌟 ADJUSTED] ย้าย .admin-status มาอยู่ใน .chat-list-header-improved */
 .admin-status {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 16px;
+  padding: 8px 12px; /* [🌟 ADJUSTED] ปรับ Padding */
   border-radius: 10px;
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.85rem; /* [🌟 ADJUSTED] ปรับ Font Size */
   transition: all 0.3s ease;
 }
 
@@ -256,6 +250,7 @@
   background: #94a3b8;
 }
 
+/* [🌟 ADJUSTED] ย้าย .last-refresh มาอยู่ใน .chat-list-header-improved */
 .last-refresh {
   font-size: 0.8rem;
   color: #64748b;
@@ -268,9 +263,11 @@
   gap: 6px;
 }
 
+/* [🌟 ADJUSTED] .control-buttons ตอนนี้อยู่ใน .chat-header-improved */
 .control-buttons {
   display: flex;
   gap: 12px;
+  flex-shrink: 0; /* [🌟 ADDED] ป้องกันปุ่มหด */
 }
 
 .control-btn {
@@ -358,10 +355,15 @@
   border: 2px solid #e2e8f0;
 }
 
+/* [🌟 ADJUSTED] ปรับ Header ของ Chat List */
 .chat-list-header-improved {
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
-  color: white;
+  background: #ffffff; /* [🌟 NEW] เปลี่ยนเป็นสีขาว */
+  color: #1e293b; /* [🌟 NEW] เปลี่ยนสีตัวอักษรหลัก */
   padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 2px solid #e2e8f0; /* [🌟 NEW] เพิ่มเส้นขอบ */
 }
 
 .header-content {
@@ -377,16 +379,45 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  color: #1e40af; /* [🌟 NEW] เปลี่ยนสี Title เป็นสีน้ำเงิน */
 }
 
 .chat-count-badge {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
+  background: rgba(59, 130, 246, 0.1); /* [🌟 NEW] พื้นหลังฟ้าอ่อน */
+  color: #3b82f6; /* [🌟 NEW] ตัวอักษรสีน้ำเงิน */
   padding: 6px 12px;
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(59, 130, 246, 0.2); /* [🌟 NEW] ขอบฟ้าอ่อน */
+}
+
+/* [🌟 ADJUSTED] ปรับ Status Control บนพื้นหลังสีขาว */
+.header-status-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: #f8fafc; /* [🌟 NEW] พื้นหลังสีเทาอ่อน */
+  padding: 8px;
+  border-radius: 12px;
+}
+
+/* [🌟 ADJUSTED] คืนค่าสีเดิมให้ Last Refresh */
+.header-status-controls .last-refresh {
+  font-size: 0.8rem;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 6px 12px;
+  border-radius: 15px;
+  border: 1px solid #e2e8f0;
+}
+
+/* [🌟 ADJUSTED] คืนค่าสีเดิมให้ Admin Offline */
+.header-status-controls .admin-status.offline {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #64748b;
+  border: 2px solid #cbd5e1;
 }
 
 .chat-items-improved {
@@ -574,12 +605,13 @@
 }
 
 .chat-window-header-improved {
-  background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+  background: #ffffff; /* [🌟 NEW] เปลี่ยนเป็นสีขาว */
   padding: 20px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); /* [🌟 ADJUSTED] ปรับ Shadow */
+  border-bottom: 2px solid #e2e8f0; /* [🌟 NEW] เพิ่มเส้นขอบ */
 }
 
 .selected-customer {
@@ -588,39 +620,38 @@
   gap: 16px;
 }
 
+/* [🌟 THEME FIX 🎨] เปลี่ยนสี Avatar ลูกค้า */
 .customer-avatar-large {
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%); /* [🌟 REVERTED] กลับเป็นสีเขียว */
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-weight: 700;
   font-size: 1.2rem;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4); /* [🌟 REVERTED] กลับเป็น Shadow เขียว */
   border: 3px solid white;
 }
 
+/* [🌟 BUG FIX 🎨] แก้ Bug สีตัวหนังสือ (บนพื้นหลังขาว) */
 .customer-info {
-  background: white;
-  border-radius: 12px;
-  padding: 8px 20px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  /* ลบ background: white; และ border ทั้งหมด (เหมือนเดิม) */
 }
 
 .customer-info h4 {
   margin: 0 0 4px;
   font-size: 1.1rem;
   font-weight: 700;
-  color: #1e40af;
+  color: #1e40af; /* [🌟 BUG FIX] เปลี่ยนเป็นสีน้ำเงิน */
 }
 
 .customer-info p {
   margin: 0;
   font-size: 0.85rem;
-  color: #64748b;
+  color: #64748b; /* [🌟 BUG FIX] เปลี่ยนเป็นสีเทา */
 }
 
 .chat-actions {
@@ -1031,7 +1062,6 @@ text-align: center;
   
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
-    min-width: 300px;
   }
 }
 
@@ -1085,18 +1115,9 @@ text-align: center;
     height: 500px;
   }
   
-  .control-panel-improved {
-    flex-direction: column;
-    gap: 16px;
-    align-items: stretch;
-    padding: 16px;
-  }
-  
-  .control-left {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
+  /* [ ❌ DELETED ❌ ] */
+  /* .control-panel-improved { ... } */
+  /* .control-left { ... } */
   
   .control-buttons {
     justify-content: center;
@@ -1139,10 +1160,6 @@ text-align: center;
   .chat-window-header-improved {
     padding: 16px;
     flex-wrap: wrap;
-  }
-  
-  .customer-info {
-    padding: 6px 16px;
   }
   
   .customer-info h4 {
@@ -1282,9 +1299,10 @@ text-align: center;
 
 /* ===== PRINT STYLES ===== */
 @media print {
-  .control-panel-improved,
+  .control-buttons, /* [🌟 ADJUSTED] */
   .chat-input-improved,
-  .action-btn {
+  .action-btn,
+  .header-status-controls { /* [🌟 ADDED] */
     display: none;
   }
   
@@ -1333,4 +1351,3 @@ text-align: center;
     transition-duration: 0.01ms !important;
   }
 }
-

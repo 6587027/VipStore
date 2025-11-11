@@ -113,54 +113,47 @@ const AdminDashboard = () => {
       <div className="container">
         {/* Admin Header */}
         {/* <div className="admin-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <UserRoundCheck size={28} className="header-icon" />
-            <h1>Admin Panel</h1>
-          </div>
-          <div className="admin-user-info">
-            <span>Welcome back <strong>{user.name}</strong></span>
-            <span className="admin-time">{new Date().toLocaleDateString()}</span>
-          </div>
+          ... (omitted for brevity) ...
         </div> */}
 
-        {/* Admin Navigation */}
+        {/* Admin Navigation - [🌟 JAVIS FIX: Wrapped all text in <span> 🌟] */}
         <div className="admin-nav">
           <button 
             className={`admin-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
             onClick={() => setActiveTab('dashboard')}
           >
-             <LayoutDashboard size={13} /> Dashboard
+             <LayoutDashboard size={13} /> <span>Dashboard</span>
           </button>
           <button 
             className={`admin-tab ${activeTab === 'products' ? 'active' : ''}`}
             onClick={() => setActiveTab('products')}
           >
-            <Package size={13} /> Products
+            <Package size={13} /> <span>Products</span>
           </button>
           <button 
             className={`admin-tab ${activeTab === 'orders' ? 'active' : ''}`}
             onClick={() => setActiveTab('orders')}
           >
-            <ShoppingCart size={13} /> Orders
+            <ShoppingCart size={13} /> <span>Orders</span>
           </button>
           <button 
             className={`admin-tab ${activeTab === 'users' ? 'active' : ''}`}
             onClick={() => setActiveTab('users')}
           >
-            <User size={13} /> Users
+            <User size={13} /> <span>Users</span>
           </button>
           <button 
             className={`admin-tab ${activeTab === 'reports' ? 'active' : ''}`}
             onClick={() => setActiveTab('reports')}
           >
-            <ChartNoAxesCombined size={13} /> Reports
+            <ChartNoAxesCombined size={13} /> <span>Reports</span>
           </button>
       <button 
         className={`admin-tab ${activeTab === 'chat' ? 'active' : ''}`}
         onClick={() => setActiveTab('chat')}
         style={{ position: 'relative' }}
       >
-        <MessageCircleMore size={13} /> Live Chat
+        <MessageCircleMore size={13} /> <span>Live Chat</span>
         {/* Real-time notification badge */}
         <span style={{
           position: 'absolute',
@@ -285,11 +278,10 @@ const AdminDashboard = () => {
 export default AdminDashboard;
 
 
-// (ดึง API_BASE_URL มาใช้ - ถ้าไม่มี ให้ import)
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com/api';
 
 const StoreStatusToggle = () => {
-  const [isMaintenance, setIsMaintenance] = useState(true);
+  const [isMaintenance, setIsMaintenance] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
