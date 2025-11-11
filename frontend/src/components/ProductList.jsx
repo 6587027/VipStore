@@ -72,7 +72,7 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
         } else {
           console.error('Failed to fetch maintenance status, defaulting to ON');
           setStatusError('Cannot verify store status');
-          setIsMaintenance(true);
+          setIsMaintenance(false);
         }
       } catch (err) {
         console.error('Error fetching maintenance status:', err);
