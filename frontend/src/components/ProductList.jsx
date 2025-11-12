@@ -16,7 +16,9 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
   const [products, setProducts] = useState(savedState?.products || []);
   const [loading, setLoading] = useState(savedState?.loading !== undefined ? savedState.loading : true);
   const [selectedCategory, setSelectedCategory] = useState(savedState?.selectedCategory || '');
-
+  const [isMaintenance, setIsMaintenance] = useState(savedState?.isMaintenance !== undefined ? savedState.isMaintenance : false);
+  const [loadingStatus, setLoadingStatus] = useState(savedState?.loadingStatus !== undefined ? savedState.loadingStatus : true);
+  const [statusError, setStatusError] = useState(null);
   const [loadingPhase, setLoadingPhase] = useState('initializing');
   const [serverWakeAttempts, setServerWakeAttempts] = useState(0);
   const [showRealError, setShowRealError] = useState(false);
@@ -47,43 +49,61 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
   // 🛠️ Maintenance Mode Toggle
   // const MAINTENANCE_MODE = true;
 
-  // 🆕 (1.1) เพิ่ม State เหล่านี้:
-  const [isMaintenance, setIsMaintenance] = useState(savedState?.isMaintenance !== undefined ? savedState.isMaintenance : false);
-  const [loadingStatus, setLoadingStatus] = useState(savedState?.loadingStatus !== undefined ? savedState.loadingStatus : true);
-  const [statusError, setStatusError] = useState(null);
+  // --------------------------------------------------------------------------------
 
-  // 🆕 (1.2) เพิ่ม useEffect นี้ (สำหรับ Fetch สถานะ Maintenance):
+
+
+  
   useEffect(() => {
     if (!loadingStatus) {
       console.log('✅ Skipping maintenance check, using saved state.');
       return;
     }
+
+    const MAX_RETRIES = 15; // พยายามสูงสุด 15 ครั้ง
+    const RETRY_DELAY = 3000; // รอครั้งละ 3 วินาที
+    let attemptCount = 0; // ตัวนับ
+
     const checkMaintenanceStatus = async () => {
+      attemptCount++;
+      console.log(`📡 Checking store maintenance status... (Attempt ${attemptCount}/${MAX_RETRIES})`);
+      setStatusError(`Connecting to server... (Attempt ${attemptCount})`);
+
       try {
-        console.log('📡 Checking store maintenance status...');
-        setLoadingStatus(true);
-        // ❗️ ใช้ /orders/settings/status
         const response = await fetch(`${API_BASE_URL}/orders/settings/status`);
+        if (!response.ok) {
+          throw new Error(`Server responded with ${response.status}`);
+        }
+
         const data = await response.json();
         
         if (data.success) {
           console.log(`🔧 Maintenance Mode is: ${data.isMaintenanceMode ? 'ON' : 'OFF'}`);
           setIsMaintenance(data.isMaintenanceMode);
+          setLoadingStatus(false); 
+          setStatusError(null);
         } else {
-          console.error('Failed to fetch maintenance status, defaulting to ON');
-          setStatusError('Cannot verify store status');
-          setIsMaintenance(false);
+          
+          throw new Error(data.message || 'API returned success: false');
         }
       } catch (err) {
-        console.error('Error fetching maintenance status:', err);
-        setStatusError('Error connecting to server');
-        setIsMaintenance(false);
-      } finally {
-        setLoadingStatus(false);
+        
+        console.error(`Error fetching maintenance status (Attempt ${attemptCount}):`, err.message);
+        
+        if (attemptCount >= MAX_RETRIES) {
+          
+          console.error('🛑 Max retries for maintenance check reached. Defaulting to MAINTENANCE.');
+          setStatusError(`Server unreachable after ${MAX_RETRIES} attempts. Assuming maintenance.`);
+          setIsMaintenance(true); 
+          setLoadingStatus(false); 
+        } else {    
+          console.log(`🔄 Retrying maintenance check in ${RETRY_DELAY / 1000}s...`);
+          setTimeout(checkMaintenanceStatus, RETRY_DELAY); 
+        }
       }
     };
-    
     checkMaintenanceStatus();
+
   }, []);
 
 
