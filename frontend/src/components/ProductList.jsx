@@ -60,9 +60,9 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
       return;
     }
 
-    const MAX_RETRIES = 15; // พยายามสูงสุด 15 ครั้ง
-    const RETRY_DELAY = 3000; // รอครั้งละ 3 วินาที
-    let attemptCount = 0; // ตัวนับ
+    const MAX_RETRIES = 15; 
+    const RETRY_DELAY = 3000; 
+    let attemptCount = 0; 
 
     const checkMaintenanceStatus = async () => {
       attemptCount++;
@@ -91,11 +91,11 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
         console.error(`Error fetching maintenance status (Attempt ${attemptCount}):`, err.message);
         
         if (attemptCount >= MAX_RETRIES) {
-          
-          console.error('🛑 Max retries for maintenance check reached. Defaulting to MAINTENANCE.');
-          setStatusError(`Server unreachable after ${MAX_RETRIES} attempts. Assuming maintenance.`);
-          setIsMaintenance(true); 
+          console.warn(`🛑 Maintenance check failed after ${MAX_RETRIES} attempts. Assuming server is sleeping. Handing over to fetchProducts()`);
+          setStatusError(`Server is waking up... Please wait.`); 
+          setIsMaintenance(false); 
           setLoadingStatus(false); 
+
         } else {    
           console.log(`🔄 Retrying maintenance check in ${RETRY_DELAY / 1000}s...`);
           setTimeout(checkMaintenanceStatus, RETRY_DELAY); 
@@ -104,7 +104,7 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
     };
     checkMaintenanceStatus();
 
-  }, []);
+  }, []); //
 
 
   // ---------------------------------------------------------------------------------
@@ -117,25 +117,17 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
     }
 
     console.log('Setting up auto-reload interval (30 seconds)');
-
     const intervalId = setInterval(() => {
-      // เช็กจาก Ref ว่าตอนนี้กำลังโหลดอยู่หรือเปล่า
+      
       if (loadingRef.current) {
         // console.log('🔄 Auto-reload: Skipped, already loading.');
         return;
-      }
-      
+      }      
       // console.log('🔄 Auto-reloading products (background)...');
-      
-      // ตั้งค่า isInitialLoad เป็น false เพื่อไม่ให้แสดงหน้า Loading เต็มจอ
       setIsInitialLoad(false); 
-      
-      // เรียก fetchProducts เพื่อโหลดข้อมูลใหม่
       fetchProducts();
 
-    }, 5000); // 1,000 ms = 1 วินาที 
-
-    // Cleanup function: เคลียร์ interval เมื่อ component ถูก unmount
+    }, 5000);
     return () => {
       // console.log('Clearing auto-reload interval.');
       clearInterval(intervalId);
@@ -152,11 +144,11 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
       console.log('✅ Using saved product data, no fetch needed');
     } else if (isMaintenance) {
       console.log('🛑 Store is in MAINTENANCE. Skipping product fetch.');
-      setLoading(false); // หยุด Loading
+      setLoading(false); 
     } else if (loadingStatus) {
       console.log('⏳ Waiting for maintenance status check...');
     }
-  }, [shouldFetch, selectedCategory, isMaintenance, loadingStatus]);
+  }, [shouldFetch, selectedCategory, isMaintenance, loadingStatus]); //
 
   // เพิ่มตรงนี้หลัง useState ทั้งหมด:
 useEffect(() => {
@@ -184,7 +176,7 @@ useEffect(() => {
     priceRange, sortOption, retryCount, loadingPhase, serverWakeAttempts, 
     showRealError, isInitialLoad, 
     isMaintenance, loadingStatus
-]);
+]); //
 
 
   // ✅ Enhanced Filter Effect
@@ -212,12 +204,7 @@ useEffect(() => {
     const maxPrice = parseFloat(priceRange.max);
 
     filtered = filtered.filter(product => {
-      // ตรวจสอบเงื่อนไข Min:
-      // ถ้า minPrice ไม่ใช่ตัวเลข (เช่น ช่องว่าง) หรือราคาสินค้า >= minPrice
       const minCondition = isNaN(minPrice) ? true : product.price >= minPrice;
-
-      // ตรวจสอบเงื่อนไข Max:
-      // ถ้า maxPrice ไม่ใช่ตัวเลข (เช่น ช่องว่าง) หรือราคาสินค้า <= maxPrice
       const maxCondition = isNaN(maxPrice) ? true : product.price <= maxPrice;
 
       return minCondition && maxCondition;
@@ -307,7 +294,7 @@ useEffect(() => {
   } else {
     console.warn('⚠️ onProductClick prop not provided');
   }
-};
+}; //
 
   const fetchProducts = async () => {
     try {
@@ -383,7 +370,7 @@ useEffect(() => {
         return;
       }
     }
-  };
+  }; 
 
   const categories = ['Electronics', 'Clothing', 'Books', 'Home', 'Sports', 'Beauty', 'Toys', 'Watches', 'Other'];
   const priceStats = getPriceStats();
@@ -409,12 +396,12 @@ useEffect(() => {
         animation: 'spin 1s linear infinite'
       }}></div>
       <h2 style={{ color: '#1e40af', marginTop: '20px' }}>
-        {statusError ? 'Connection Error' : 'Verifying Store Status...'}
+        {statusError ? 'Connecting...' : 'Verifying Store Status...'}
       </h2>
       <p style={{ color: '#6b7280' }}>
         {statusError ? statusError : 'กำลังตรวจสอบสถานะร้านค้า...'}
       </p>
-      {statusError && (
+      {statusError && !statusError.includes('Server is waking up') && ( 
         <button
           onClick={() => window.location.reload()}
           style={{
@@ -432,7 +419,7 @@ useEffect(() => {
       )}
     </div>
   );
-}
+} //
 
 
 // -------------------------------------------------------------------------------------- 
@@ -453,17 +440,17 @@ if (isMaintenance) {
       
       <LanguageSwitcher />
 
-      {/* --- 2. เปลี่ยน Card กลับเป็นสีขาวทึบ --- */}
+      
       <div style={{
-        background: '#ffffff', // 🌟
-        border: '1px solid #e5e7eb', // 🌟
-        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)', // 🌟
+        background: '#ffffff', 
+        border: '1px solid #e5e7eb', 
+        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)', 
         borderRadius: '16px',
         padding: '15px',
         maxWidth: '400px',
         width: '100%',
         textAlign: 'center',
-        color: '#1f2937' // 🌟 เปลี่ยนสี Text เริ่มต้นเป็นสีเข้ม
+        color: '#1f2937' 
       }}>
         
         <div style={{
@@ -485,7 +472,7 @@ if (isMaintenance) {
         </div>
 
         <h1 style={{
-          color: '#1e40af', // 🌟 กลับเป็นสีน้ำเงิน
+          color: '#1e40af', 
           fontSize: '2rem',
           fontWeight: '700',
           margin: '0 0 16px 0'
@@ -495,7 +482,7 @@ if (isMaintenance) {
 
         <p 
           style={{
-            color: '#6b7280', // 🌟 กลับเป็นสีเทาเข้ม
+            color: '#6b7280', 
             fontSize: '1.1rem',
             margin: '0 0 24px 0',
             lineHeight: '1.6'
@@ -505,11 +492,11 @@ if (isMaintenance) {
 
         {/* --- กล่องอัปเดต (สีเทาอ่อน) --- */}
         <div style={{
-          background: '#f3f4f6', // 🌟
+          background: '#f3f4f6', 
           padding: '16px',
           borderRadius: '12px',
           margin: '0 0 1px 0',
-          border: '1px solid #e5e7eb', // 🌟
+          border: '1px solid #e5e7eb', 
           textAlign: 'left'
         }}>
           <div style={{
@@ -519,9 +506,9 @@ if (isMaintenance) {
             gap: '8px',
             marginBottom: '12px'
           }}>
-            <Megaphone size={20} color="#1e40af" /> {/* 🌟 */}
+            <Megaphone size={20} color="#1e40af" /> 
             <span style={{
-              color: '#1e40af', // 🌟
+              color: '#1e40af', 
               fontWeight: '600'
             }}>
               {t('updatesTitle')}
@@ -529,7 +516,7 @@ if (isMaintenance) {
           </div>
           <div style={{ 
               fontSize: '0.9rem', 
-              color: '#4b5563', // 🌟
+              color: '#4b5563', 
               lineHeight: '1.6'
           }}>
               <ul style={{ 
@@ -545,7 +532,7 @@ if (isMaintenance) {
                  <hr style={{ 
                      margin: '12px 0', 
                      border: '0', 
-                     borderTop: '1px solid #e5e7eb', // 🌟
+                     borderTop: '1px solid #e5e7eb', 
                   }}/>
                   <li>{t('update5')}</li>
                   {/* <li>{t('update6')}</li> */}
@@ -555,12 +542,12 @@ if (isMaintenance) {
 
         {/* --- กล่อง Alert (สีแดงอ่อน) --- */}
         <div style={{
-            background: '#fee2e2', // 🌟
-            color: '#991b1b', // 🌟
+            background: '#fee2e2', 
+            color: '#991b1b', 
             padding: '12px 16px',
             borderRadius: '12px',
             margin: '16px 0 16px 0',
-            border: '1px solid #fca5a5', // 🌟
+            border: '1px solid #fca5a5', 
             display: 'flex',
             alignItems: 'flex-start',
             gap: '10px',
@@ -574,7 +561,7 @@ if (isMaintenance) {
                 fontWeight: '400',
                 lineHeight: '1.5',
                 textAlign: 'left',
-                color: '#991b1b' // 🌟
+                color: '#991b1b' 
               }}
 
 
@@ -598,7 +585,7 @@ if (isMaintenance) {
               alignItems: 'center',
               justifyContent: 'center',
               gap: '8px',
-              background: '#1e40af', // 🌟
+              background: '#1e40af', 
               color: 'white',
               border: 'none',
               padding: '12px 24px',
@@ -610,11 +597,11 @@ if (isMaintenance) {
               transition: 'background-color 0.2s ease, transform 0.2s ease'
             }}
             onMouseEnter={(e) => {
-              e.target.style.background = '#2563eb'; // 🌟
+              e.target.style.background = '#2563eb'; 
               e.target.style.transform = 'translateY(-2px)';
             }}
             onMouseLeave={(e) => {
-              e.target.style.background = '#1e40af'; // 🌟
+              e.target.style.background = '#1e40af'; 
               e.target.style.transform = 'translateY(0)';
             }}
           >
@@ -631,8 +618,8 @@ if (isMaintenance) {
               justifyContent: 'center',
               gap: '8px',
               background: 'transparent',
-              color: '#1e40af', // 🌟
-              border: '2px solid #1e40af', // 🌟
+              color: '#1e40af', 
+              border: '2px solid #1e40af', 
               padding: '12px 24px',
               fontSize: '1rem',
               fontWeight: '600',
@@ -642,7 +629,7 @@ if (isMaintenance) {
               transition: 'background-color 0.2s ease, transform 0.2s ease'
             }}
             onMouseEnter={(e) => {
-              e.target.style.background = '#eff6ff'; // 🌟
+              e.target.style.background = '#eff6ff'; 
               e.target.style.transform = 'translateY(-2px)';
             }}
             onMouseLeave={(e) => {
@@ -659,10 +646,10 @@ if (isMaintenance) {
         <div style={{
           marginTop: '32px',
           padding: '16px',
-          background: '#f3f4f6', // 🌟
+          background: '#f3f4f6', 
           borderRadius: '12px',
           fontSize: '0.85rem',
-          color: '#6b7280' // 🌟
+          color: '#6b7280' 
         }}>
           <div style={{
             display: 'flex',
@@ -671,7 +658,7 @@ if (isMaintenance) {
             gap: '6px',
             marginBottom: '4px',
             fontWeight: '600',
-            color: '#1e40af' // 🌟
+            color: '#1e40af' 
           }}>
             <Code size={14} />
             {t('developerName')}
@@ -681,7 +668,7 @@ if (isMaintenance) {
       </div>
     </div>
   );
-}
+} //
 
 // --------------------------------------------------------------------------------------
 
@@ -966,7 +953,7 @@ if (isMaintenance) {
         </div>
       </div>
     );
-}
+} //
 
 
   // Error State (ย่อ)
@@ -1472,8 +1459,6 @@ if (isMaintenance) {
   </div>
 </div>
 
-      
-
       {/* Products Count */}
       <div style={{ marginBottom: '24px' }}>
         <h2 style={{ color: '#1f2937' }}>
@@ -1830,20 +1815,20 @@ const LanguageSwitcher = () => {
   return (
     <div style={{
       // --- 🌟 Liquid Glass Frame Styles 🌟 ---
-      background: 'rgba(255, 255, 255, 0.25)',      // สีพื้นหลังโปร่งแสง
-      backdropFilter: 'blur(10px)',              // เอฟเฟกต์เบลอ
-      WebkitBackdropFilter: 'blur(10px)',        // สำหรับ Safari
-      border: '1px solid rgba(255, 255, 255, 0.18)', // ขอบจางๆ
-      borderRadius: '12px',                         // ทำให้กรอบมน
-      padding: '6px',                               // ระยะห่างภายในกรอบ
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',    // เงาจางๆ
+      background: 'rgba(255, 255, 255, 0.25)',     
+      backdropFilter: 'blur(10px)',              
+      WebkitBackdropFilter: 'blur(10px)',        
+      border: '1px solid rgba(255, 255, 255, 0.18)', 
+      borderRadius: '12px',                       
+      padding: '6px',                               
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',   
       
       // --- Original Styles ---
       position: 'absolute',
       top: '20px',
       right: '20px',
       display: 'flex',
-      gap: '5px', // ลดระยะห่างปุ่มเล็กน้อย
+      gap: '5px', 
       zIndex: 100
     }}>
       <button
@@ -1851,13 +1836,13 @@ const LanguageSwitcher = () => {
         style={{
           padding: '8px 12px',
           cursor: 'pointer',
-          borderRadius: '8px', // ความมนของปุ่ม
+          borderRadius: '8px', 
           fontWeight: 'bold',
-          transition: 'all 0.2s ease', // เพิ่ม Animation
+          transition: 'all 0.2s ease', 
           
           // --- 🌟 ปรับ Style ปุ่มให้เข้ากับกรอบ 🌟 ---
-          background: currentLang === 'th' ? '#1e40af' : 'transparent', // (Active = ทึบ, Inactive = โปร่งใส)
-          color: currentLang === 'th' ? 'white' : '#f0f2ff', // (Inactive = สีขาวนวล)
+          background: currentLang === 'th' ? '#1e40af' : 'transparent', 
+          color: currentLang === 'th' ? 'white' : '#f0f2ff', 
           border: currentLang === 'th' ? '2px solid #1e40af' : '2px solid transparent',
         }}
       >
