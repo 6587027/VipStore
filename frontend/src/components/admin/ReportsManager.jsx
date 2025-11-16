@@ -598,7 +598,7 @@ const ReportsManager = () => {
             <ChartNoAxesCombined color="#3b82f6" size={28} />
             Reports & Analytics
           </h2>
-          <p>ข้อมูลการวิเคราะห์แบบ Real-time ของ Vip Store</p>
+          <p>Real-time analytics data system for Vip Store</p>
         </div>
         <button
           onClick={refreshReport}

@@ -1,5 +1,6 @@
-// frontend/src/components/LoginForm.jsx - Enhanced Beautiful Version
-import React, { useState } from 'react';
+// frontend/src/components/LoginForm.jsx 
+
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import './LoginForm.css';
 
@@ -18,6 +19,12 @@ const LoginForm = ({ onSuccess, onClose }) => {
   const [loginError, setLoginError] = useState('');
 
   const { login, register, loading } = useAuth();
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
 
   // Handle input changes
   const handleChange = (e) => {

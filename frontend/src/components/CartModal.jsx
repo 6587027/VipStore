@@ -190,6 +190,16 @@ const CartModal = ({ isOpen, onClose }) => {
     
     return userId;
   };
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    const originalOverflow = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isOpen]);
 
   // Enhanced useEffect with better user checking
   useEffect(() => {

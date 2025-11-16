@@ -3,22 +3,30 @@
 import React, { useState, useEffect,useRef } from 'react';
 import ProductCard from './ProductCard';
 import { productsAPI } from '../services/api';
-import { Search, Filter, Package, DollarSign, BarChart3, RotateCcw, Sparkles, ChevronDown } from 'lucide-react';
-import { Settings, RefreshCw, Clock, User, Code , Megaphone , CircleAlert } from 'lucide-react';
+// ✅ [FIX] เพิ่ม Icons ที่ต้องใช้แทน Emoji (Globe, Zap, Tag, Trash2)
+import { 
+  Search, Filter, Package, DollarSign, BarChart3, RotateCcw, Sparkles, ChevronDown, 
+  Settings, RefreshCw, Clock, User, Code, Megaphone, CircleAlert, ArrowUp,
+  Globe, Zap, Tag, Trash2
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { t } from 'i18next';
 
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com/api';
 
-// import ChatButton from './chat/ChatButton';
+// --------------------------------------------------------------------------------
+// ‼️ [JAVIS HARD-CODE FIX] ‼️
+// ถ้าจะปิดร้าน ให้มาแก้ตรงนี้เป็น true แล้ว Deploy ใหม่
+// --------------------------------------------------------------------------------
+const MAINTENANCE_MODE = false;
+// --------------------------------------------------------------------------------
 
 const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = true }) => {
   const [products, setProducts] = useState(savedState?.products || []);
   const [loading, setLoading] = useState(savedState?.loading !== undefined ? savedState.loading : true);
   const [selectedCategory, setSelectedCategory] = useState(savedState?.selectedCategory || '');
-  const [isMaintenance, setIsMaintenance] = useState(savedState?.isMaintenance !== undefined ? savedState.isMaintenance : false);
-  const [loadingStatus, setLoadingStatus] = useState(savedState?.loadingStatus !== undefined ? savedState.loadingStatus : true);
-  const [statusError, setStatusError] = useState(null);
+  const [showScrollTopButton, setShowScrollTopButton] = useState(false);
   const [loadingPhase, setLoadingPhase] = useState('initializing');
   const [serverWakeAttempts, setServerWakeAttempts] = useState(0);
   const [showRealError, setShowRealError] = useState(false);
@@ -43,71 +51,31 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
   const [showFilters, setShowFilters] = useState(false);
   
   const { t } = useTranslation();
-  // --------------------------------------------------------------------------------
-
-
-  // 🛠️ Maintenance Mode Toggle
-  // const MAINTENANCE_MODE = true;
-
-  // --------------------------------------------------------------------------------
-
-
-
   
-  useEffect(() => {
-    if (!loadingStatus) {
-      console.log('✅ Skipping maintenance check, using saved state.');
-      return;
-    }
-
-    const MAX_RETRIES = 15; 
-    const RETRY_DELAY = 3000; 
-    let attemptCount = 0; 
-
-    const checkMaintenanceStatus = async () => {
-      attemptCount++;
-      console.log(`📡 Checking store maintenance status... (Attempt ${attemptCount}/${MAX_RETRIES})`);
-      setStatusError(`Connecting to server... (Attempt ${attemptCount})`);
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/orders/settings/status`);
-        if (!response.ok) {
-          throw new Error(`Server responded with ${response.status}`);
-        }
-
-        const data = await response.json();
-        
-        if (data.success) {
-          console.log(`🔧 Maintenance Mode is: ${data.isMaintenanceMode ? 'ON' : 'OFF'}`);
-          setIsMaintenance(data.isMaintenanceMode);
-          setLoadingStatus(false); 
-          setStatusError(null);
-        } else {
-          
-          throw new Error(data.message || 'API returned success: false');
-        }
-      } catch (err) {
-        
-        console.error(`Error fetching maintenance status (Attempt ${attemptCount}):`, err.message);
-        
-        if (attemptCount >= MAX_RETRIES) {
-          console.warn(`🛑 Maintenance check failed after ${MAX_RETRIES} attempts. Assuming server is sleeping. Handing over to fetchProducts()`);
-          setStatusError(`Server is waking up... Please wait.`); 
-          setIsMaintenance(false); 
-          setLoadingStatus(false); 
-
-        } else {    
-          console.log(`🔄 Retrying maintenance check in ${RETRY_DELAY / 1000}s...`);
-          setTimeout(checkMaintenanceStatus, RETRY_DELAY); 
-        }
-      }
-    };
-    checkMaintenanceStatus();
-
-  }, []); //
+  
 
 
   // ---------------------------------------------------------------------------------
+
+  useEffect(() => {
+    // ฟังก์ชันที่จะทำงานเมื่อมีการ scroll
+    const checkScrollTop = () => {
+      // ถ้าเลื่อนลงมาเกิน 400px
+      if (window.pageYOffset > 400) {
+        setShowScrollTopButton(true); // ให้แสดงปุ่ม
+      } else {
+        setShowScrollTopButton(false); // ซ่อนปุ่ม
+      }
+    };
+
+    // เพิ่ม Event Listener
+    window.addEventListener('scroll', checkScrollTop);
+    
+    // Cleanup: ลบ Event Listener ออกเมื่อ component ถูกปิด
+    return () => {
+      window.removeEventListener('scroll', checkScrollTop);
+    };
+  }, []);
 
 
   useEffect(() => {
@@ -137,21 +105,20 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
 
   // ดึงข้อมูลสินค้าจาก API
   useEffect(() => {
-  if (shouldFetch && !isMaintenance && !loadingStatus && (isInitialLoad || !products.length)) {
-      console.log('📡 Store is ONLINE. Fetching products...');
-      fetchProducts();
+    // [JAVIS HARD-CODE FIX] - เปลี่ยน Logic การเช็ก
+    if (shouldFetch && !MAINTENANCE_MODE && (isInitialLoad || !products.length)) {
+        console.log('📡 Store is ONLINE. Fetching products...');
+        fetchProducts();
     } else if (savedState?.products?.length && !shouldFetch) {
-      console.log('✅ Using saved product data, no fetch needed');
-    } else if (isMaintenance) {
-      console.log('🛑 Store is in MAINTENANCE. Skipping product fetch.');
-      setLoading(false); 
-    } else if (loadingStatus) {
-      console.log('⏳ Waiting for maintenance status check...');
+        console.log('✅ Using saved product data, no fetch needed');
+    } else if (MAINTENANCE_MODE) {
+        console.log('🛑 Store is in MAINTENANCE. Skipping product fetch.');
+        setLoading(false); 
     }
-  }, [shouldFetch, selectedCategory, isMaintenance, loadingStatus]); //
+  }, [shouldFetch, selectedCategory]); // [JAVIS HARD-CODE FIX] - เอา isMaintenance, loadingStatus ออกจาก dependency
 
-  // เพิ่มตรงนี้หลัง useState ทั้งหมด:
-useEffect(() => {
+  
+  useEffect(() => {
   if (onStateUpdate) {
     onStateUpdate({
       products,
@@ -166,17 +133,14 @@ useEffect(() => {
       serverWakeAttempts,
       showRealError,
       isInitialLoad,
-      isMaintenance,  
-      loadingStatus
-
     });
   }
 }, [
     products, loading, selectedCategory, searchTerm, filteredProducts, 
     priceRange, sortOption, retryCount, loadingPhase, serverWakeAttempts, 
     showRealError, isInitialLoad, 
-    isMaintenance, loadingStatus
-]); //
+    
+]); 
 
 
   // ✅ Enhanced Filter Effect
@@ -296,6 +260,14 @@ useEffect(() => {
   }
 }; //
 
+// เพิ่มฟังก์ชันนี้สำหรับจัดการการคลิกปุ่ม
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth' 
+    });
+  };
+
   const fetchProducts = async () => {
     try {
       setLoading(true);
@@ -375,57 +347,12 @@ useEffect(() => {
   const categories = ['Electronics', 'Clothing', 'Books', 'Home', 'Sports', 'Beauty', 'Toys', 'Watches', 'Other'];
   const priceStats = getPriceStats();
 
-  if (loadingStatus) {
-  return (
-    <div style={{
-      minHeight: '100vh',
-      width: '100vw', 
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px',
-      background: '#f3f4f6'
-    }}>
-      <div style={{
-        width: '50px',
-        height: '50px',
-        border: '4px solid #f3f3f3',
-        borderTop: '4px solid #1e40af', 
-        borderRadius: '50%',
-        animation: 'spin 1s linear infinite'
-      }}></div>
-      <h2 style={{ color: '#1e40af', marginTop: '20px' }}>
-        {statusError ? 'Connecting...' : 'Verifying Store Status...'}
-      </h2>
-      <p style={{ color: '#6b7280' }}>
-        {statusError ? statusError : 'กำลังตรวจสอบสถานะร้านค้า...'}
-      </p>
-      {statusError && !statusError.includes('Server is waking up') && ( 
-        <button
-          onClick={() => window.location.reload()}
-          style={{
-            background: '#1e40af',
-            color: 'white',
-            border: 'none',
-            padding: '10px 16px',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            marginTop: '10px'
-          }}
-        >
-          Try Again
-        </button>
-      )}
-    </div>
-  );
-} //
-
 
 // -------------------------------------------------------------------------------------- 
 // Maintenance Mode Check
 
-if (isMaintenance) {
+
+if (MAINTENANCE_MODE) {
   return (
     <div style={{
       minHeight: '100vh',
@@ -676,7 +603,7 @@ if (isMaintenance) {
 
 
 // 🚀 VipStore Enhanced Loading State
-
+// [JAVIS HARD-CODE FIX] - ตอนนี้หน้านี้จะเป็นหน้าแรกเสมอ (ถ้า MAINTENANCE_MODE = false)
   if (loading && isInitialLoad && !showRealError) {
     return (
       <div className="container">
@@ -694,6 +621,8 @@ if (isMaintenance) {
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
         }}>
           
+          {/* ... (โค้ด Loading... เหมือนเดิมทุกประการ) ... */}
+
           {/* Background Animation */}
           <div style={{
             position: 'absolute',
@@ -743,20 +672,19 @@ if (isMaintenance) {
                 justifyContent: 'center'
               }}>
                 
-                {/* Dynamic Icon */}
+                {/* Dynamic Icon (Replace Emojis) */}
                 <div style={{
-                  fontSize: '2rem',
                   animation: 'iconFloat 3s ease-in-out infinite',
                   filter: 'drop-shadow(0 2px 8px rgba(102, 126, 234, 0.3))'
                 }}>
                   {loadingPhase === 'connecting' && (
-                    <div style={{ color: '#667eea' }}>🌐</div>
+                    <div style={{ color: '#667eea' }}><Globe size={32} /></div> 
                   )}
                   {loadingPhase === 'fetching' && (
-                    <div style={{ color: '#10b981' }}>📦</div>
+                    <div style={{ color: '#10b981' }}><Package size={32} /></div> 
                   )}
                   {loadingPhase === 'retrying' && (
-                    <div style={{ color: '#f59e0b' }}>⚡</div>
+                    <div style={{ color: '#f59e0b' }}><Zap size={32} /></div> 
                   )}
                 </div>
               </div>
@@ -849,7 +777,7 @@ if (isMaintenance) {
             </div>
           </div>
 
-          {/* Advanced CSS Animations */}
+          {/* ... (โค้ด CSS Animations ของ Loading... เหมือนเดิม) ... */}
           <style jsx>{`
             @keyframes smoothSpin {
               0% { transform: rotate(0deg); }
@@ -950,6 +878,7 @@ if (isMaintenance) {
               50% { transform: scale(1) rotate(-180deg); opacity: 1; }
             }
           `}</style>
+
         </div>
       </div>
     );
@@ -958,54 +887,13 @@ if (isMaintenance) {
 
   // Error State (ย่อ)
   // if (error && showRealError) {
-  //   return (
-  //     <div className="container">
-  //       <div style={{
-  //         display: 'flex',
-  //         flexDirection: 'column',
-  //         alignItems: 'center',
-  //         justifyContent: 'center',
-  //         minHeight: '400px',
-  //         padding: '40px 20px',
-  //         background: 'linear-gradient(135deg, #fef3c7 0%, #fbbf24 100%)',
-  //         borderRadius: '20px',
-  //         textAlign: 'center'
-  //       }}>
-  //         <div style={{ fontSize: '4rem', marginBottom: '24px' }}>🔌💥🖥️</div>
-  //         <h2 style={{ color: '#92400e', fontSize: '1.8rem', marginBottom: '16px' }}>
-  //           เซิร์ฟเวอร์ไม่สามารถเข้าถึงได้
-  //         </h2>
-  //         <p style={{ color: '#d97706', fontSize: '1.1rem', marginBottom: '24px' }}>
-  //           ระบบได้พยายามเชื่อมต่อแล้ว {serverWakeAttempts} ครั้ง<br/>
-  //           เซิร์ฟเวอร์อาจปิดการให้บริการชั่วคราว หรือ กำลังปรับปรุงระบบ
-  //         </p>
-  //         <button
-  //           onClick={() => {
-  //             setServerWakeAttempts(0);
-  //             setShowRealError(false);
-  //             fetchProducts();
-  //           }}
-  //           style={{
-  //             background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-  //             border: 'none',
-  //             padding: '12px 24px',
-  //             fontSize: '1rem',
-  //             fontWeight: '600',
-  //             borderRadius: '12px',
-  //             color: 'white',
-  //             cursor: 'pointer'
-  //           }}
-  //         >
-  //           🔄 ลองใหม่อีกครั้ง
-  //         </button>
-  //       </div>
-  //     </div>
-  //   );
+  //   ... (โค้ด Error ... เหมือนเดิม)
   // }
   
   return (
     <div className="container">
      {/* ========== 🎨 COLLAPSIBLE HORIZONTAL FILTER SYSTEM ========== */}
+{/* ... (โค้ด Filter... เหมือนเดิมทุกประการ) ... */}
 <div className="filter-container" style={{
   background: 'white',
   borderRadius: '16px',
@@ -1471,8 +1359,10 @@ if (isMaintenance) {
       {/* Products Grid */}
 {filteredProducts.length === 0 ? (
   <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
-    <div style={{ fontSize: '3rem', marginBottom: '16px' }}>
-      {searchTerm ? '🔍' : getActiveFiltersCount() > 0 ? '🏷️' : '📦'}
+    {/* ... (โค้ด "ไม่พบสินค้า"... เหมือนเดิม) ... */}
+    <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
+      {/* ✅ [FIX] เปลี่ยน Emoji เป็น Icon */}
+      {searchTerm ? <Search size={48} color="#9ca3af" /> : getActiveFiltersCount() > 0 ? <Tag size={48} color="#9ca3af" /> : <Package size={48} color="#9ca3af" />}
     </div>
     <h3 style={{ color: '#6b7280', marginBottom: '16px' }}>
       {searchTerm ? 'ไม่พบสินค้าที่ค้นหา' : 
@@ -1502,10 +1392,14 @@ if (isMaintenance) {
               cursor: 'pointer',
               fontSize: '0.9rem',
               fontWeight: '500',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
             }}
           >
-            🗑️ ล้างการค้นหา
+            {/* ✅ [FIX] เปลี่ยน Emoji เป็น Icon */}
+            <Trash2 size={16} /> ล้างการค้นหา
           </button>
         )}
         {getActiveFiltersCount() > 0 && (
@@ -1520,10 +1414,14 @@ if (isMaintenance) {
               cursor: 'pointer',
               fontSize: '0.9rem',
               fontWeight: '500',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
             }}
           >
-            🗑️ ล้างตัวกรองทั้งหมด
+            {/* ✅ [FIX] เปลี่ยน Emoji เป็น Icon */}
+            <Trash2 size={16} /> ล้างตัวกรองทั้งหมด
           </button>
         )}
         
@@ -1558,7 +1456,8 @@ if (isMaintenance) {
             e.target.style.transform = 'translateY(0)';
           }}
         >
-          🔄 โหลดข้อมูลใหม่
+          {/* ✅ [FIX] เปลี่ยน Emoji เป็น Icon */}
+          <RefreshCw size={16} /> โหลดข้อมูลใหม่
         </button>
       </div>
     )}
@@ -1598,7 +1497,8 @@ if (isMaintenance) {
             e.target.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
           }}
         >
-           โหลดสินค้าใหม่
+           {/* ✅ [FIX] เปลี่ยน Emoji เป็น Icon */}
+           <RefreshCw size={20} /> โหลดสินค้าใหม่
         </button>
       </div>
     )}
@@ -1614,10 +1514,46 @@ if (isMaintenance) {
     ))}
   </div>
 )}
+      {/* 🆕 4. [สำคัญ] ปุ่ม Scroll to Top */}
+      {showScrollTopButton && (
+        <button
+          onClick={scrollToTop}
+          style={{
+            position: 'fixed', // 👈 ทำให้มันลอยอยู่กับที่
+            bottom: '30px',    // 👈 ระยะห่างจากด้านล่าง
+            right: '30px',     // 👈 ระยะห่างจากด้านขวา
+            zIndex: 1000,      // 👈 ให้อยู่เหนือ Product Card (ที่ z-index: 2)
+            width: '50px',
+            height: '50px',
+            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', // 👈 ใช้สีเขียวธีมหลัก
+            color: 'white',
+            border: 'none',
+            borderRadius: '50%', // 👈 ทำให้เป็นวงกลม
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)',
+            transition: 'all 0.3s ease',
+            animation: 'fadeIn 0.3s ease' // 👈 Animation ตอนปรากฏตัว
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = 'scale(1.1)';
+            e.target.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = 'scale(1)';
+            e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)';
+          }}
+          title="กลับไปด้านบน"
+        >
+          <ArrowUp size={24} />
+        </button>
+      )}
 
       {/* CSS Styles */}
       <style jsx>{`
-        /* ===== DROPDOWN SYSTEM ===== */
+        /* ... (โค้ด CSS... เหมือนเดิม) ... */
         .card {
           background: white;
           border-radius: 12px;
@@ -1797,7 +1733,18 @@ if (isMaintenance) {
   .filter-container select {
     width: 100% !important;
   }
-}
+    /* 🆕 5. เพิ่ม Keyframes สำหรับ Animation */
+    @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+    
       `}</style>
     </div>
   );

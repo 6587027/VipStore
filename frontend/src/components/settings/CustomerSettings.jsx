@@ -63,6 +63,7 @@ import {
   X,
   Eye,
   
+  
 } from 'lucide-react';
 import { ChatBubbleBottomCenterIcon, ListBulletIcon } from '@heroicons/react/16/solid';
 
@@ -507,6 +508,18 @@ const refreshChat = async () => {
     console.error('❌ Manual refresh failed:', error);
   }
 };
+
+
+useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    const originalOverflow = window.getComputedStyle(document.body).overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isOpen]);
 
 // 🧹 Cleanup useEffect - แก้ไข Version
 useEffect(() => {

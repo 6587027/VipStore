@@ -189,7 +189,6 @@ const AdminDashboard = () => {
               <div className="quick-actions">
                 <h3>⚡ Quick Actions :       </h3>
                 <div className="action-cards">
-                  <StoreStatusToggle />
                   <button 
                     className="action-card"
                     onClick={() => setActiveTab('products')}
@@ -277,100 +276,3 @@ const AdminDashboard = () => {
 
 export default AdminDashboard;
 
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com/api';
-
-const StoreStatusToggle = () => {
-  const [isMaintenance, setIsMaintenance] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // 1. Fetch current status on load
-  useEffect(() => {
-    const fetchStatus = async () => {
-      try {
-        setIsLoading(true);
-        // ❗️ ใช้ /orders/settings/status
-        const response = await fetch(`${API_BASE_URL}/orders/settings/status`);
-        const data = await response.json();
-        if (data.success) {
-          setIsMaintenance(data.isMaintenanceMode);
-        } else {
-          setError('Failed to fetch status');
-        }
-      } catch (err) {
-        setError('Error connecting to server');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchStatus();
-  }, []);
-
-  // 2. Handle toggle change
-  const handleToggle = async (e) => {
-    const newStatus = e.target.checked;
-    
-    if (newStatus === isMaintenance) return;
-    
-    // ถามยืนยันก่อน
-    const confirmMessage = newStatus
-      ? '⚠️ Are you sure you want to CLOSE the store (Enable Maintenance Mode)?'
-      : '✅ Are you sure you want to OPEN the store (Disable Maintenance Mode)?';
-    
-    if (!window.confirm(confirmMessage)) {
-      e.target.checked = !newStatus; // Revert checkbox
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-    try {
-      // ❗️ ใช้ /orders/settings/maintenance
-      const response = await fetch(`${API_BASE_URL}/orders/settings/maintenance`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isMaintenanceMode: newStatus }),
-      });
-      const data = await response.json();
-      if (data.success) {
-        setIsMaintenance(data.isMaintenanceMode);
-        alert(data.message);
-      } else {
-        setError(data.message || 'Failed to update status');
-      }
-    } catch (err) {
-      setError('Error connecting to server');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (error) {
-    return <div style={{ color: 'red' }}>{error}</div>;
-  }
-  
-  const statusClass = isMaintenance ? 'status-maintenance' : 'status-online';
-  const statusText = isMaintenance ? 'MAINTENANCE (CLOSED)' : 'ONLINE (OPEN)';
-
-  return (
-    <div className={`store-status-card action-card ${statusClass}`}>
-      <div className="action-text">
-        <h4>Store Status</h4>
-        <p>Toggle customer-facing website on/off</p>
-      </div>
-      <div className="status-indicator">
-        <strong>{statusText}</strong>
-        <label className="switch">
-          <input 
-            type="checkbox" 
-            checked={isMaintenance}
-            onChange={handleToggle}
-            disabled={isLoading}
-          />
-          <span className="slider round"></span>
-        </label>
-      </div>
-    </div>
-  );
-};
