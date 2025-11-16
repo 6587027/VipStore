@@ -176,24 +176,28 @@ const chatSocketHandler = (io) => {
           isRead: false
         };
 
-        // CRITICAL: Broadcast to room participants FIRST
+        // Broadcast to room participants FIRST
         chatNamespace.to(`room_${roomId}`).emit('new_message', messageData);
         console.log(`📤 Message broadcasted to room_${roomId}`);
         
-        // Then update admin dashboard
+        // Broadcast the new message to ALL admins on the dashboard
+        // This allows the admin panel to update the message map in real-time
+        chatNamespace.to('admin_dashboard').emit('new_message', messageData);
+        console.log(`📤 Message broadcasted to admin_dashboard`);
+        
+        // Then update admin dashboard (for room list sorting and unread counts)
         const updatedRooms = await ChatRoom.find()
           .sort({ lastMessageTime: -1 })
           .limit(50);
         
+        // Broadcast updated chat rooms to admin dashboard without the newMessage payload
+        // We let the 'new_message' event handle all real-time message logic
         chatNamespace.to('admin_dashboard').emit('chat_rooms_updated', {
           chatRooms: updatedRooms,
-          newMessage: {
-            roomId,
-            senderType,
-            senderName: userName,
-            message: message.substring(0, 50),
-            timestamp: new Date()
-          }
+          triggerBy: 'new_message', // Add context
+          roomId: roomId,
+          timestamp: new Date()
+          // ❌ We remove the 'newMessage' object from here to prevent double notifications
         });
 
         console.log('📢 Admin dashboard updated');

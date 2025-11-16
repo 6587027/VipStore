@@ -7,7 +7,7 @@ import './AdminChatTab.css';
 
 // Lucide Icons
 import { 
-  MessageSquare,
+  MessageSquare,ปป
   Users,
   Clock,
   CheckCircle,
@@ -181,11 +181,7 @@ const AdminChatTab = () => {
         console.log(`📊 Updating ${data.chatRooms.length} chat rooms`);
         setActiveChatRooms(data.chatRooms);
         updateStats(data.chatRooms);
-        
-        // Play notification sound if new message from customer
-        if (data.newMessage && data.newMessage.senderType === 'customer') {
-          playNotificationSound();
-        }
+      
       } else if (data && Array.isArray(data)) {
         console.log(`📊 Updating ${data.length} chat rooms (direct array)`);
         setActiveChatRooms(data);
