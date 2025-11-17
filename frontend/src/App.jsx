@@ -1,5 +1,5 @@
 // frontend/src/App.jsx 
-import React, { useState, useCallback } from 'react'; // ✅ 1. เพิ่ม useCallback
+import React, { useState, useCallback } from 'react';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import Header from './components/Header';
@@ -14,8 +14,30 @@ import WelcomeAnimation from './components/WelcomeAnimation';
 import { useCart } from './context/CartContext';
 import { useAuth } from './context/AuthContext';
 
+
+import { motion, AnimatePresence } from 'framer-motion';
+
 // Import Admin Panel CSS
 import './styles/AdminPanel.css';
+
+
+const pageVariants = {
+  initial: (direction) => ({
+    x: direction > 0 ? '100vw' : '-100vw', // ถ้าไปข้างหน้า(1) มาจากขวา, ถ้าย้อนกลับ(-1) มาจากซ้าย
+    opacity: 0
+  }),
+  animate: {
+    x: 0, // สไลด์มาตรงกลาง
+    opacity: 1,
+    transition: { type: 'spring', stiffness: 1200, damping: 50 }
+  },
+  exit: (direction) => ({
+    x: direction > 0 ? '-100vw' : '100vw', // ถ้าไปข้างหน้า(1) ออกไปซ้าย, ถ้าย้อนกลับ(-1) ออกไปขวา
+    opacity: 0,
+    transition: { type: 'spring', stiffness: 1200, damping: 50 }
+  })
+};
+
 
 function AppContent() {
   const [showLogin, setShowLogin] = useState(false);
@@ -30,6 +52,9 @@ function AppContent() {
   const [showProductBackButton, setShowProductBackButton] = useState(false);
   const [productBackHandler, setProductBackHandler] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
+
+  
+  const [direction, setDirection] = useState(0);
 
   // 🎯 NEW: ProductList State Preservation
   const [productListState, setProductListState] = useState({
@@ -84,16 +109,21 @@ function AppContent() {
       scrollPosition: currentScrollPosition
     }));
     
+    
+    setDirection(1); 
+    
     setSelectedProductId(productId);
     setSelectedProduct(productData);
     setCurrentView('product');
   };
 
   // 🎯 FIXED: Enhanced Back from Product Handler - NO RELOAD
-  // ✅ 2. หุ้ม handleBackFromProduct ด้วย useCallback
   const handleBackFromProduct = useCallback(() => {
     console.log('⬅️ App.jsx - handleBackFromProduct called - PRESERVING STATE');
     
+    
+    setDirection(-1);
+
     // ✅ Return to home WITHOUT resetting ProductList state
     setCurrentView('home');
     setSelectedProductId(null);
@@ -104,6 +134,7 @@ function AppContent() {
     setProductBackHandler(null);
     
     // 🔄 Restore scroll position after component renders
+    // (โค้ดส่วนนี้ยังทำงานได้ดีเหมือนเดิมครับ)
     setTimeout(() => {
       const savedScrollPosition = productListState.scrollPosition;
       console.log('📍 Restoring scroll position:', savedScrollPosition);
@@ -111,11 +142,11 @@ function AppContent() {
       if (savedScrollPosition > 0) {
         window.scrollTo({
           top: savedScrollPosition,
-          behavior: 'smooth'
+          behavior: 'auto' // 👈 พี่แก้เป็น 'auto' จากที่คุยกันครั้งก่อนครับ
         });
       }
-    }, 100);
-  }, [productListState.scrollPosition]); // ✅ ใส่ dependency ที่จำเป็น
+    }, 100); // 👈 ลด delay ลงนิดหน่อย
+  }, [productListState.scrollPosition]);
 
   // Product Back Button Handler (from Header)
   const handleProductBackClick = () => {
@@ -162,11 +193,13 @@ function AppContent() {
 
   const handleShowAdmin = () => {
     if (isAdmin()) {
+      setDirection(1);
       setCurrentView('admin');
     }
   };
 
   const handleBackToHome = () => {
+    setDirection(-1);
     setCurrentView('home');
     setSelectedProductId(null);
     setSelectedProduct(null);
@@ -184,12 +217,11 @@ function AppContent() {
     setShowProfile(false);
   };
 
-  // ✅ 3. สร้างฟังก์ชัน onShowBackButton ที่เสถียร (Stable)
   const onShowBackButton = useCallback((show, handler) => {
     // console.log('📤 App.jsx - onShowBackButton:', { show, handler: !!handler });
     setShowProductBackButton(show);
     setProductBackHandler(() => handler);
-  }, []); // ✅ ใส่ [] เพื่อให้ฟังก์ชันนี้ถูกสร้างแค่ครั้งเดียว
+  }, []);
 
   return (
     <div className="App">
@@ -214,33 +246,57 @@ function AppContent() {
             onProductBack={handleProductBackClick}
             productName={selectedProduct?.name || ''}
           />
+          <AnimatePresence initial={false} custom={direction}>
+            {currentView === 'home' && (
+              <motion.div
+                key="home" // 👈 key สำคัญมาก
+                custom={direction}
+                variants={pageVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <ProductList 
+                  onProductClick={handleShowProduct}
+                  savedState={productListState}
+                  onStateUpdate={updateProductListState}
+                  shouldFetch={shouldFetchData()}
+                />
+              </motion.div>
+            )}
+            
+            {currentView === 'admin' && (
+              <motion.div
+                key="admin" // 👈 key สำคัญมาก
+                custom={direction}
+                variants={pageVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <AdminDashboard />
+              </motion.div>
+            )}
+            
+            {currentView === 'product' && selectedProductId && (
+              <motion.div
+                key="product" // 👈 key สำคัญมาก
+                custom={direction}
+                variants={pageVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <ProductPreview 
+                  productId={selectedProductId}
+                  onBack={handleBackFromProduct}
+                  onShowBackButton={onShowBackButton}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
           
-          {/* 🎯 Enhanced View Routing with State Preservation */}
-          {currentView === 'home' && (
-            <ProductList 
-              onProductClick={handleShowProduct}
-              
-              // 🎯 NEW: State Preservation Props
-              savedState={productListState}
-              onStateUpdate={updateProductListState}
-              shouldFetch={shouldFetchData()}
-            />
-          )}
-          
-          {currentView === 'admin' && <AdminDashboard />}
-          
-          {/* Enhanced ProductPreview */}
-          {currentView === 'product' && selectedProductId && (
-            <ProductPreview 
-              productId={selectedProductId}
-              onBack={handleBackFromProduct} // ✅ ใช้ฟังก์ชันจาก useCallback
-              
-              // Back Button ใน Header
-              onShowBackButton={onShowBackButton} // ✅ 4. ใช้ฟังก์ชันใหม่จาก useCallback
-            />
-          )}
-          
-          {/* Modals */}
+          {/* Modals (อยู่ข้างนอก AnimatePresence ถูกต้องแล้วครับ) */}
           {showLogin && (
             <LoginForm 
               onSuccess={handleLoginSuccess}

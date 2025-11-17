@@ -223,43 +223,19 @@ const AdminChatTab = () => {
         
         return newMap;
       });
-
-      // [ ❌ JAVIS NOTE: We removed the old logic here to rely on the useEffect Sync ❌ ]
-      // // Update current chat window if selected
-      // if (selectedChatRoom && messageData.chatRoomId === selectedChatRoom._id) {
-      //   ... (old code deleted) ...
-      // }
-
-      // [🌟 JAVIS NOTE: This is the "Bouncing Chat" fix we added 🌟]
-      // Update chat rooms list
       setActiveChatRooms(prev => {
-        // 1. หา Room ที่มีข้อความใหม่เข้ามา
         const roomToUpdate = prev.find(room => room._id === messageData.chatRoomId);
-        
-        // 2. กรอง Room นั้นออกจาก List เดิม (สร้าง Array ใหม่ที่ไม่มี Room นั้น)
         const otherRooms = prev.filter(room => room._id !== messageData.chatRoomId);
-
-        // 3. ถ้าเจอ Room ที่ว่า
         if (roomToUpdate) {
-          // 4. สร้าง Room ที่อัปเดตข้อมูลล่าสุดแล้ว
           const updatedRoom = { 
             ...roomToUpdate, 
             lastMessage: messageData.message,
             lastMessageTime: new Date(messageData.createdAt || Date.now()),
-            
-            // ✨ [BONUS] พี่ปรับ logic unreadCount ให้นิดหน่อยครับ
-            // จะนับ unread (เด้ง Badge) ก็ต่อเมื่อ:
-            // 1. เป็นข้อความจากลูกค้า
-            // 2. Admin *ไม่ได้* กำลังเปิดแชทนั้นค้างไว้
             unreadCount: (messageData.senderType === 'customer' && selectedChatRoom?._id !== messageData.chatRoomId) ? 
               (roomToUpdate.unreadCount || 0) + 1 : roomToUpdate.unreadCount
           };
-
-          // 5. คืนค่า Array ใหม่ โดยเอา Room ที่เพิ่งอัปเดตมาไว้บนสุด
           return [updatedRoom, ...otherRooms];
         }
-        
-        // 6. ถ้าไม่เจอ (ซึ่งไม่น่าเกิด) ก็คืนค่าเดิมไปก่อน
         return prev;
       });
 
@@ -269,7 +245,7 @@ const AdminChatTab = () => {
         showBrowserNotification(messageData);
       }
 
-      console.log('💬 🔥 New message processed successfully - Real-time!');
+      console.log('💬 New message ');
     });
 
     // Customer online/offline
@@ -313,7 +289,6 @@ const AdminChatTab = () => {
           });
         }
         
-        // [ ❌ JAVIS NOTE: We let the useEffect Sync handle this now ❌ ]
         // setChatMessages(messages); 
         console.log(`✅ Loaded ${messages.length} room messages into Global Map`);
         // setTimeout(() => scrollToBottom(), 100);
@@ -373,8 +348,8 @@ const AdminChatTab = () => {
     
     setSelectedChatRoom(chatRoom);
     
-    // [ ❌ JAVIS NOTE: We let the useEffect Sync handle this now ❌ ]
-    // // Use existing messages from global map
+   
+    // Use existing messages from global map
     // const existingMessages = allRoomMessages.get(chatRoom._id) || [];
     // setChatMessages(existingMessages);
     

@@ -41,7 +41,7 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
   useEffect(() => {
     loadingRef.current = loading;
   }, [loading]);
-
+  const scrollRestoredRef = useRef(false);
 
   // ✅ Search & Filter States and 🆕 Advanced Filter States
   const [searchTerm, setSearchTerm] = useState(savedState?.searchTerm || '');
@@ -56,6 +56,21 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
 
 
   // ---------------------------------------------------------------------------------
+
+  useEffect(() => {
+  if (savedState?.scrollPosition && savedState.scrollPosition > 0) {
+    if (!scrollRestoredRef.current) {
+      // console.log(`[WipFix] Restoring scroll to ${savedState.scrollPosition} INSTANTLY.`);
+      window.scrollTo({
+        top: savedState.scrollPosition,
+        behavior: 'auto' 
+      });
+      scrollRestoredRef.current = true;
+    }
+  } else {
+    scrollRestoredRef.current = false;
+  }
+}, [savedState, products]);
 
   useEffect(() => {
     // ฟังก์ชันที่จะทำงานเมื่อมีการ scroll

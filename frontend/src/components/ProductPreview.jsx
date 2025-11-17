@@ -27,7 +27,7 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
     window.scrollTo({
       top: 0,
       left: 0,
-      behavior: 'smooth' // เลื่อนอย่างนุ่มนวล
+      behavior: 'auto'
     });
     
     // Reset page position for instant scroll (fallback)
