@@ -208,7 +208,13 @@ router.get('/my-orders', async (req, res) => {
       });
     }
 
-    const orders = await Order.find({ userId })
+    const orders = await Order.find({ 
+      userId,
+      $or: [
+        { paymentStatus: { $ne: 'pending' } },
+        { 'paymentInfo.method': 'later' }
+      ]
+    })
       .populate('items.productId')
       .sort({ orderDate: -1 });
 
