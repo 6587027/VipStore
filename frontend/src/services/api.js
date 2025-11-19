@@ -112,6 +112,16 @@ export const authAPI = {
     }
   },
   
+  favorites: {
+    // สลับสถานะ (Add/Remove)
+    toggle: (userId, productId) => 
+      api.post(`/auth/favorites/${productId}`, { userId }),
+      
+    // ดึงรายการทั้งหมด
+    getAll: (userId) => 
+      api.get(`/auth/favorites/${userId}`)
+  },
+  
   register: async (userData) => {
     try {
       console.log('📝 Register Attempt:', {

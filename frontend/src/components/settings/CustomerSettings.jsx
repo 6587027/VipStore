@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { authAPI, ordersAPI } from '../../services/api';
 import PaymentModal from '../payment/PaymentModal'; 
 import { socketManager, chatSocket, socketUtils } from '../../services/socketClient';
+import ProductFavoriteList from '../ProductFavoriteList';
 
 import { 
   User, 
@@ -62,6 +63,7 @@ import {
   KeyRoundIcon,
   X,
   Eye,
+  Star,
   
   
 } from 'lucide-react';
@@ -1651,6 +1653,14 @@ const handleNewProfileInputChange = (e) => {
       description: 'ดูประวัติการสั่งซื้อและติดตามสถานะ',
       badge: orderHistory.length > 0 ? `${orderHistory.length}` : null
     },
+    ...(user?.role === 'customer' || user?.role === 'user' ? [{
+      id: 'favorites',
+      icon: <Star className="w-6 h-6" />,
+      title: 'รายการที่ชื่นชอบ',
+      description: 'สินค้าที่คุณกดใจไว้',
+      badge: null 
+    }] : []),
+
     // {
     //   id: 'security',
     //   icon: <Shield className="w-6 h-6" />,
@@ -5772,6 +5782,78 @@ boxShadow: '0 4px 12px rgba(255, 107, 107, 0.6)',
     </div>
   );
 
+  case 'favorites':
+        return (
+          <div style={{
+            background: 'white',
+            borderRadius: '16px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
+            overflow: 'hidden',
+            minHeight: '60vh'
+          }}>
+            {/* Header สีเขียว (Theme Favorite) */}
+            <div style={{
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', 
+              color: 'white',
+              padding: '16px 20px', 
+              textAlign: 'left',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexShrink: 0
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <button
+                  onClick={() => setActiveSection('menu')}
+                  style={{
+                    background: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    borderRadius: '8px',
+                    padding: '8px 12px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    fontWeight: '600'
+                  }}
+                >
+                  <ArrowLeft size={16} />
+                </button>
+                
+                <div>
+                  <h2 style={{ 
+                    margin: 0, 
+                    fontSize: '1.2rem',
+                    fontWeight: '700',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <Star size={20} fill="white" />
+                    รายการที่ชื่นชอบ
+                  </h2>
+                  <p style={{ margin: '4px 0 0', opacity: 0.9, fontSize: '0.8rem' }}>
+                    รวมสินค้าที่คุณถูกใจ
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* เนื้อหา */}
+            <div style={{ padding: '0px' }}>
+               <ProductFavoriteList 
+                  onProductClick={(id) => {
+                     // ถ้าต้องการให้กดแล้วไปหน้า ProductPreview อาจต้องเขียน Logic เพิ่มเติม
+                     // แต่เบื้องต้นใส่ console.log ไว้ก่อน
+                     console.log('Clicked product:', id);
+                  }}
+                  onGoShopping={() => {
+                     setActiveSection('menu');
+                     onClose(); 
+                  }}
+               />
+            </div>
+          </div>
+        );
 
 
       case 'menu':

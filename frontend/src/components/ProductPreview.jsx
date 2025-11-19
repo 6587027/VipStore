@@ -1,11 +1,12 @@
-// frontend/src/components/ProductPreview.jsx - FIXED VERSION WITH AUTO SCROLL
+// frontend/src/components/ProductPreview.jsx - FIXED VERSION WITH AUTO SCROLL & FAVORITES
 import React, { useState, useEffect } from 'react';
-import { productsAPI } from '../services/api';
+import { productsAPI, authAPI } from '../services/api'; // ✅ เพิ่ม authAPI
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import './ProductPreview.css';
 
-import { Search, Filter, Package, DollarSign, BarChart3, RotateCcw, Sparkles, ChevronDown , Package2Icon , File, ShoppingCartIcon } from 'lucide-react';
+// ✅ เพิ่ม Star เข้าไปใน imports
+import { Search, Filter, Package, DollarSign, BarChart3, RotateCcw, Sparkles, ChevronDown , Package2Icon , File, ShoppingCartIcon, Star } from 'lucide-react';
 
 const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
   console.log('🔍 ProductPreview rendered with productId:', productId);
@@ -18,34 +19,30 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   
+  // ✅ State สำหรับ Favorites
+  const [isFavorite, setIsFavorite] = useState(false);
+  
   const { addToCart, getCartItemQuantity } = useCart();
   const { user } = useAuth();
 
   // ✨ SCROLL TO TOP WHEN COMPONENT LOADS
   useEffect(() => {
-    // console.log('🔝 Scrolling to top of page...');
     window.scrollTo({
       top: 0,
       left: 0,
       behavior: 'auto'
     });
-    
-    // Reset page position for instant scroll (fallback)
     document.documentElement.scrollTop = 0;
     document.body.scrollTop = 0;
-  }, [productId]); // ✨ Trigger เมื่อ productId เปลี่ยน
+  }, [productId]);
 
   // ✨ Notify parent to show back button in header
   useEffect(() => {
     if (onShowBackButton && typeof onShowBackButton === 'function') {
-      // console.log('📤 Notifying parent to show back button in header...');
       onShowBackButton(true, handleBackClick);
     }
-    
-    // Cleanup: hide back button when component unmounts
     return () => {
       if (onShowBackButton && typeof onShowBackButton === 'function') {
-        // console.log('🧹 Hiding back button on component unmount...');
         onShowBackButton(false);
       }
     };
@@ -61,9 +58,48 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
     }
   }, [productId]);
 
+  // ✅ ตรวจสอบสถานะ Favorite เมื่อโหลดสินค้าเสร็จ
+  useEffect(() => {
+    if (user && product) {
+        checkIfFavorite();
+    }
+  }, [user, product]);
+
+  const checkIfFavorite = async () => {
+    try {
+        const res = await authAPI.favorites.getAll(user._id || user.id);
+        if (res.data.success) {
+            const found = res.data.favorites.find(f => f._id === product._id);
+            setIsFavorite(!!found);
+        }
+    } catch (error) {
+        console.error('Error checking favorite:', error);
+    }
+  };
+
+  // ✅ ฟังก์ชันกดปุ่มดาว
+  const toggleFavorite = async () => {
+    if (!user) {
+        alert('กรุณาเข้าสู่ระบบเพื่อบันทึกรายการโปรด');
+        return;
+    }
+
+    const previousState = isFavorite;
+    setIsFavorite(!isFavorite); // Optimistic Update
+
+    try {
+        const response = await authAPI.favorites.toggle(user._id || user.id, product._id);
+        if (!response.data.success) {
+           setIsFavorite(previousState); // Revert if error
+        }
+    } catch (error) {
+        console.error('Error toggling favorite:', error);
+        setIsFavorite(previousState);
+    }
+  };
+
   const fetchProductDetails = async () => {
     try {
-      // console.log('📦 Fetching product details for ID:', productId);
       setLoading(true);
       setError(null);
       
@@ -86,27 +122,19 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
   // Handle Back Button with Smooth Experience
   const handleBackClick = () => {
     console.log('🔙 Back button clicked');
-    
-    // ✨ เลื่อนไปด้านบนก่อนที่จะกลับ (เผื่อมี animation)
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
     });
-    
-    // ✨ รอ animation เสร็จแล้วค่อยกลับ
     setTimeout(() => {
       if (onBack && typeof onBack === 'function') {
         onBack();
-      } else {
-        // window.location.reload();
       }
-    }, 200); // รอ 200ms ให้ scroll animation เสร็จ
+    }, 200);
   };
 
-  // ✨ ส่ง Back Handler ไปยัง Parent Component เพื่อแสดงใน Header
   useEffect(() => {
     if (onBack && typeof onBack === 'function') {
-      // Notify parent that we need back button in header
       console.log('📤 Sending back handler to parent...');
     }
   }, [onBack]);
@@ -114,8 +142,6 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
   // จัดการรูปภาพหลายรูป
   const getProductImages = (product) => {
     if (!product?.image) return ['/api/placeholder/400/400'];
-    
-    // ถ้าเป็น Unsplash URL, สร้างรูปหลายมุมมอง
     if (product.image.includes('unsplash.com')) {
       const baseUrl = product.image.split('?')[0];
       return [
@@ -125,17 +151,14 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
         `${baseUrl}?w=800&h=600&fit=crop&sat=-100`,
       ];
     }
-    
     return [product.image];
   };
 
   // จัดการจำนวนสินค้า
   const handleQuantityChange = (newQuantity) => {
     if (!product) return;
-    
     const currentCartQuantity = getCartItemQuantity(product._id);
     const availableStock = product.stock - currentCartQuantity;
-    
     if (newQuantity >= 1 && newQuantity <= availableStock) {
       setQuantity(newQuantity);
     }
@@ -144,16 +167,12 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
   // เพิ่มสินค้าลงตะกร้า
   const handleAddToCart = () => {
     if (!product || quantity <= 0) return;
-    
     try {
       addToCart(product, quantity);
-      
-      // แสดงการแจ้งเตือนสำเร็จ
       setShowNotification(true);
       setTimeout(() => {
         setShowNotification(false);
       }, 3000);
-      
       console.log('✅ Added to cart:', product.name, 'Quantity:', quantity);
     } catch (error) {
       console.error('❌ Error adding to cart:', error);
@@ -235,9 +254,6 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
         </div>
       )}
 
-      {/* Header with Back Button - REMOVED เอาออกแล้ว */}
-      {/* ปุ่มกลับจะแสดงใน Main Header แทน */}
-
       <div className="product-preview-content">
         {/* Image Gallery Section */}
         <div className="product-gallery">
@@ -297,8 +313,34 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
             </div>
           )}
 
-          {/* Product Name */}
-          <h1 className="product-title">{product.name || 'ไม่ระบุชื่อสินค้า'}</h1>
+          {/* ✅ [UPDATED] Product Name & Favorite Button Wrapper */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
+            <h1 className="product-title">{product.name || 'ไม่ระบุชื่อสินค้า'}</h1>
+            
+            {/* ✅ ปุ่มดาว (แสดงเฉพาะ User/Customer) */}
+            {(!user || user.role === 'customer' || user.role === 'user') && (
+              <button 
+                onClick={toggleFavorite}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '8px',
+                  transition: 'transform 0.2s',
+                  transform: isFavorite ? 'scale(1.1)' : 'scale(1)',
+                  marginTop: '5px' // ปรับตำแหน่งให้ตรงกับชื่อสินค้า
+                }}
+                title={isFavorite ? "ยกเลิกรายการโปรด" : "เพิ่มลงรายการโปรด"}
+              >
+                <Star 
+                  size={32} 
+                  color={isFavorite ? "#f59e0b" : "#cbd5e1"} // เหลือง หรือ เทา
+                  fill={isFavorite ? "#f59e0b" : "transparent"} // ถ้ารักก็เติมสีเต็ม
+                  strokeWidth={2}
+                />
+              </button>
+            )}
+          </div>
 
           {/* Rating (Mock) */}
           {/* <div className="product-rating">
@@ -420,6 +462,7 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
               </p>
             </div>
           )}
+          
 
           {/* User Actions */}
           {/* <div className="user-actions">

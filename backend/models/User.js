@@ -112,7 +112,11 @@ const userSchema = new mongoose.Schema({
       message: 'Maximum 5 address profiles allowed'
     },
     default: []
-  }
+  },
+  favorites: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Product' 
+  }]
 }, {
   timestamps: true // Automatically adds createdAt and updatedAt
 });

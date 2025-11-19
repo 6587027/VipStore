@@ -1842,4 +1842,45 @@ router.post('/complete-password-change', async (req, res) => {
   }
 });
 
+//  POST /api/auth/favorites/:productId - Toggle favorite product
+router.post('/favorites/:productId', async (req, res) => {
+  try {
+    const { userId } = req.body; // รับ userId จากหน้าบ้าน
+    const { productId } = req.params;
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    // เช็คว่ามีของหรือยัง
+    const index = user.favorites.indexOf(productId);
+    let isFavorite = false;
+
+    if (index === -1) {
+      user.favorites.push(productId); // 
+      isFavorite = true;
+    } else {
+      user.favorites.splice(index, 1); // มีแล้ว -> ลบ
+      isFavorite = false;
+    }
+
+    await user.save();
+    res.json({ success: true, isFavorite });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+//  GET /api/auth/favorites/:userId - Get user's favorite products
+router.get('/favorites/:userId', async (req, res) => {
+  try {
+    // .populate('favorites') คือพระเอก ที่จะแปลง ID เป็นข้อมูลสินค้าจริงๆ
+    const user = await User.findById(req.params.userId).populate('favorites');
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    res.json({ success: true, favorites: user.favorites });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;
