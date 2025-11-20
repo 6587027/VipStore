@@ -12,6 +12,8 @@ const app = express();
 const server = http.createServer(app); // 🆕 สร้าง HTTP server สำหรับ Socket.IO
 const PORT = process.env.PORT || 3001;
 
+const announcementRoutes = require('./routes/announcement');
+
 // ✅ CORS Configuration
 const allowedOrigins = [
   'https://vipstore-sigma.vercel.app',  // Production Frontend
@@ -137,7 +139,8 @@ app.use("/api/products", productRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/orders", orderRoutes);
 app.use('/api/reports', require('./routes/reports'));
-app.use('/api/chat', require('./routes/chat')); // 🆕 Chat routes
+app.use('/api/chat', require('./routes/chat')); 
+app.use('/api/announcement', announcementRoutes);
 
 // 🆕 Socket.IO Chat Handler
 try {

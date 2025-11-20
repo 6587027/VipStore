@@ -13,31 +13,29 @@ import CustomerSettings from './components/settings/CustomerSettings';
 import WelcomeAnimation from './components/WelcomeAnimation';
 import { useCart } from './context/CartContext';
 import { useAuth } from './context/AuthContext';
-
+import Announcement from './components/Announcement';
 
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Import Admin Panel CSS
 import './styles/AdminPanel.css';
 
-
 const pageVariants = {
   initial: (direction) => ({
-    x: direction > 0 ? '100vw' : '-100vw', // ถ้าไปข้างหน้า(1) มาจากขวา, ถ้าย้อนกลับ(-1) มาจากซ้าย
+    x: direction > 0 ? '100vw' : '-100vw',
     opacity: 0
   }),
   animate: {
-    x: 0, // สไลด์มาตรงกลาง
+    x: 0,
     opacity: 1,
     transition: { type: 'spring', stiffness: 1200, damping: 50 }
   },
   exit: (direction) => ({
-    x: direction > 0 ? '-100vw' : '100vw', // ถ้าไปข้างหน้า(1) ออกไปซ้าย, ถ้าย้อนกลับ(-1) ออกไปขวา
+    x: direction > 0 ? '-100vw' : '100vw',
     opacity: 0,
     transition: { type: 'spring', stiffness: 1200, damping: 50 }
   })
 };
-
 
 function AppContent() {
   const [showLogin, setShowLogin] = useState(false);
@@ -47,13 +45,12 @@ function AppContent() {
   const [simulateServerError, setSimulateServerError] = useState(true);
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
-  
+
   // Product Back Button State
   const [showProductBackButton, setShowProductBackButton] = useState(false);
   const [productBackHandler, setProductBackHandler] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
-  
   const [direction, setDirection] = useState(0);
 
   // 🎯 NEW: ProductList State Preservation
@@ -67,13 +64,30 @@ function AppContent() {
     loading: false,
     scrollPosition: 0,
     lastFetchTime: null,
-    // Keep Vip's existing states
     retryCount: 0,
     loadingPhase: 'initializing',
     serverWakeAttempts: 0,
     showRealError: false,
     isInitialLoad: true
   });
+
+  // 🎯 Announcement State
+  const [announcementConfig, setAnnouncementConfig] = useState(() => {
+    // 1. ตอนเริ่ม App ให้ลองไปดูใน LocalStorage ก่อนว่าเคยเซฟไว้ไหม
+    const savedConfig = localStorage.getItem('vipstore_announcement_config');
+    return savedConfig ? JSON.parse(savedConfig) : {
+      active: false,
+      title: '',
+      content: '',
+      priority: 'green',
+      mode: 'toast'
+    };
+  });
+
+  // 2. สร้าง Effect ดักฟัง: ถ้ามีการแก้ไขค่า ให้เซฟลง LocalStorage ทันที
+  React.useEffect(() => {
+    localStorage.setItem('vipstore_announcement_config', JSON.stringify(announcementConfig));
+  }, [announcementConfig]);
 
   const { isCartOpen, closeCart } = useCart();
   const { isAdmin } = useAuth();
@@ -97,21 +111,17 @@ function AppContent() {
   // 🎯 FIXED: Enhanced Product Preview Handlers with State Preservation
   const handleShowProduct = (productId, productData = null) => {
     console.log('🛍️ App.jsx - handleShowProduct called with ID:', productId);
-    console.log('📦 Product data:', productData);
-    
+
     // 💾 Save current scroll position BEFORE navigation
     const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-    console.log('💾 Saving scroll position:', currentScrollPosition);
-    
+
     // Update ProductList state with scroll position
     setProductListState(prev => ({
       ...prev,
       scrollPosition: currentScrollPosition
     }));
-    
-    
-    setDirection(1); 
-    
+
+    setDirection(1);
     setSelectedProductId(productId);
     setSelectedProduct(productData);
     setCurrentView('product');
@@ -120,32 +130,27 @@ function AppContent() {
   // 🎯 FIXED: Enhanced Back from Product Handler - NO RELOAD
   const handleBackFromProduct = useCallback(() => {
     console.log('⬅️ App.jsx - handleBackFromProduct called - PRESERVING STATE');
-    
-    
     setDirection(-1);
 
     // ✅ Return to home WITHOUT resetting ProductList state
     setCurrentView('home');
     setSelectedProductId(null);
     setSelectedProduct(null);
-    
+
     // Reset Product Back Button State
     setShowProductBackButton(false);
     setProductBackHandler(null);
-    
+
     // 🔄 Restore scroll position after component renders
-    // (โค้ดส่วนนี้ยังทำงานได้ดีเหมือนเดิมครับ)
     setTimeout(() => {
       const savedScrollPosition = productListState.scrollPosition;
-      console.log('📍 Restoring scroll position:', savedScrollPosition);
-      
       if (savedScrollPosition > 0) {
         window.scrollTo({
           top: savedScrollPosition,
-          behavior: 'auto' // 👈 พี่แก้เป็น 'auto' จากที่คุยกันครั้งก่อนครับ
+          behavior: 'auto'
         });
       }
-    }, 100); // 👈 ลด delay ลงนิดหน่อย
+    }, 100);
   }, [productListState.scrollPosition]);
 
   // Product Back Button Handler (from Header)
@@ -160,7 +165,6 @@ function AppContent() {
 
   // 🎯 ProductList State Management Function
   const updateProductListState = (updates) => {
-    // console.log('🔄 Updating ProductList state:', updates);
     setProductListState(prev => ({
       ...prev,
       ...updates,
@@ -172,10 +176,10 @@ function AppContent() {
   const shouldFetchData = () => {
     // Fetch if no saved data or data is older than 5 minutes
     const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
-    return !productListState?.products?.length || 
-           !productListState?.lastFetchTime || 
-           productListState.lastFetchTime < fiveMinutesAgo ||
-           productListState.isInitialLoad; // Always fetch on initial load
+    return !productListState?.products?.length ||
+      !productListState?.lastFetchTime ||
+      productListState.lastFetchTime < fiveMinutesAgo ||
+      productListState.isInitialLoad;
   };
 
   const handleLoginSuccess = (user) => {
@@ -203,7 +207,7 @@ function AppContent() {
     setCurrentView('home');
     setSelectedProductId(null);
     setSelectedProduct(null);
-    
+
     // Reset Product Back Button State
     setShowProductBackButton(false);
     setProductBackHandler(null);
@@ -218,30 +222,31 @@ function AppContent() {
   };
 
   const onShowBackButton = useCallback((show, handler) => {
-    // console.log('📤 App.jsx - onShowBackButton:', { show, handler: !!handler });
     setShowProductBackButton(show);
     setProductBackHandler(() => handler);
   }, []);
 
   return (
     <div className="App">
+
+      {/* ✅ Announcement Component Display */}
+      <Announcement config={announcementConfig} />
+
       {/* Welcome Animation */}
       {showWelcome && (
         <WelcomeAnimation onAnimationComplete={handleAnimationComplete} />
       )}
-      
+
       {/* Main App */}
       {!showWelcome && (
         <>
-          <Header 
+          <Header
             onLoginClick={handleShowLogin}
             onAdminClick={handleShowAdmin}
             onBackToHome={handleBackToHome}
             onProfileClick={handleShowProfile}
             onSettingsClick={handleSettingsClick}
             currentView={currentView}
-            
-            // Product Preview Props
             showProductBackButton={showProductBackButton}
             onProductBack={handleProductBackClick}
             productName={selectedProduct?.name || ''}
@@ -249,14 +254,14 @@ function AppContent() {
           <AnimatePresence initial={false} custom={direction}>
             {currentView === 'home' && (
               <motion.div
-                key="home" // 👈 key สำคัญมาก
+                key="home"
                 custom={direction}
                 variants={pageVariants}
                 initial="initial"
                 animate="animate"
                 exit="exit"
               >
-                <ProductList 
+                <ProductList
                   onProductClick={handleShowProduct}
                   savedState={productListState}
                   onStateUpdate={updateProductListState}
@@ -264,30 +269,34 @@ function AppContent() {
                 />
               </motion.div>
             )}
-            
+
             {currentView === 'admin' && (
               <motion.div
-                key="admin" // 👈 key สำคัญมาก
+                key="admin"
                 custom={direction}
                 variants={pageVariants}
                 initial="initial"
                 animate="animate"
                 exit="exit"
               >
-                <AdminDashboard />
+                {/* ✅ FIXED: ส่ง Props เข้าไปในวงเล็บให้ถูกต้อง */}
+                <AdminDashboard
+                  announcementConfig={announcementConfig}
+                  setAnnouncementConfig={setAnnouncementConfig}
+                />
               </motion.div>
             )}
-            
+
             {currentView === 'product' && selectedProductId && (
               <motion.div
-                key="product" // 👈 key สำคัญมาก
+                key="product"
                 custom={direction}
                 variants={pageVariants}
                 initial="initial"
                 animate="animate"
                 exit="exit"
               >
-                <ProductPreview 
+                <ProductPreview
                   productId={selectedProductId}
                   onBack={handleBackFromProduct}
                   onShowBackButton={onShowBackButton}
@@ -295,23 +304,22 @@ function AppContent() {
               </motion.div>
             )}
           </AnimatePresence>
-          
-          {/* Modals (อยู่ข้างนอก AnimatePresence ถูกต้องแล้วครับ) */}
+
+          {/* Modals */}
           {showLogin && (
-            <LoginForm 
+            <LoginForm
               onSuccess={handleLoginSuccess}
               onClose={handleCloseLogin}
             />
           )}
 
           {showProfile && (
-            <UserProfileModal 
+            <UserProfileModal
               isOpen={showProfile}
               onClose={handleCloseProfile}
             />
           )}
 
-          {/* Settings Modal */}
           {showSettings && (
             <CustomerSettings
               isOpen={showSettings}
@@ -319,9 +327,8 @@ function AppContent() {
             />
           )}
 
-          {/* Enhanced Cart Modal */}
           {(currentView === 'home' || currentView === 'product') && (
-            <CartModal 
+            <CartModal
               isOpen={isCartOpen}
               onClose={closeCart}
             />
