@@ -1,15 +1,29 @@
-// frontend/src/components/ProductPreview.jsx - FIXED VERSION WITH AUTO SCROLL & FAVORITES
+// frontend/src/components/ProductPreview.jsx
 import React, { useState, useEffect } from 'react';
-import { productsAPI, authAPI } from '../services/api'; // ✅ เพิ่ม authAPI
+import { productsAPI, authAPI } from '../services/api';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import './ProductPreview.css';
 
-// ✅ เพิ่ม Star เข้าไปใน imports
-import { Search, Filter, Package, DollarSign, BarChart3, RotateCcw, Sparkles, ChevronDown , Package2Icon , File, ShoppingCartIcon, Star } from 'lucide-react';
+import { 
+  Search, 
+  Filter, 
+  Package, 
+  DollarSign, 
+  BarChart3, 
+  RotateCcw, 
+  Sparkles, 
+  ChevronDown, 
+  Package2Icon, 
+  File, 
+  ShoppingCartIcon, 
+  Star,
+  Maximize2, 
+  X          
+} from 'lucide-react';
 
 const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
-  console.log('🔍 ProductPreview rendered with productId:', productId);
+  console.log('ProductPreview rendered with productId:', productId);
   
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -19,13 +33,16 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   
-  // ✅ State สำหรับ Favorites
+  // Favorites state
   const [isFavorite, setIsFavorite] = useState(false);
+
+  // Image Modal state
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   
   const { addToCart, getCartItemQuantity } = useCart();
   const { user } = useAuth();
 
-  // ✨ SCROLL TO TOP WHEN COMPONENT LOADS
+  // Scroll to top on mount
   useEffect(() => {
     window.scrollTo({
       top: 0,
@@ -36,7 +53,20 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
     document.body.scrollTop = 0;
   }, [productId]);
 
-  // ✨ Notify parent to show back button in header
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isImageModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    // Cleanup function to reset scroll on unmount
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isImageModalOpen]);
+
+  // Handle back button visibility
   useEffect(() => {
     if (onShowBackButton && typeof onShowBackButton === 'function') {
       onShowBackButton(true, handleBackClick);
@@ -48,17 +78,17 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
     };
   }, [onShowBackButton]);
 
-  // โหลดข้อมูลสินค้า
+  // Fetch product data
   useEffect(() => {
     if (productId) {
       fetchProductDetails();
     } else {
-      setError('ไม่พบรหัสสินค้า');
+      setError('Product ID not found');
       setLoading(false);
     }
   }, [productId]);
 
-  // ✅ ตรวจสอบสถานะ Favorite เมื่อโหลดสินค้าเสร็จ
+  // Check favorite status
   useEffect(() => {
     if (user && product) {
         checkIfFavorite();
@@ -77,7 +107,7 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
     }
   };
 
-  // ✅ ฟังก์ชันกดปุ่มดาว
+  // Toggle favorite status
   const toggleFavorite = async () => {
     if (!user) {
         alert('กรุณาเข้าสู่ระบบเพื่อบันทึกรายการโปรด');
@@ -104,24 +134,24 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
       setError(null);
       
       const response = await productsAPI.getById(productId);
-      console.log('✅ Product data received:', response.data);
+      console.log('Product data received:', response.data);
       
       if (response.data && response.data.data) {
         setProduct(response.data.data);
       } else {
-        throw new Error('ไม่พบข้อมูลสินค้า');
+        throw new Error('Product data not found');
       }
     } catch (err) {
-      console.error('❌ Error fetching product:', err);
-      setError('ไม่สามารถโหลดข้อมูลสินค้าได้');
+      console.error('Error fetching product:', err);
+      setError('Unable to load product data');
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle Back Button with Smooth Experience
+  // Handle back button click
   const handleBackClick = () => {
-    console.log('🔙 Back button clicked');
+    console.log('Back button clicked');
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
@@ -135,17 +165,17 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
 
   useEffect(() => {
     if (onBack && typeof onBack === 'function') {
-      console.log('📤 Sending back handler to parent...');
+      console.log('Sending back handler to parent...');
     }
   }, [onBack]);
 
-  // จัดการรูปภาพหลายรูป
+  // Handle image gallery
   const getProductImages = (product) => {
     if (!product?.image) return ['/api/placeholder/400/400'];
     if (product.image.includes('unsplash.com')) {
       const baseUrl = product.image.split('?')[0];
       return [
-        `${baseUrl}?w=800&h=600&fit=crop`,
+        `${baseUrl}?w=1200&h=1200&fit=crop`, // High res for main view
         `${baseUrl}?w=800&h=600&fit=crop&crop=top`,
         `${baseUrl}?w=800&h=600&fit=crop&crop=center`,
         `${baseUrl}?w=800&h=600&fit=crop&sat=-100`,
@@ -154,7 +184,7 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
     return [product.image];
   };
 
-  // จัดการจำนวนสินค้า
+  // Handle quantity change
   const handleQuantityChange = (newQuantity) => {
     if (!product) return;
     const currentCartQuantity = getCartItemQuantity(product._id);
@@ -164,7 +194,7 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
     }
   };
 
-  // เพิ่มสินค้าลงตะกร้า
+  // Add to cart
   const handleAddToCart = () => {
     if (!product || quantity <= 0) return;
     try {
@@ -173,14 +203,14 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
       setTimeout(() => {
         setShowNotification(false);
       }, 3000);
-      console.log('✅ Added to cart:', product.name, 'Quantity:', quantity);
+      console.log('Added to cart:', product.name, 'Quantity:', quantity);
     } catch (error) {
-      console.error('❌ Error adding to cart:', error);
+      console.error('Error adding to cart:', error);
       alert('เกิดข้อผิดพลาดในการเพิ่มสินค้าลงตะกร้า');
     }
   };
 
-  // ฟอร์แมตราคา
+  // Format price
   const formatPrice = (price) => {
     if (typeof price !== 'number') return '฿0';
     return new Intl.NumberFormat('th-TH', {
@@ -191,7 +221,7 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
     }).format(price);
   };
 
-  // ถ้าไม่มี productId
+  // Missing Product ID state
   if (!productId) {
     return (
       <div className="product-preview-container">
@@ -236,7 +266,7 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
     );
   }
 
-  // คำนวณข้อมูลสินค้า
+  // Calculate derived state
   const images = getProductImages(product);
   const currentCartQuantity = getCartItemQuantity(product._id);
   const isOutOfStock = product.stock === 0;
@@ -245,7 +275,7 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
 
   return (
     <div className="product-preview-container">
-      {/* Notification */}
+      {/* Notification Toast */}
       {showNotification && (
         <div className="add-to-cart-notification">
           <div className="notification-content">
@@ -254,20 +284,45 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
         </div>
       )}
 
+      {/* Full Screen Image Modal */}
+      {isImageModalOpen && (
+        <div className="image-modal-overlay" onClick={() => setIsImageModalOpen(false)}>
+          <button className="image-modal-close" onClick={() => setIsImageModalOpen(false)}>
+            <X size={24} />
+          </button>
+          <div className="image-modal-content" onClick={(e) => e.stopPropagation()}>
+            <img 
+              src={images[selectedImage]} 
+              alt="Full size view" 
+              className="image-modal-img"
+            />
+          </div>
+        </div>
+      )}
+
       <div className="product-preview-content">
         {/* Image Gallery Section */}
         <div className="product-gallery">
-          {/* Main Image */}
-          <div className="main-image-container">
+          {/* Main Image Container */}
+          <div 
+            className="main-image-container"
+            onClick={() => setIsImageModalOpen(true)}
+            title="คลิกเพื่อดูภาพขยาย"
+          >
             <img
               src={images[selectedImage]}
-              alt={product.name || 'สินค้า'}
+              alt={product.name || 'Product'}
               className="main-image"
               loading="lazy"
               onError={(e) => {
                 e.target.src = '/api/placeholder/400/400';
               }}
             />
+            
+            {/* Zoom Badge */}
+            <div className="zoom-badge">
+              <Maximize2 size={20} />
+            </div>
             
             {/* Stock Status Badge */}
             {isOutOfStock && (
@@ -313,29 +368,21 @@ const ProductPreview = ({ productId, onBack, onShowBackButton }) => {
             </div>
           )}
 
-          {/* ✅ [UPDATED] Product Name & Favorite Button Wrapper */}
+          {/* Product Name & Favorite Button */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
             <h1 className="product-title">{product.name || 'ไม่ระบุชื่อสินค้า'}</h1>
             
-            {/* ✅ ปุ่มดาว (แสดงเฉพาะ User/Customer) */}
+            {/* Favorite Button (User/Customer only) */}
             {(!user || user.role === 'customer' || user.role === 'user') && (
               <button 
                 onClick={toggleFavorite}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '8px',
-                  transition: 'transform 0.2s',
-                  transform: isFavorite ? 'scale(1.1)' : 'scale(1)',
-                  marginTop: '5px' // ปรับตำแหน่งให้ตรงกับชื่อสินค้า
-                }}
+                className="favorite-btn"
                 title={isFavorite ? "ยกเลิกรายการโปรด" : "เพิ่มลงรายการโปรด"}
               >
                 <Star 
                   size={32} 
-                  color={isFavorite ? "#f59e0b" : "#cbd5e1"} // เหลือง หรือ เทา
-                  fill={isFavorite ? "#f59e0b" : "transparent"} // ถ้ารักก็เติมสีเต็ม
+                  color={isFavorite ? "#f59e0b" : "#cbd5e1"} 
+                  fill={isFavorite ? "#f59e0b" : "transparent"}
                   strokeWidth={2}
                 />
               </button>

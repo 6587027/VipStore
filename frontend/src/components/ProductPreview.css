@@ -3,13 +3,13 @@
 .product-preview-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px; /* ✨ กลับเป็น padding ปกติ */
+  padding: 20px;
   background: #f8fafc;
   min-height: 100vh;
 }
 
 /* ===== REMOVED: Header Section ===== */
-/* ปุ่มกลับจะแสดงใน Main Header แทน */
+/* Back button is now in the Main Header */
 
 /* ===== MAIN CONTENT LAYOUT ===== */
 .product-preview-content {
@@ -29,22 +29,51 @@
 .main-image-container {
   position: relative;
   width: 100%;
-  height: 400px;
+  height: 500px; /* Increased height for better view */
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-  background: white;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.1);
+  background: #ffffff; /* White background for clean look */
+  border: 1px solid #f1f5f9;
+  cursor: zoom-in; /* Indicates clickable image */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .main-image {
   width: 100%;
   height: 100%;
-  /* object-fit: cover; */
+  object-fit: contain; /* Ensures image is fully visible */
   transition: transform 0.3s ease;
+  padding: 10px;
 }
 
-.main-image:hover {
+.main-image-container:hover .main-image {
   transform: scale(1.05);
+}
+
+/* Zoom Badge Styles */
+.zoom-badge {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1e293b;
+  padding: 8px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s ease;
+}
+
+.main-image-container:hover .zoom-badge {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .stock-badge {
@@ -57,6 +86,7 @@
   font-size: 0.9rem;
   color: white;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  z-index: 10;
 }
 
 .out-of-stock-badge {
@@ -82,6 +112,7 @@
   border: 3px solid transparent;
   transition: all 0.3s ease;
   opacity: 0.7;
+  background: white;
 }
 
 .thumbnail:hover {
@@ -93,6 +124,65 @@
   border-color: #667eea;
   opacity: 1;
   box-shadow: 0 0 0 1px #667eea;
+}
+
+/* ===== IMAGE MODAL (LIGHTBOX) ===== */
+.image-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(5px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+  cursor: zoom-out;
+}
+
+.image-modal-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.image-modal-img {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  cursor: default;
+  background: white;
+}
+
+.image-modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 2001;
+}
+
+.image-modal-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
 }
 
 /* ===== PRODUCT INFO SECTION ===== */
@@ -123,6 +213,20 @@
   color: #1e293b;
   margin: 0;
   line-height: 1.3;
+}
+
+/* Favorite Button Styles */
+.favorite-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  transition: transform 0.2s;
+  margin-top: 4px;
+}
+
+.favorite-btn:hover {
+  transform: scale(1.1);
 }
 
 .product-rating {
@@ -499,9 +603,9 @@
 /* ===== NOTIFICATION ===== */
 .add-to-cart-notification {
   position: fixed;
-  top: 20px; /* ✨ กลับเป็นตำแหน่งปกติ */
+  top: 20px;
   right: 20px;
-  z-index: 1000; /* ✨ กลับเป็น z-index ปกติ */
+  z-index: 1000;
   animation: slideInRight 0.3s ease-out;
 }
 
@@ -537,27 +641,27 @@
   }
   
   .product-preview-header {
-    padding: 16px 0; /* ✨ ลด padding บน tablet */
+    padding: 16px 0;
   }
   
   .product-preview-header h1 {
-    font-size: 1.6rem; /* ✨ ปรับขนาดฟอนต์ */
+    font-size: 1.6rem;
   }
 }
 
 /* Mobile */
 @media (max-width: 768px) {
   .product-preview-container {
-    padding: 16px; /* ✨ กลับเป็น padding ปกติ */
+    padding: 16px;
   }
   
   .product-preview-header {
-    padding: 16px 0; /* ✨ เพิ่ม padding บน mobile */
+    padding: 16px 0;
     margin-bottom: 20px;
   }
   
   .product-preview-header h1 {
-    font-size: 1.5rem; /* ✨ ขนาดปกติบน mobile */
+    font-size: 1.5rem;
   }
   
   .back-button {
@@ -567,7 +671,7 @@
   
   .product-preview-content {
     gap: 24px;
-    margin-top: 16px; /* ✨ ลดระยะห่างบน mobile */
+    margin-top: 16px;
   }
   
   .main-image-container {
@@ -654,7 +758,7 @@
   }
   
   .add-to-cart-notification {
-    top: 10px; /* ✨ กลับเป็นตำแหน่งปกติ */
+    top: 10px;
     right: 10px;
     left: 10px;
   }
@@ -669,16 +773,16 @@
 /* Small Mobile */
 @media (max-width: 480px) {
   .product-preview-container {
-    padding: 12px; /* ✨ กลับเป็น padding ปกติ */
+    padding: 12px;
   }
   
   .product-preview-header {
-    padding: 12px 0; /* ✨ เพิ่ม padding */
+    padding: 12px 0;
     margin-bottom: 16px;
   }
   
   .product-preview-header h1 {
-    font-size: 1.3rem; /* ✨ ขนาดปกติ */
+    font-size: 1.3rem;
   }
   
   .back-button {
@@ -740,7 +844,7 @@
   }
   
   .add-to-cart-notification {
-    top: 10px; /* ✨ กลับเป็นตำแหน่งปกติ */
+    top: 10px;
   }
 }
 
@@ -813,4 +917,3 @@
     border: 2px solid white;
   }
 }
-

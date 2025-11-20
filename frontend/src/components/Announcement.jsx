@@ -17,15 +17,18 @@ const Announcement = ({ config, onClose }) => {
         lastUpdated = 0
     } = config || {};
 
-    // 1. Effect สำหรับการแสดงผลและ Timer (เหมือนเดิม)
+    // 1. Effect สำหรับการแสดงผลและ Timer
     useEffect(() => {
+        // ถ้าปิดอยู่ ให้ซ่อนเลย
         if (!active) {
             setIsVisible(false);
             return;
         }
 
+        // เช็ครหัสความจำ (Unique ID)
         const uniqueId = `seen_announcement_${title}_${lastUpdated}`;
 
+        // ถ้าเป็น Modal และเคยดูแล้ว -> ไม่ต้องโชว์
         if (mode === 'modal') {
             const hasSeen = sessionStorage.getItem(uniqueId);
             if (hasSeen) {
@@ -34,28 +37,30 @@ const Announcement = ({ config, onClose }) => {
             }
         }
 
+        // ถ้าทุกอย่างผ่าน -> โชว์ได้!
         setIsVisible(true);
 
+        // ถ้าเป็น Toast (Banner) -> ตั้งเวลาปิด
         if (mode === 'toast') {
             const timer = setTimeout(() => {
                 setIsVisible(false);
                 if (onClose) onClose();
-            }, 20000);
+            }, 20000); // 20 วินาที
             return () => clearTimeout(timer);
         }
-    }, [config, active, mode, title, lastUpdated, onClose]);
 
-    // ✅ 2. [NEW] Effect สำหรับ "ล็อคหน้าจอ" (Body Scroll Lock)
+        // 🔴 จุดสำคัญที่แก้: ลบ 'config' ออกจาก Array ด้านล่างนี้ครับ
+        // ใส่แค่ตัวแปรย่อย (active, mode, title, lastUpdated) พอ
+        // React จะได้เช็คแค่ว่า "ค่าข้างในเปลี่ยนไหม" แทนที่จะเช็คว่า "เป็น object ตัวใหม่รึเปล่า"
+    }, [active, mode, title, lastUpdated, onClose]);
+
+    // 2. Effect สำหรับ Lock Scroll (เฉพาะ Modal)
     useEffect(() => {
         if (isVisible && mode === 'modal') {
-            // เมื่อ Modal ขึ้น -> ห้ามเลื่อนหน้าหลัง
             document.body.style.overflow = 'hidden';
         } else {
-            // เมื่อ Modal ปิด -> ให้เลื่อนได้ปกติ
             document.body.style.overflow = 'unset';
         }
-
-        // Cleanup: คืนค่าเมื่อปิด Component
         return () => {
             document.body.style.overflow = 'unset';
         };
@@ -91,7 +96,6 @@ const Announcement = ({ config, onClose }) => {
                         {renderIcon()}
                         <h3 className="announcement-title">{title}</h3>
                     </div>
-                    {/* ส่วนเนื้อหา */}
                     <div className="announcement-scroll-area">
                         <p className="announcement-content">{content}</p>
                     </div>
@@ -116,7 +120,7 @@ const Announcement = ({ config, onClose }) => {
                     <h3 className="announcement-title">{title}</h3>
                 </div>
                 <div className="announcement-scroll-area">
-                     <p className="announcement-content">{content}</p>
+                    <p className="announcement-content">{content}</p>
                 </div>
             </div>
         </div>
