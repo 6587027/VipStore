@@ -1,5 +1,6 @@
 // frontend/src/App.jsx 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import axios from 'axios'; // ✅ เพิ่ม axios สำหรับยิง API
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import Header from './components/Header';
@@ -19,6 +20,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 // Import Admin Panel CSS
 import './styles/AdminPanel.css';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://vipstore-backend.onrender.com/api';
 
 const pageVariants = {
   initial: (direction) => ({
@@ -42,7 +45,6 @@ function AppContent() {
   const [showProfile, setShowProfile] = useState(false);
   const [currentView, setCurrentView] = useState('home');
   const [showWelcome, setShowWelcome] = useState(true);
-  const [simulateServerError, setSimulateServerError] = useState(true);
   const [selectedProductId, setSelectedProductId] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -53,7 +55,7 @@ function AppContent() {
 
   const [direction, setDirection] = useState(0);
 
-  // 🎯 NEW: ProductList State Preservation
+  // 🎯 ProductList State Preservation
   const [productListState, setProductListState] = useState({
     products: [],
     filteredProducts: [],
@@ -71,26 +73,59 @@ function AppContent() {
     isInitialLoad: true
   });
 
-  // 🎯 Announcement State
-  const [announcementConfig, setAnnouncementConfig] = useState(() => {
-    // 1. ตอนเริ่ม App ให้ลองไปดูใน LocalStorage ก่อนว่าเคยเซฟไว้ไหม
-    const savedConfig = localStorage.getItem('vipstore_announcement_config');
-    return savedConfig ? JSON.parse(savedConfig) : {
-      active: false,
-      title: '',
-      content: '',
-      priority: 'green',
-      mode: 'toast'
-    };
+  // 🎯 Announcement State (เริ่มต้นเป็นค่าว่างๆ ก่อนดึงจาก Server)
+  const [announcementConfig, setAnnouncementConfig] = useState({
+    active: false,
+    title: '',
+    content: '',
+    priority: 'green',
+    mode: 'toast',
+    lastUpdated: 0
   });
-
-  // 2. สร้าง Effect ดักฟัง: ถ้ามีการแก้ไขค่า ให้เซฟลง LocalStorage ทันที
-  React.useEffect(() => {
-    localStorage.setItem('vipstore_announcement_config', JSON.stringify(announcementConfig));
-  }, [announcementConfig]);
 
   const { isCartOpen, closeCart } = useCart();
   const { isAdmin } = useAuth();
+
+  // (ดึงข้อมูลประกาศจาก Server ทันทีที่เข้าเว็บ เพื่อให้ User เห็นข้อมูลล่าสุด)
+  useEffect(() => {
+    const fetchAnnouncement = async () => {
+      try {
+        console.log('📢 Fetching announcement from server...');
+        const response = await axios.get(`${API_BASE_URL}/announcement`);
+        
+        if (response.data && response.data.success) {
+          console.log('✅ Announcement loaded:', response.data.data);
+          setAnnouncementConfig(response.data.data);
+        }
+      } catch (error) {
+        console.error('❌ Failed to fetch announcement:', error);
+      }
+    };
+
+    fetchAnnouncement();
+    
+    // pull announcement every 60 seconds
+    const interval = setInterval(fetchAnnouncement, 60000);
+    return () => clearInterval(interval);
+
+  }, []);
+
+  // (ฟังก์ชันนี้จะถูกส่งไปให้ AdminDashboard ใช้ตอนกด Save)
+  const handleUpdateAnnouncement = async (newConfig) => {
+    try {
+      // อัปเดตหน้าจอ Admin ทันที (Optimistic UI)
+      setAnnouncementConfig(newConfig);
+
+      // ส่งข้อมูลไปบันทึกที่ Server (Database)
+      console.log('📤 Saving announcement to server...');
+      await axios.put(`${API_BASE_URL}/announcement`, newConfig);
+      console.log('✅ Announcement saved successfully');
+      
+    } catch (error) {
+      console.error('❌ Failed to save announcement:', error);
+      alert('Failed to save to server. Please try again.');
+    }
+  };
 
   // Welcome animation complete
   const handleAnimationComplete = () => {
@@ -99,23 +134,16 @@ function AppContent() {
 
   // Settings Handlers
   const handleSettingsClick = () => {
-    console.log('📱 App.jsx - handleSettingsClick called!');
     setShowSettings(true);
   };
 
   const handleCloseSettings = () => {
-    console.log('📱 App.jsx - handleCloseSettings called!');
     setShowSettings(false);
   };
 
-  // 🎯 FIXED: Enhanced Product Preview Handlers with State Preservation
+  // Product Preview Handlers
   const handleShowProduct = (productId, productData = null) => {
-    console.log('🛍️ App.jsx - handleShowProduct called with ID:', productId);
-
-    // 💾 Save current scroll position BEFORE navigation
     const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-
-    // Update ProductList state with scroll position
     setProductListState(prev => ({
       ...prev,
       scrollPosition: currentScrollPosition
@@ -127,21 +155,14 @@ function AppContent() {
     setCurrentView('product');
   };
 
-  // 🎯 FIXED: Enhanced Back from Product Handler - NO RELOAD
   const handleBackFromProduct = useCallback(() => {
-    console.log('⬅️ App.jsx - handleBackFromProduct called - PRESERVING STATE');
     setDirection(-1);
-
-    // ✅ Return to home WITHOUT resetting ProductList state
     setCurrentView('home');
     setSelectedProductId(null);
     setSelectedProduct(null);
-
-    // Reset Product Back Button State
     setShowProductBackButton(false);
     setProductBackHandler(null);
 
-    // 🔄 Restore scroll position after component renders
     setTimeout(() => {
       const savedScrollPosition = productListState.scrollPosition;
       if (savedScrollPosition > 0) {
@@ -153,9 +174,7 @@ function AppContent() {
     }, 100);
   }, [productListState.scrollPosition]);
 
-  // Product Back Button Handler (from Header)
   const handleProductBackClick = () => {
-    console.log('🔙 App.jsx - handleProductBackClick from Header');
     if (productBackHandler && typeof productBackHandler === 'function') {
       productBackHandler();
     } else {
@@ -163,7 +182,6 @@ function AppContent() {
     }
   };
 
-  // 🎯 ProductList State Management Function
   const updateProductListState = (updates) => {
     setProductListState(prev => ({
       ...prev,
@@ -172,9 +190,7 @@ function AppContent() {
     }));
   };
 
-  // 🎯 Check if should fetch data (prevent unnecessary API calls)
   const shouldFetchData = () => {
-    // Fetch if no saved data or data is older than 5 minutes
     const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
     return !productListState?.products?.length ||
       !productListState?.lastFetchTime ||
@@ -184,7 +200,6 @@ function AppContent() {
 
   const handleLoginSuccess = (user) => {
     setShowLogin(false);
-    console.log('User logged in:', user);
   };
 
   const handleShowLogin = () => {
@@ -207,8 +222,6 @@ function AppContent() {
     setCurrentView('home');
     setSelectedProductId(null);
     setSelectedProduct(null);
-
-    // Reset Product Back Button State
     setShowProductBackButton(false);
     setProductBackHandler(null);
   };
@@ -229,7 +242,8 @@ function AppContent() {
   return (
     <div className="App">
 
-      {/* ✅ Announcement Component Display */}
+      {/* Announcement Display */}
+      {/* แสดงผลตาม Config ที่ดึงมาจาก Server */}
       <Announcement config={announcementConfig} />
 
       {/* Welcome Animation */}
@@ -279,10 +293,10 @@ function AppContent() {
                 animate="animate"
                 exit="exit"
               >
-                {/* ✅ FIXED: ส่ง Props เข้าไปในวงเล็บให้ถูกต้อง */}
+                {/* ✅ ส่ง Config และ ฟังก์ชัน Update ไปให้ AdminDashboard */}
                 <AdminDashboard
                   announcementConfig={announcementConfig}
-                  setAnnouncementConfig={setAnnouncementConfig}
+                  setAnnouncementConfig={handleUpdateAnnouncement}
                 />
               </motion.div>
             )}
