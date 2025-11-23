@@ -1,11 +1,11 @@
 // src/components/ProductList.jsx  
 
-import React, { useState, useEffect,useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ProductCard from './ProductCard';
 import { productsAPI } from '../services/api';
 // ✅ [FIX] เพิ่ม Icons ที่ต้องใช้แทน Emoji (Globe, Zap, Tag, Trash2)
-import { 
-  Search, Filter, Package, DollarSign, BarChart3, RotateCcw, Sparkles, ChevronDown, 
+import {
+  Search, Filter, Package, DollarSign, BarChart3, RotateCcw, Sparkles, ChevronDown,
   Settings, RefreshCw, Clock, User, Code, Megaphone, CircleAlert, ArrowUp,
   Globe, Zap, Tag, Trash2
 } from 'lucide-react';
@@ -49,28 +49,28 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
   const [priceRange, setPriceRange] = useState(savedState?.priceRange || { min: '', max: '' });
   const [sortOption, setSortOption] = useState(savedState?.sortOption || '');
   const [showFilters, setShowFilters] = useState(false);
-  
+
   const { t } = useTranslation();
-  
-  
+
+
 
 
   // ---------------------------------------------------------------------------------
 
   useEffect(() => {
-  if (savedState?.scrollPosition && savedState.scrollPosition > 0) {
-    if (!scrollRestoredRef.current) {
-      // console.log(`[WipFix] Restoring scroll to ${savedState.scrollPosition} INSTANTLY.`);
-      window.scrollTo({
-        top: savedState.scrollPosition,
-        behavior: 'auto' 
-      });
-      scrollRestoredRef.current = true;
+    if (savedState?.scrollPosition && savedState.scrollPosition > 0) {
+      if (!scrollRestoredRef.current) {
+        // console.log(`[WipFix] Restoring scroll to ${savedState.scrollPosition} INSTANTLY.`);
+        window.scrollTo({
+          top: savedState.scrollPosition,
+          behavior: 'auto'
+        });
+        scrollRestoredRef.current = true;
+      }
+    } else {
+      scrollRestoredRef.current = false;
     }
-  } else {
-    scrollRestoredRef.current = false;
-  }
-}, [savedState, products]);
+  }, [savedState, products]);
 
   useEffect(() => {
     // ฟังก์ชันที่จะทำงานเมื่อมีการ scroll
@@ -85,7 +85,7 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
 
     // เพิ่ม Event Listener
     window.addEventListener('scroll', checkScrollTop);
-    
+
     // Cleanup: ลบ Event Listener ออกเมื่อ component ถูกปิด
     return () => {
       window.removeEventListener('scroll', checkScrollTop);
@@ -99,18 +99,18 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
       return;
     }
 
-    console.log('Setting up auto-reload interval (30 seconds)');
+    console.log('Setting up auto-reload interval (5 seconds)');
     const intervalId = setInterval(() => {
-      
+
       if (loadingRef.current) {
         // console.log('🔄 Auto-reload: Skipped, already loading.');
         return;
-      }      
+      }
       // console.log('🔄 Auto-reloading products (background)...');
-      setIsInitialLoad(false); 
+      // setIsInitialLoad(false); // Don't reset initial load to avoid spinner flickering
       fetchProducts();
 
-    }, 2000);
+    }, 5000);
     return () => {
       // console.log('Clearing auto-reload interval.');
       clearInterval(intervalId);
@@ -122,53 +122,53 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
   useEffect(() => {
     // [JAVIS HARD-CODE FIX] - เปลี่ยน Logic การเช็ก
     if (shouldFetch && !MAINTENANCE_MODE && (isInitialLoad || !products.length)) {
-        console.log('📡 Store is ONLINE. Fetching products...');
-        fetchProducts();
+      console.log('📡 Store is ONLINE. Fetching products...');
+      fetchProducts();
     } else if (savedState?.products?.length && !shouldFetch) {
-        console.log('✅ Using saved product data, no fetch needed');
+      console.log('✅ Using saved product data, no fetch needed');
     } else if (MAINTENANCE_MODE) {
-        console.log('🛑 Store is in MAINTENANCE. Skipping product fetch.');
-        setLoading(false); 
+      console.log('🛑 Store is in MAINTENANCE. Skipping product fetch.');
+      setLoading(false);
     }
   }, [shouldFetch, selectedCategory]); // [JAVIS HARD-CODE FIX] - เอา isMaintenance, loadingStatus ออกจาก dependency
 
-  
+
   useEffect(() => {
-  if (onStateUpdate) {
-    onStateUpdate({
-      products,
-      loading,
-      selectedCategory,
-      searchTerm,
-      filteredProducts,
-      priceRange,
-      sortOption,
-      retryCount,
-      loadingPhase,
-      serverWakeAttempts,
-      showRealError,
-      isInitialLoad,
-    });
-  }
-}, [
-    products, loading, selectedCategory, searchTerm, filteredProducts, 
-    priceRange, sortOption, retryCount, loadingPhase, serverWakeAttempts, 
-    showRealError, isInitialLoad, 
-    
-]); 
+    if (onStateUpdate) {
+      onStateUpdate({
+        products,
+        loading,
+        selectedCategory,
+        searchTerm,
+        filteredProducts,
+        priceRange,
+        sortOption,
+        retryCount,
+        loadingPhase,
+        serverWakeAttempts,
+        showRealError,
+        isInitialLoad,
+      });
+    }
+  }, [
+    products, loading, selectedCategory, searchTerm, filteredProducts,
+    priceRange, sortOption, retryCount, loadingPhase, serverWakeAttempts,
+    showRealError, isInitialLoad,
+
+  ]);
 
 
   // ✅ Enhanced Filter Effect
   useEffect(() => {
     let filtered = products;
-    
+
     // Filter by Category
     if (selectedCategory) {
-      filtered = filtered.filter(product => 
+      filtered = filtered.filter(product =>
         product.category === selectedCategory
       );
     }
-    
+
     // Filter by Search Term
     if (searchTerm.trim()) {
       filtered = filtered.filter(product =>
@@ -177,7 +177,7 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
         product.category.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    
+
     // Filter by Price Range
     const minPrice = parseFloat(priceRange.min);
     const maxPrice = parseFloat(priceRange.max);
@@ -188,7 +188,7 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
 
       return minCondition && maxCondition;
     });
-    
+
     // Sort Products
     if (sortOption) {
       filtered = [...filtered].sort((a, b) => {
@@ -210,7 +210,7 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
         }
       });
     }
-    
+
     setFilteredProducts(filtered);
   }, [products, selectedCategory, searchTerm, priceRange, sortOption]);
 
@@ -243,43 +243,43 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
   };
 
   const handleProductClick = (productId) => {
-  console.log('🖱️ ProductList - handleProductClick called with ID:', productId);
-  
-  // 💾 Save scroll position ก่อนไป ProductPreview
-  const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-  
-  // Update parent state with scroll position
-  if (onStateUpdate) {
-    onStateUpdate({
-      products,
-      loading,
-      selectedCategory,
-      searchTerm,
-      filteredProducts,
-      priceRange,
-      sortOption,
-      retryCount,
-      loadingPhase,
-      serverWakeAttempts,
-      showRealError,
-      isInitialLoad,
-      scrollPosition: currentScrollPosition 
-    });
-  }
-  
-  if (onProductClick) {
-    const productData = products.find(p => p._id === productId);
-    onProductClick(productId, productData);
-  } else {
-    console.warn('⚠️ onProductClick prop not provided');
-  }
-}; //
+    console.log('🖱️ ProductList - handleProductClick called with ID:', productId);
 
-// เพิ่มฟังก์ชันนี้สำหรับจัดการการคลิกปุ่ม
+    // 💾 Save scroll position ก่อนไป ProductPreview
+    const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+
+    // Update parent state with scroll position
+    if (onStateUpdate) {
+      onStateUpdate({
+        products,
+        loading,
+        selectedCategory,
+        searchTerm,
+        filteredProducts,
+        priceRange,
+        sortOption,
+        retryCount,
+        loadingPhase,
+        serverWakeAttempts,
+        showRealError,
+        isInitialLoad,
+        scrollPosition: currentScrollPosition
+      });
+    }
+
+    if (onProductClick) {
+      const productData = products.find(p => p._id === productId);
+      onProductClick(productId, productData);
+    } else {
+      console.warn('⚠️ onProductClick prop not provided');
+    }
+  }; //
+
+  // เพิ่มฟังก์ชันนี้สำหรับจัดการการคลิกปุ่ม
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
-      behavior: 'smooth' 
+      behavior: 'smooth'
     });
   };
 
@@ -288,7 +288,7 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
       setLoading(true);
       setError(null);
       setShowRealError(false);
-      
+
       if (isInitialLoad) {
         setLoadingPhase('initializing');
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -296,19 +296,19 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
         await new Promise(resolve => setTimeout(resolve, 800));
         setLoadingPhase('fetching');
       }
-      
+
       const params = selectedCategory ? { category: selectedCategory } : {};
       const response = await productsAPI.getAll(params);
-      
+
       setProducts(response.data.data || []);
       setRetryCount(0);
       setServerWakeAttempts(0);
       setIsInitialLoad(false);
       setLoading(false);
-      
+
     } catch (err) {
       console.error('Error fetching products:', err);
-      
+
       if (serverWakeAttempts >= 9) {
         console.log('🛑 Reached maximum retry attempts (10), showing error');
         setShowRealError(true);
@@ -317,36 +317,36 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
         setLoading(false);
         return;
       }
-      
-      const isServerSleeping = err.code === 'ECONNREFUSED' || 
-                              err.message?.includes('Network Error') ||
-                              err.response?.status === 502 ||
-                              err.response?.status === 503;
+
+      const isServerSleeping = err.code === 'ECONNREFUSED' ||
+        err.message?.includes('Network Error') ||
+        err.response?.status === 502 ||
+        err.response?.status === 503;
 
       if (isServerSleeping) {
         console.log(`🔄 Server sleeping, retrying... (${serverWakeAttempts + 1}/10)`);
-        
+
         setServerWakeAttempts(prev => {
           const newCount = prev + 1;
           console.log(`📊 Updated serverWakeAttempts to: ${newCount}`);
           return newCount;
         });
-        
+
         setRetryCount(prev => prev + 1);
-        
+
         if (isInitialLoad) {
           setLoadingPhase('retrying');
         }
-        
+
         const delay = 3000 + (Math.min(serverWakeAttempts, 20) * 500);
         console.log(`⏱️ Retrying in ${delay}ms...`);
-        
+
         setTimeout(() => {
           fetchProducts();
         }, delay);
-        
+
         return;
-        
+
       } else {
         console.log('🚨 Non-server error, showing error immediately');
         setShowRealError(true);
@@ -357,268 +357,268 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
         return;
       }
     }
-  }; 
+  };
 
   const categories = ['Electronics', 'Clothing', 'Books', 'Home', 'Sports', 'Beauty', 'Toys', 'Watches', 'Other'];
   const priceStats = getPriceStats();
 
 
-// -------------------------------------------------------------------------------------- 
-// Maintenance Mode Check
+  // -------------------------------------------------------------------------------------- 
+  // Maintenance Mode Check
 
 
-if (MAINTENANCE_MODE) {
-  return (
-    <div style={{
-      minHeight: '100vh',
-      width: '100vw', 
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '0px',
-      background: '#f3f4f6', 
-      position: 'relative'
-    }}>
-      
-      <LanguageSwitcher />
-
-      
+  if (MAINTENANCE_MODE) {
+    return (
       <div style={{
-        background: '#ffffff', 
-        border: '1px solid #e5e7eb', 
-        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)', 
-        borderRadius: '16px',
-        padding: '15px',
-        maxWidth: '400px',
-        width: '100%',
-        textAlign: 'center',
-        color: '#1f2937' 
+        minHeight: '100vh',
+        width: '100vw',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '0px',
+        background: '#f3f4f6',
+        position: 'relative'
       }}>
-        
+
+        <LanguageSwitcher />
+
+
         <div style={{
-          marginBottom: '20px',
-          display: 'flex',
-          justifyContent: 'center'
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
+          borderRadius: '16px',
+          padding: '15px',
+          maxWidth: '400px',
+          width: '100%',
+          textAlign: 'center',
+          color: '#1f2937'
         }}>
-          <img 
-            src="/VipStoreLogo.png"
-            alt="VipStore Logo"
-            style={{
-              width: '100px',
-              height: '100px',
-              objectFit: 'contain',
-              borderRadius: '15px',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-            }}
-          />
-        </div>
 
-        <h1 style={{
-          color: '#1e40af', 
-          fontSize: '2rem',
-          fontWeight: '700',
-          margin: '0 0 16px 0'
-        }}>
-          {t('maintenanceTitle')}
-        </h1>
-
-        <p 
-          style={{
-            color: '#6b7280', 
-            fontSize: '1.1rem',
-            margin: '0 0 24px 0',
-            lineHeight: '1.6'
-          }}
-          dangerouslySetInnerHTML={{ __html: t('maintenanceMessage') }}
-        />
-
-        {/* --- กล่องอัปเดต (สีเทาอ่อน) --- */}
-        <div style={{
-          background: '#f3f4f6', 
-          padding: '16px',
-          borderRadius: '12px',
-          margin: '0 0 1px 0',
-          border: '1px solid #e5e7eb', 
-          textAlign: 'left'
-        }}>
           <div style={{
+            marginBottom: '20px',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-start',
-            gap: '8px',
-            marginBottom: '12px'
+            justifyContent: 'center'
           }}>
-            <Megaphone size={20} color="#1e40af" /> 
-            <span style={{
-              color: '#1e40af', 
-              fontWeight: '600'
-            }}>
-              {t('updatesTitle')}
-            </span>
+            <img
+              src="/VipStoreLogo.png"
+              alt="VipStore Logo"
+              style={{
+                width: '100px',
+                height: '100px',
+                objectFit: 'contain',
+                borderRadius: '15px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+              }}
+            />
           </div>
-          <div style={{ 
-              fontSize: '0.9rem', 
-              color: '#4b5563', 
-              lineHeight: '1.6'
-          }}>
-              <ul style={{ 
-                  listStyleType: 'disc', 
-                  margin: '0', 
-                  paddingLeft: '20px'
-              }}>
-                  <li>{t('update1')}</li>
-                  {/* <li>{t('update2')}</li> */}
-                  {/* <li>{t('update3')}</li> */}
-                  {/* <li>{t('update4')}</li> */}
-                  {/* <li>{t('update4.1')}</li> */}
-                 <hr style={{ 
-                     margin: '12px 0', 
-                     border: '0', 
-                     borderTop: '1px solid #e5e7eb', 
-                  }}/>
-                  <li>{t('update5')}</li>
-                  {/* <li>{t('update6')}</li> */}
-              </ul>
-          </div>
-        </div>
 
-        {/* --- กล่อง Alert (สีแดงอ่อน) --- */}
-        <div style={{
-            background: '#fee2e2', 
-            color: '#991b1b', 
+          <h1 style={{
+            color: '#1e40af',
+            fontSize: '2rem',
+            fontWeight: '700',
+            margin: '0 0 16px 0'
+          }}>
+            {t('maintenanceTitle')}
+          </h1>
+
+          <p
+            style={{
+              color: '#6b7280',
+              fontSize: '1.1rem',
+              margin: '0 0 24px 0',
+              lineHeight: '1.6'
+            }}
+            dangerouslySetInnerHTML={{ __html: t('maintenanceMessage') }}
+          />
+
+          {/* --- กล่องอัปเดต (สีเทาอ่อน) --- */}
+          <div style={{
+            background: '#f3f4f6',
+            padding: '16px',
+            borderRadius: '12px',
+            margin: '0 0 1px 0',
+            border: '1px solid #e5e7eb',
+            textAlign: 'left'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+              gap: '8px',
+              marginBottom: '12px'
+            }}>
+              <Megaphone size={20} color="#1e40af" />
+              <span style={{
+                color: '#1e40af',
+                fontWeight: '600'
+              }}>
+                {t('updatesTitle')}
+              </span>
+            </div>
+            <div style={{
+              fontSize: '0.9rem',
+              color: '#4b5563',
+              lineHeight: '1.6'
+            }}>
+              <ul style={{
+                listStyleType: 'disc',
+                margin: '0',
+                paddingLeft: '20px'
+              }}>
+                <li>{t('update1')}</li>
+                {/* <li>{t('update2')}</li> */}
+                {/* <li>{t('update3')}</li> */}
+                {/* <li>{t('update4')}</li> */}
+                {/* <li>{t('update4.1')}</li> */}
+                <hr style={{
+                  margin: '12px 0',
+                  border: '0',
+                  borderTop: '1px solid #e5e7eb',
+                }} />
+                <li>{t('update5')}</li>
+                {/* <li>{t('update6')}</li> */}
+              </ul>
+            </div>
+          </div>
+
+          {/* --- กล่อง Alert (สีแดงอ่อน) --- */}
+          <div style={{
+            background: '#fee2e2',
+            color: '#991b1b',
             padding: '12px 16px',
             borderRadius: '12px',
             margin: '16px 0 16px 0',
-            border: '1px solid #fca5a5', 
+            border: '1px solid #fca5a5',
             display: 'flex',
             alignItems: 'flex-start',
             gap: '10px',
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
-        }}>
+          }}>
             <CircleAlert size={20} color="#dc2626" style={{ flexShrink: 0, marginTop: '3px' }} /> {/* 🌟 */}
-            <p 
+            <p
               style={{
                 margin: '0',
                 fontSize: '1rem',
                 fontWeight: '400',
                 lineHeight: '1.5',
                 textAlign: 'left',
-                color: '#991b1b' 
+                color: '#991b1b'
               }}
 
 
               dangerouslySetInnerHTML={{ __html: t('alertMessage') }}
-              // dangerouslySetInnerHTML={{ __html: t('settingsClose') }}
+            // dangerouslySetInnerHTML={{ __html: t('settingsClose') }}
 
-              
+
             />
-        </div>
+          </div>
 
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '12px'
-        }}>
-          {/* --- ปุ่มหลัก (Primary) --- */}
-          <button
-            onClick={() => window.location.reload()}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              background: '#1e40af', 
-              color: 'white',
-              border: 'none',
-              padding: '12px 24px',
-              fontSize: '1rem',
-              fontWeight: '600',
-              borderRadius: '12px',
-              cursor: 'pointer',
-              width: '100%',
-              transition: 'background-color 0.2s ease, transform 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = '#2563eb'; 
-              e.target.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = '#1e40af'; 
-              e.target.style.transform = 'translateY(0)';
-            }}
-          >
-            <RefreshCw size={18} />
-            {t('reloadButton')}
-          </button>
-          
-          {/* --- ปุ่มรอง (Secondary) --- */}
-          <button
-            onClick={() => window.open('https://vippersonalwebsite.vercel.app/contact', '_blank')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              background: 'transparent',
-              color: '#1e40af', 
-              border: '2px solid #1e40af', 
-              padding: '12px 24px',
-              fontSize: '1rem',
-              fontWeight: '600',
-              borderRadius: '12px',
-              cursor: 'pointer',
-              width: '100%',
-              transition: 'background-color 0.2s ease, transform 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = '#eff6ff'; 
-              e.target.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = 'transparent';
-              e.target.style.transform = 'translateY(0)';
-            }}
-          >
-            <User size={16} />
-            {t('contactButton')}
-          </button>
-        </div>
-
-        {/* --- Footer --- */}
-        <div style={{
-          marginTop: '32px',
-          padding: '16px',
-          background: '#f3f4f6', 
-          borderRadius: '12px',
-          fontSize: '0.85rem',
-          color: '#6b7280' 
-        }}>
           <div style={{
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '6px',
-            marginBottom: '4px',
-            fontWeight: '600',
-            color: '#1e40af' 
+            flexDirection: 'column',
+            gap: '12px'
           }}>
-            <Code size={14} />
-            {t('developerName')}
+            {/* --- ปุ่มหลัก (Primary) --- */}
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                background: '#1e40af',
+                color: 'white',
+                border: 'none',
+                padding: '12px 24px',
+                fontSize: '1rem',
+                fontWeight: '600',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                width: '100%',
+                transition: 'background-color 0.2s ease, transform 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#2563eb';
+                e.target.style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = '#1e40af';
+                e.target.style.transform = 'translateY(0)';
+              }}
+            >
+              <RefreshCw size={18} />
+              {t('reloadButton')}
+            </button>
+
+            {/* --- ปุ่มรอง (Secondary) --- */}
+            <button
+              onClick={() => window.open('https://vippersonalwebsite.vercel.app/contact', '_blank')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                background: 'transparent',
+                color: '#1e40af',
+                border: '2px solid #1e40af',
+                padding: '12px 24px',
+                fontSize: '1rem',
+                fontWeight: '600',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                width: '100%',
+                transition: 'background-color 0.2s ease, transform 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#eff6ff';
+                e.target.style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'transparent';
+                e.target.style.transform = 'translateY(0)';
+              }}
+            >
+              <User size={16} />
+              {t('contactButton')}
+            </button>
           </div>
-          <div>{t('developerRole')}</div>
+
+          {/* --- Footer --- */}
+          <div style={{
+            marginTop: '32px',
+            padding: '16px',
+            background: '#f3f4f6',
+            borderRadius: '12px',
+            fontSize: '0.85rem',
+            color: '#6b7280'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              marginBottom: '4px',
+              fontWeight: '600',
+              color: '#1e40af'
+            }}>
+              <Code size={14} />
+              {t('developerName')}
+            </div>
+            <div>{t('developerRole')}</div>
+          </div>
         </div>
       </div>
-    </div>
-  );
-} //
+    );
+  } //
 
-// --------------------------------------------------------------------------------------
-
+  // --------------------------------------------------------------------------------------
 
 
 
-// 🚀 VipStore Enhanced Loading State
-// [JAVIS HARD-CODE FIX] - ตอนนี้หน้านี้จะเป็นหน้าแรกเสมอ (ถ้า MAINTENANCE_MODE = false)
+
+  // 🚀 VipStore Enhanced Loading State
+  // [JAVIS HARD-CODE FIX] - ตอนนี้หน้านี้จะเป็นหน้าแรกเสมอ (ถ้า MAINTENANCE_MODE = false)
   if (loading && isInitialLoad && !showRealError) {
     return (
       <div className="container">
@@ -635,7 +635,7 @@ if (MAINTENANCE_MODE) {
           overflow: 'hidden',
           boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)'
         }}>
-          
+
           {/* ... (โค้ด Loading... เหมือนเดิมทุกประการ) ... */}
 
           {/* Background Animation */}
@@ -660,7 +660,7 @@ if (MAINTENANCE_MODE) {
             position: 'relative',
             marginBottom: '32px'
           }}>
-            
+
             {/* Outer Rotating Ring */}
             <div style={{
               width: '120px',
@@ -671,7 +671,7 @@ if (MAINTENANCE_MODE) {
               animation: 'smoothSpin 2s linear infinite',
               position: 'relative'
             }}>
-              
+
               {/* Inner Pulsing Circle */}
               <div style={{
                 position: 'absolute',
@@ -686,20 +686,20 @@ if (MAINTENANCE_MODE) {
                 alignItems: 'center',
                 justifyContent: 'center'
               }}>
-                
+
                 {/* Dynamic Icon (Replace Emojis) */}
                 <div style={{
                   animation: 'iconFloat 3s ease-in-out infinite',
                   filter: 'drop-shadow(0 2px 8px rgba(102, 126, 234, 0.3))'
                 }}>
                   {loadingPhase === 'connecting' && (
-                    <div style={{ color: '#667eea' }}><Globe size={32} /></div> 
+                    <div style={{ color: '#667eea' }}><Globe size={32} /></div>
                   )}
                   {loadingPhase === 'fetching' && (
-                    <div style={{ color: '#10b981' }}><Package size={32} /></div> 
+                    <div style={{ color: '#10b981' }}><Package size={32} /></div>
                   )}
                   {loadingPhase === 'retrying' && (
-                    <div style={{ color: '#f59e0b' }}><Zap size={32} /></div> 
+                    <div style={{ color: '#f59e0b' }}><Zap size={32} /></div>
                   )}
                 </div>
               </div>
@@ -897,638 +897,638 @@ if (MAINTENANCE_MODE) {
         </div>
       </div>
     );
-} //
+  } //
 
 
   // Error State (ย่อ)
   // if (error && showRealError) {
   //   ... (โค้ด Error ... เหมือนเดิม)
   // }
-  
+
   return (
     <div className="container">
-     {/* ========== 🎨 COLLAPSIBLE HORIZONTAL FILTER SYSTEM ========== */}
-{/* ... (โค้ด Filter... เหมือนเดิมทุกประการ) ... */}
-<div className="filter-container" style={{
-  background: 'white',
-  borderRadius: '16px',
-  marginBottom: '24px',
-  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-  border: '1px solid #e5e7eb',
-  overflow: 'hidden'
-}}>
-  
-  {/* Filter Header - Always Visible */}
-  <div 
-    onClick={() => setShowFilters(!showFilters)}
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: '16px 20px',
-      cursor: 'pointer',
-      borderBottom: showFilters ? '1px solid #e5e7eb' : 'none',
-      transition: 'all 0.3s ease',
-      backgroundColor: showFilters ? '#f0fdf4' : 'white'
-    }}
-  >
-    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-  <Search size={24} color="#059669" />
-  <div>
-    <h3 style={{ 
-      margin: 0, 
-      color: '#059669',
-      fontSize: '1.2rem',
-      fontWeight: '700'
-    }}>
-          ตัวกรองและค้นหา
-        </h3>
-        <p style={{
-          margin: 0,
-          color: '#047857',
-          fontSize: '0.9rem',
-          fontWeight: '500'
-        }}>
-          {getActiveFiltersCount() > 0 
-            ? `กำลังใช้ ${getActiveFiltersCount()} ตัวกรอง • ${filteredProducts.length} สินค้า`
-            : `${filteredProducts.length} สินค้าทั้งหมด • คลิกเพื่อค้นหา`
-          }
-        </p>
-      </div>
-    </div>
-    
-    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-      {/* Active Filters Badge */}
-      {getActiveFiltersCount() > 0 && (
-        <span style={{
-          backgroundColor: '#059669',
-          color: 'white',
-          fontSize: '0.8rem',
-          fontWeight: '700',
-          padding: '6px 12px',
-          borderRadius: '20px',
-          animation: 'pulse 2s infinite'
-        }}>
-          {getActiveFiltersCount()}
-        </span>
-      )}
-      
-      {/* Toggle Icon */}
-      <div style={{
-        fontSize: '1.5rem',
-        color: '#059669',
-        transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        transform: showFilters ? 'rotate(180deg)' : 'rotate(0deg)'
+      {/* ========== 🎨 COLLAPSIBLE HORIZONTAL FILTER SYSTEM ========== */}
+      {/* ... (โค้ด Filter... เหมือนเดิมทุกประการ) ... */}
+      <div className="filter-container" style={{
+        background: 'white',
+        borderRadius: '16px',
+        marginBottom: '24px',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+        border: '1px solid #e5e7eb',
+        overflow: 'hidden'
       }}>
-        <ChevronDown size={20} />
-      </div>
-    </div>
-  </div>
 
-  {/* Animated Filter Content */}
-  <div style={{
-    height: showFilters ? 'auto' : '0',
-    opacity: showFilters ? '1' : '0',
-    transform: showFilters ? 'translateY(0)' : 'translateY(-20px)',
-    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-    overflow: 'hidden'
-  }}>
-    <div style={{ padding: '20px' }}>
-      
-      {/* Search Bar */}
-      <div style={{ marginBottom: '20px' }}>
-        <div style={{ position: 'relative' }}>
-          <input
-            type="text"
-            placeholder="ค้นหาสินค้า, รายละเอียด, หรือหมวดหมู่..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '14px 18px 14px 50px',
-              fontSize: '1rem',
-              border: '2px solid #059669',
-              borderRadius: '14px',
-              outline: 'none',
-              transition: 'all 0.3s ease',
-              backgroundColor: '#f0fdf4',
-              boxShadow: '0 2px 8px rgba(5, 150, 105, 0.1)'
-            }}
-            onFocus={(e) => {
-              e.target.style.backgroundColor = 'white';
-              e.target.style.boxShadow = '0 4px 16px rgba(5, 150, 105, 0.2)';
-            }}
-            onBlur={(e) => {
-              e.target.style.backgroundColor = '#f0fdf4';
-              e.target.style.boxShadow = '0 2px 8px rgba(5, 150, 105, 0.1)';
-            }}
-          />
-          
-          <div style={{
-              position: 'absolute',
-              left: '18px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: '#059669'
-            }}>
-              <Search size={20} />
+        {/* Filter Header - Always Visible */}
+        <div
+          onClick={() => setShowFilters(!showFilters)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '16px 20px',
+            cursor: 'pointer',
+            borderBottom: showFilters ? '1px solid #e5e7eb' : 'none',
+            transition: 'all 0.3s ease',
+            backgroundColor: showFilters ? '#f0fdf4' : 'white'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Search size={24} color="#059669" />
+            <div>
+              <h3 style={{
+                margin: 0,
+                color: '#059669',
+                fontSize: '1.2rem',
+                fontWeight: '700'
+              }}>
+                ตัวกรองและค้นหา
+              </h3>
+              <p style={{
+                margin: 0,
+                color: '#047857',
+                fontSize: '0.9rem',
+                fontWeight: '500'
+              }}>
+                {getActiveFiltersCount() > 0
+                  ? `กำลังใช้ ${getActiveFiltersCount()} ตัวกรอง • ${filteredProducts.length} สินค้า`
+                  : `${filteredProducts.length} สินค้าทั้งหมด • คลิกเพื่อค้นหา`
+                }
+              </p>
             </div>
-          
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              style={{
-                position: 'absolute',
-                right: '15px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '1.3rem',
-                color: '#6b7280',
-                transition: 'all 0.2s ease',
-                borderRadius: '50%',
-                width: '28px',
-                height: '28px',
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* Active Filters Badge */}
+            {getActiveFiltersCount() > 0 && (
+              <span style={{
+                backgroundColor: '#059669',
+                color: 'white',
+                fontSize: '0.8rem',
+                fontWeight: '700',
+                padding: '6px 12px',
+                borderRadius: '20px',
+                animation: 'pulse 2s infinite'
+              }}>
+                {getActiveFiltersCount()}
+              </span>
+            )}
+
+            {/* Toggle Icon */}
+            <div style={{
+              fontSize: '1.5rem',
+              color: '#059669',
+              transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              transform: showFilters ? 'rotate(180deg)' : 'rotate(0deg)'
+            }}>
+              <ChevronDown size={20} />
+            </div>
+          </div>
+        </div>
+
+        {/* Animated Filter Content */}
+        <div style={{
+          height: showFilters ? 'auto' : '0',
+          opacity: showFilters ? '1' : '0',
+          transform: showFilters ? 'translateY(0)' : 'translateY(-20px)',
+          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+          overflow: 'hidden'
+        }}>
+          <div style={{ padding: '20px' }}>
+
+            {/* Search Bar */}
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  placeholder="ค้นหาสินค้า, รายละเอียด, หรือหมวดหมู่..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '14px 18px 14px 50px',
+                    fontSize: '1rem',
+                    border: '2px solid #059669',
+                    borderRadius: '14px',
+                    outline: 'none',
+                    transition: 'all 0.3s ease',
+                    backgroundColor: '#f0fdf4',
+                    boxShadow: '0 2px 8px rgba(5, 150, 105, 0.1)'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.backgroundColor = 'white';
+                    e.target.style.boxShadow = '0 4px 16px rgba(5, 150, 105, 0.2)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.backgroundColor = '#f0fdf4';
+                    e.target.style.boxShadow = '0 2px 8px rgba(5, 150, 105, 0.1)';
+                  }}
+                />
+
+                <div style={{
+                  position: 'absolute',
+                  left: '18px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: '#059669'
+                }}>
+                  <Search size={20} />
+                </div>
+
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    style={{
+                      position: 'absolute',
+                      right: '15px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: '1.3rem',
+                      color: '#6b7280',
+                      transition: 'all 0.2s ease',
+                      borderRadius: '50%',
+                      width: '28px',
+                      height: '28px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#fee2e2';
+                      e.target.style.color = '#dc2626';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = 'transparent';
+                      e.target.style.color = '#6b7280';
+                    }}
+                  >
+                    <RotateCcw size={16} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Filters Grid */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+              gap: '20px',
+              alignItems: 'start'
+            }}>
+
+              {/* Categories */}
+              <div>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '1rem',
+                  fontWeight: '700',
+                  color: '#047857',
+                  marginBottom: '12px'
+                }}>
+                  <Package size={18} />
+                  หมวดหมู่สินค้า
+                </label>
+                <div style={{
+                  display: 'flex',
+                  gap: '8px',
+                  flexWrap: 'wrap'
+                }}>
+                  <button
+                    onClick={() => setSelectedCategory('')}
+                    style={{
+                      padding: '10px 16px',
+                      fontSize: '0.9rem',
+                      fontWeight: '600',
+                      border: selectedCategory === '' ? '2px solid #059669' : '2px solid #d1d5db',
+                      borderRadius: '25px',
+                      backgroundColor: selectedCategory === '' ? '#059669' : 'white',
+                      color: selectedCategory === '' ? 'white' : '#6b7280',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      whiteSpace: 'nowrap',
+                      transform: 'scale(1)',
+                      boxShadow: selectedCategory === '' ? '0 4px 12px rgba(5, 150, 105, 0.3)' : 'none'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (selectedCategory !== '') {
+                        e.target.style.borderColor = '#059669';
+                        e.target.style.color = '#059669';
+                        e.target.style.transform = 'scale(1.05)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedCategory !== '') {
+                        e.target.style.borderColor = '#d1d5db';
+                        e.target.style.color = '#6b7280';
+                        e.target.style.transform = 'scale(1)';
+                      }
+                    }}
+                  >
+                    ทั้งหมด
+                  </button>
+                  {categories.map(category => (
+                    <button
+                      key={category}
+                      onClick={() => setSelectedCategory(category)}
+                      style={{
+                        padding: '10px 16px',
+                        fontSize: '0.9rem',
+                        fontWeight: '600',
+                        border: selectedCategory === category ? '2px solid #059669' : '2px solid #d1d5db',
+                        borderRadius: '25px',
+                        backgroundColor: selectedCategory === category ? '#059669' : 'white',
+                        color: selectedCategory === category ? 'white' : '#6b7280',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        whiteSpace: 'nowrap',
+                        transform: 'scale(1)',
+                        boxShadow: selectedCategory === category ? '0 4px 12px rgba(5, 150, 105, 0.3)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (selectedCategory !== category) {
+                          e.target.style.borderColor = '#059669';
+                          e.target.style.color = '#059669';
+                          e.target.style.transform = 'scale(1.05)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (selectedCategory !== category) {
+                          e.target.style.borderColor = '#d1d5db';
+                          e.target.style.color = '#6b7280';
+                          e.target.style.transform = 'scale(1)';
+                        }
+                      }}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price Range */}
+              <div>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '1rem',
+                  fontWeight: '700',
+                  color: '#047857',
+                  marginBottom: '12px'
+                }}>
+                  <DollarSign size={18} />
+                  ช่วงราคา
+                </label>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <input
+                    type="number"
+                    placeholder="ต่ำสุด"
+                    value={priceRange.min}
+                    onChange={(e) => setPriceRange({ ...priceRange, min: e.target.value })}
+                    style={{
+                      width: '90px',
+                      padding: '8px 10px',
+                      fontSize: '0.9rem',
+                      border: '2px solid #d1d5db',
+                      borderRadius: '8px',
+                      outline: 'none',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#059669';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(5, 150, 105, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                  <span style={{
+                    color: '#6b7280',
+                    fontSize: '1.2rem',
+                    fontWeight: '600'
+                  }}>
+                    -
+                  </span>
+                  <input
+                    type="number"
+                    placeholder="สูงสุด"
+                    value={priceRange.max}
+                    onChange={(e) => setPriceRange({ ...priceRange, max: e.target.value })}
+                    style={{
+                      width: '90px',
+                      padding: '8px 10px',
+                      fontSize: '0.9rem',
+                      border: '2px solid #d1d5db',
+                      borderRadius: '8px',
+                      outline: 'none',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#059669';
+                      e.target.style.boxShadow = '0 0 0 3px rgba(5, 150, 105, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#d1d5db';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* Sort */}
+              <div>
+                <label style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '1rem',
+                  fontWeight: '700',
+                  color: '#047857',
+                  marginBottom: '12px'
+                }}>
+                  <BarChart3 size={18} />
+                  เรียงลำดับ
+                </label>
+                <select
+                  value={sortOption}
+                  onChange={(e) => setSortOption(e.target.value)}
+                  style={{
+                    padding: '10px 14px',
+                    fontSize: '0.9rem',
+                    border: '2px solid #d1d5db',
+                    borderRadius: '10px',
+                    backgroundColor: 'white',
+                    color: '#374151',
+                    cursor: 'pointer',
+                    outline: 'none',
+                    minWidth: '160px',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#059669';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(5, 150, 105, 0.1)';
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#d1d5db';
+                    e.target.style.boxShadow = 'none';
+                  }}
+                >
+                  <option value="">เริ่มต้น</option>
+                  <option value="price-low">ราคา: ต่ำ → สูง</option>
+                  <option value="price-high">ราคา: สูง → ต่ำ</option>
+                  <option value="name-az">ชื่อ: A → Z</option>
+                  <option value="name-za">ชื่อ: Z → A</option>
+                </select>
+              </div>
+
+              {/* Clear Button */}
+              {getActiveFiltersCount() > 0 && (
+                <div>
+                  <label style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '1rem',
+                    fontWeight: '700',
+                    color: '#dc2626',
+                    marginBottom: '12px'
+                  }}>
+                    <RotateCcw size={18} />
+                    รีเซ็ต
+                  </label>
+                  <button
+                    onClick={clearAllFilters}
+                    style={{
+                      padding: '10px 20px',
+                      fontSize: '0.9rem',
+                      fontWeight: '700',
+                      border: '2px solid #dc2626',
+                      borderRadius: '10px',
+                      backgroundColor: 'white',
+                      color: '#dc2626',
+                      cursor: 'pointer',
+                      transition: 'all 0.3s ease',
+                      transform: 'scale(1)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#dc2626';
+                      e.target.style.color = 'white';
+                      e.target.style.transform = 'scale(1.05)';
+                      e.target.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.3)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = 'white';
+                      e.target.style.color = '#dc2626';
+                      e.target.style.transform = 'scale(1)';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                  >
+                    ล้างตัวกรองทั้งหมด
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Results Summary */}
+            {getActiveFiltersCount() > 0 && (
+              <div style={{
+                marginTop: '20px',
+                padding: '16px',
+                backgroundColor: '#ecfdf5',
+                border: '2px solid #bbf7d0',
+                borderRadius: '12px',
+                fontSize: '0.95rem',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#fee2e2';
-                e.target.style.color = '#dc2626';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'transparent';
-                e.target.style.color = '#6b7280';
-              }}
-            >
-              <RotateCcw size={16} />
-            </button>
-          )}
+                gap: '12px'
+              }}>
+                <Sparkles size={20} color="#059669" />
+                <div>
+                  <span style={{ fontWeight: '700', color: '#059669' }}>
+                    ผลการกรอง:
+                  </span>
+                  <span style={{ marginLeft: '8px', color: '#047857', fontWeight: '600' }}>
+                    พบ {filteredProducts.length} สินค้าจากทั้งหมด {products.length} รายการ
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
-      {/* Filters Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-        gap: '20px',
-        alignItems: 'start'
-      }}>
-        
-        {/* Categories */}
-        <div>
-          <label style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '1rem',
-              fontWeight: '700',
-              color: '#047857',
-              marginBottom: '12px'
-            }}>
-              <Package size={18} />
-              หมวดหมู่สินค้า
-            </label>
-          <div style={{
-            display: 'flex',
-            gap: '8px',
-            flexWrap: 'wrap'
-          }}>
-            <button
-              onClick={() => setSelectedCategory('')}
-              style={{
-                padding: '10px 16px',
-                fontSize: '0.9rem',
-                fontWeight: '600',
-                border: selectedCategory === '' ? '2px solid #059669' : '2px solid #d1d5db',
-                borderRadius: '25px',
-                backgroundColor: selectedCategory === '' ? '#059669' : 'white',
-                color: selectedCategory === '' ? 'white' : '#6b7280',
-                cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                whiteSpace: 'nowrap',
-                transform: 'scale(1)',
-                boxShadow: selectedCategory === '' ? '0 4px 12px rgba(5, 150, 105, 0.3)' : 'none'
-              }}
-              onMouseEnter={(e) => {
-                if (selectedCategory !== '') {
-                  e.target.style.borderColor = '#059669';
-                  e.target.style.color = '#059669';
-                  e.target.style.transform = 'scale(1.05)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (selectedCategory !== '') {
-                  e.target.style.borderColor = '#d1d5db';
-                  e.target.style.color = '#6b7280';
-                  e.target.style.transform = 'scale(1)';
-                }
-              }}
-            >
-              ทั้งหมด
-            </button>
-            {categories.map(category => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                style={{
-                  padding: '10px 16px',
-                  fontSize: '0.9rem',
-                  fontWeight: '600',
-                  border: selectedCategory === category ? '2px solid #059669' : '2px solid #d1d5db',
-                  borderRadius: '25px',
-                  backgroundColor: selectedCategory === category ? '#059669' : 'white',
-                  color: selectedCategory === category ? 'white' : '#6b7280',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  whiteSpace: 'nowrap',
-                  transform: 'scale(1)',
-                  boxShadow: selectedCategory === category ? '0 4px 12px rgba(5, 150, 105, 0.3)' : 'none'
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedCategory !== category) {
-                    e.target.style.borderColor = '#059669';
-                    e.target.style.color = '#059669';
-                    e.target.style.transform = 'scale(1.05)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedCategory !== category) {
-                    e.target.style.borderColor = '#d1d5db';
-                    e.target.style.color = '#6b7280';
-                    e.target.style.transform = 'scale(1)';
-                  }
-                }}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Price Range */}
-        <div>
-          <label style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: '1rem',
-            fontWeight: '700',
-            color: '#047857',
-            marginBottom: '12px'
-          }}>
-            <DollarSign size={18} />
-            ช่วงราคา
-          </label>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <input
-              type="number"
-              placeholder="ต่ำสุด"
-              value={priceRange.min}
-              onChange={(e) => setPriceRange({...priceRange, min: e.target.value})}
-              style={{
-                width: '90px',
-                padding: '8px 10px',
-                fontSize: '0.9rem',
-                border: '2px solid #d1d5db',
-                borderRadius: '8px',
-                outline: 'none',
-                transition: 'all 0.2s ease'
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#059669';
-                e.target.style.boxShadow = '0 0 0 3px rgba(5, 150, 105, 0.1)';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#d1d5db';
-                e.target.style.boxShadow = 'none';
-              }}
-            />
-            <span style={{ 
-              color: '#6b7280', 
-              fontSize: '1.2rem', 
-              fontWeight: '600' 
-            }}>
-              -
-            </span>
-            <input
-              type="number"
-              placeholder="สูงสุด"
-              value={priceRange.max}
-              onChange={(e) => setPriceRange({...priceRange, max: e.target.value})}
-              style={{
-                width: '90px',
-                padding: '8px 10px',
-                fontSize: '0.9rem',
-                border: '2px solid #d1d5db',
-                borderRadius: '8px',
-                outline: 'none',
-                transition: 'all 0.2s ease'
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#059669';
-                e.target.style.boxShadow = '0 0 0 3px rgba(5, 150, 105, 0.1)';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#d1d5db';
-                e.target.style.boxShadow = 'none';
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Sort */}
-        <div>
-          <label style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: '1rem',
-            fontWeight: '700',
-            color: '#047857',
-            marginBottom: '12px'
-          }}>
-            <BarChart3 size={18} />
-            เรียงลำดับ
-          </label>
-          <select
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value)}
-            style={{
-              padding: '10px 14px',
-              fontSize: '0.9rem',
-              border: '2px solid #d1d5db',
-              borderRadius: '10px',
-              backgroundColor: 'white',
-              color: '#374151',
-              cursor: 'pointer',
-              outline: 'none',
-              minWidth: '160px',
-              transition: 'all 0.2s ease'
-            }}
-            onFocus={(e) => {
-              e.target.style.borderColor = '#059669';
-              e.target.style.boxShadow = '0 0 0 3px rgba(5, 150, 105, 0.1)';
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = '#d1d5db';
-              e.target.style.boxShadow = 'none';
-            }}
-          >
-            <option value="">เริ่มต้น</option>
-            <option value="price-low">ราคา: ต่ำ → สูง</option>
-            <option value="price-high">ราคา: สูง → ต่ำ</option>
-            <option value="name-az">ชื่อ: A → Z</option>
-            <option value="name-za">ชื่อ: Z → A</option>
-          </select>
-        </div>
-
-        {/* Clear Button */}
-        {getActiveFiltersCount() > 0 && (
-          <div>
-            <label style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '1rem',
-              fontWeight: '700',
-              color: '#dc2626',
-              marginBottom: '12px'
-            }}>
-              <RotateCcw size={18} />
-              รีเซ็ต
-            </label>
-            <button
-              onClick={clearAllFilters}
-              style={{
-                padding: '10px 20px',
-                fontSize: '0.9rem',
-                fontWeight: '700',
-                border: '2px solid #dc2626',
-                borderRadius: '10px',
-                backgroundColor: 'white',
-                color: '#dc2626',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                transform: 'scale(1)'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#dc2626';
-                e.target.style.color = 'white';
-                e.target.style.transform = 'scale(1.05)';
-                e.target.style.boxShadow = '0 4px 12px rgba(220, 38, 38, 0.3)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = 'white';
-                e.target.style.color = '#dc2626';
-                e.target.style.transform = 'scale(1)';
-                e.target.style.boxShadow = 'none';
-              }}
-            >
-              ล้างตัวกรองทั้งหมด
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Results Summary */}
-      {getActiveFiltersCount() > 0 && (
-        <div style={{
-          marginTop: '20px',
-          padding: '16px',
-          backgroundColor: '#ecfdf5',
-          border: '2px solid #bbf7d0',
-          borderRadius: '12px',
-          fontSize: '0.95rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}>
-          <Sparkles size={20} color="#059669" />
-          <div>
-            <span style={{ fontWeight: '700', color: '#059669' }}>
-              ผลการกรอง: 
-            </span>
-            <span style={{ marginLeft: '8px', color: '#047857', fontWeight: '600' }}>
-              พบ {filteredProducts.length} สินค้าจากทั้งหมด {products.length} รายการ
-            </span>
-          </div>
-        </div>
-      )}
-    </div>
-  </div>
-</div>
 
       {/* Products Count */}
       <div style={{ marginBottom: '24px' }}>
         <h2 style={{ color: '#1f2937' }}>
-  สินค้าทั้งหมด ({filteredProducts.length} รายการ)
-  {selectedCategory && ` - หมวดหมู่: ${selectedCategory}`}
-  {searchTerm && ` - ค้นหา: "${searchTerm}"`}
-</h2>
+          สินค้าทั้งหมด ({filteredProducts.length} รายการ)
+          {selectedCategory && ` - หมวดหมู่: ${selectedCategory}`}
+          {searchTerm && ` - ค้นหา: "${searchTerm}"`}
+        </h2>
       </div>
 
       {/* Products Grid */}
-{filteredProducts.length === 0 ? (
-  <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
-    {/* ... (โค้ด "ไม่พบสินค้า"... เหมือนเดิม) ... */}
-    <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
-      {/* ✅ [FIX] เปลี่ยน Emoji เป็น Icon */}
-      {searchTerm ? <Search size={48} color="#9ca3af" /> : getActiveFiltersCount() > 0 ? <Tag size={48} color="#9ca3af" /> : <Package size={48} color="#9ca3af" />}
-    </div>
-    <h3 style={{ color: '#6b7280', marginBottom: '16px' }}>
-      {searchTerm ? 'ไม่พบสินค้าที่ค้นหา' : 
-       getActiveFiltersCount() > 0 ? 'ไม่มีสินค้าที่ตรงกับตัวกรอง' : 'ไม่พบสินค้า'}
-    </h3>
-    <p style={{ color: '#9ca3af', marginBottom: '20px' }}>
-      {searchTerm 
-        ? `ไม่พบสินค้าที่ตรงกับ "${searchTerm}"${selectedCategory ? ` ในหมวดหมู่ ${selectedCategory}` : ''}`
-        : getActiveFiltersCount() > 0
-          ? 'ลองปรับเปลี่ยนตัวกรองหรือล้างตัวกรองบางตัว'
-          : selectedCategory 
-            ? `ไม่มีสินค้าในหมวดหมู่ ${selectedCategory}` 
-            : 'ยังไม่มีสินค้าในระบบ'
-      }
-    </p>
-    {(searchTerm || getActiveFiltersCount() > 0) && (
-      <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
-        {searchTerm && (
-          <button
-            onClick={() => setSearchTerm('')}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#10b981',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: '500',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
+      {filteredProducts.length === 0 ? (
+        <div className="card" style={{ textAlign: 'center', padding: '60px 20px' }}>
+          {/* ... (โค้ด "ไม่พบสินค้า"... เหมือนเดิม) ... */}
+          <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
             {/* ✅ [FIX] เปลี่ยน Emoji เป็น Icon */}
-            <Trash2 size={16} /> ล้างการค้นหา
-          </button>
-        )}
-        {getActiveFiltersCount() > 0 && (
-          <button
-            onClick={clearAllFilters}
-            style={{
-              padding: '8px 16px',
-              backgroundColor: '#ef4444',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '0.9rem',
-              fontWeight: '500',
-              transition: 'all 0.2s ease',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            {/* ✅ [FIX] เปลี่ยน Emoji เป็น Icon */}
-            <Trash2 size={16} /> ล้างตัวกรองทั้งหมด
-          </button>
-        )}
-        
-        {/* 🆕 เพิ่มปุ่ม Reload ตรงนี้! */}
-        <button
-          onClick={() => {
-            console.log('🔄 Reload button clicked!');
-            // ล้างตัวกรองทั้งหมด + โหลดข้อมูลใหม่
-            clearAllFilters();
-            fetchProducts();
-          }}
-          style={{
-            padding: '8px 16px',
-            backgroundColor: '#667eea',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontSize: '0.9rem',
-            fontWeight: '500',
-            transition: 'all 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = '#5a67d8';
-            e.target.style.transform = 'translateY(-1px)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = '#667eea';
-            e.target.style.transform = 'translateY(0)';
-          }}
-        >
-          {/* ✅ [FIX] เปลี่ยน Emoji เป็น Icon */}
-          <RefreshCw size={16} /> โหลดข้อมูลใหม่
-        </button>
-      </div>
-    )}
-    
-    {/* 🆕 ถ้าไม่มีตัวกรองใดๆ ให้แสดงปุ่ม Reload อยู่คนเดียว */}
-    {!searchTerm && getActiveFiltersCount() === 0 && (
-      <div style={{ marginTop: '20px' }}>
-        <button
-          onClick={() => {
-            console.log('🔄 Reload all products clicked!');
-            fetchProducts();
-          }}
-          style={{
-            padding: '12px 24px',
-            backgroundColor: '#667eea',
-            color: 'white',
-            border: 'none',
-            borderRadius: '12px',
-            cursor: 'pointer',
-            fontSize: '1rem',
-            fontWeight: '600',
-            transition: 'all 0.2s ease',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            margin: '0 auto',
-            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = '#5a67d8';
-            e.target.style.transform = 'translateY(-2px)';
-            e.target.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = '#667eea';
-            e.target.style.transform = 'translateY(0)';
-            e.target.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
-          }}
-        >
-           {/* ✅ [FIX] เปลี่ยน Emoji เป็น Icon */}
-           <RefreshCw size={20} /> โหลดสินค้าใหม่
-        </button>
-      </div>
-    )}
-  </div>
-) : (
-  <div className="product-grid">
-    {filteredProducts.map(product => (
-      <ProductCard 
-        key={product._id} 
-        product={product}
-        onProductClick={handleProductClick}
-      />
-    ))}
-  </div>
-)}
+            {searchTerm ? <Search size={48} color="#9ca3af" /> : getActiveFiltersCount() > 0 ? <Tag size={48} color="#9ca3af" /> : <Package size={48} color="#9ca3af" />}
+          </div>
+          <h3 style={{ color: '#6b7280', marginBottom: '16px' }}>
+            {searchTerm ? 'ไม่พบสินค้าที่ค้นหา' :
+              getActiveFiltersCount() > 0 ? 'ไม่มีสินค้าที่ตรงกับตัวกรอง' : 'ไม่พบสินค้า'}
+          </h3>
+          <p style={{ color: '#9ca3af', marginBottom: '20px' }}>
+            {searchTerm
+              ? `ไม่พบสินค้าที่ตรงกับ "${searchTerm}"${selectedCategory ? ` ในหมวดหมู่ ${selectedCategory}` : ''}`
+              : getActiveFiltersCount() > 0
+                ? 'ลองปรับเปลี่ยนตัวกรองหรือล้างตัวกรองบางตัว'
+                : selectedCategory
+                  ? `ไม่มีสินค้าในหมวดหมู่ ${selectedCategory}`
+                  : 'ยังไม่มีสินค้าในระบบ'
+            }
+          </p>
+          {(searchTerm || getActiveFiltersCount() > 0) && (
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm('')}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  {/* ✅ [FIX] เปลี่ยน Emoji เป็น Icon */}
+                  <Trash2 size={16} /> ล้างการค้นหา
+                </button>
+              )}
+              {getActiveFiltersCount() > 0 && (
+                <button
+                  onClick={clearAllFilters}
+                  style={{
+                    padding: '8px 16px',
+                    backgroundColor: '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  {/* ✅ [FIX] เปลี่ยน Emoji เป็น Icon */}
+                  <Trash2 size={16} /> ล้างตัวกรองทั้งหมด
+                </button>
+              )}
+
+              {/* 🆕 เพิ่มปุ่ม Reload ตรงนี้! */}
+              <button
+                onClick={() => {
+                  console.log('🔄 Reload button clicked!');
+                  // ล้างตัวกรองทั้งหมด + โหลดข้อมูลใหม่
+                  clearAllFilters();
+                  fetchProducts();
+                }}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#667eea',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  fontWeight: '500',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#5a67d8';
+                  e.target.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#667eea';
+                  e.target.style.transform = 'translateY(0)';
+                }}
+              >
+                {/* ✅ [FIX] เปลี่ยน Emoji เป็น Icon */}
+                <RefreshCw size={16} /> โหลดข้อมูลใหม่
+              </button>
+            </div>
+          )}
+
+          {/* 🆕 ถ้าไม่มีตัวกรองใดๆ ให้แสดงปุ่ม Reload อยู่คนเดียว */}
+          {!searchTerm && getActiveFiltersCount() === 0 && (
+            <div style={{ marginTop: '20px' }}>
+              <button
+                onClick={() => {
+                  console.log('🔄 Reload all products clicked!');
+                  fetchProducts();
+                }}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#667eea',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  margin: '0 auto',
+                  boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#5a67d8';
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#667eea';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                }}
+              >
+                {/* ✅ [FIX] เปลี่ยน Emoji เป็น Icon */}
+                <RefreshCw size={20} /> โหลดสินค้าใหม่
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="product-grid">
+          {filteredProducts.map(product => (
+            <ProductCard
+              key={product._id}
+              product={product}
+              onProductClick={handleProductClick}
+            />
+          ))}
+        </div>
+      )}
       {/* 🆕 4. [สำคัญ] ปุ่ม Scroll to Top */}
       {showScrollTopButton && (
         <button
@@ -1777,20 +1777,20 @@ const LanguageSwitcher = () => {
   return (
     <div style={{
       // --- 🌟 Liquid Glass Frame Styles 🌟 ---
-      background: 'rgba(255, 255, 255, 0.25)',     
-      backdropFilter: 'blur(10px)',              
-      WebkitBackdropFilter: 'blur(10px)',        
-      border: '1px solid rgba(255, 255, 255, 0.18)', 
-      borderRadius: '12px',                       
-      padding: '6px',                               
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',   
-      
+      background: 'rgba(255, 255, 255, 0.25)',
+      backdropFilter: 'blur(10px)',
+      WebkitBackdropFilter: 'blur(10px)',
+      border: '1px solid rgba(255, 255, 255, 0.18)',
+      borderRadius: '12px',
+      padding: '6px',
+      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+
       // --- Original Styles ---
       position: 'absolute',
       top: '20px',
       right: '20px',
       display: 'flex',
-      gap: '5px', 
+      gap: '5px',
       zIndex: 100
     }}>
       <button
@@ -1798,17 +1798,17 @@ const LanguageSwitcher = () => {
         style={{
           padding: '8px 12px',
           cursor: 'pointer',
-          borderRadius: '8px', 
+          borderRadius: '8px',
           fontWeight: 'bold',
-          transition: 'all 0.2s ease', 
-          
+          transition: 'all 0.2s ease',
+
           // --- 🌟 ปรับ Style ปุ่มให้เข้ากับกรอบ 🌟 ---
-          background: currentLang === 'th' ? '#1e40af' : 'transparent', 
-          color: currentLang === 'th' ? 'white' : '#f0f2ff', 
+          background: currentLang === 'th' ? '#1e40af' : 'transparent',
+          color: currentLang === 'th' ? 'white' : '#f0f2ff',
           border: currentLang === 'th' ? '2px solid #1e40af' : '2px solid transparent',
         }}
       >
-        TH 
+        TH
       </button>
       <button
         onClick={() => changeLanguage('en')}

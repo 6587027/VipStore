@@ -1,6 +1,6 @@
 // frontend/src/components/admin/ProductManager.jsx
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { productsAPI } from '../../services/api';
 import AddProductForm from './AddProductForm';
 import EditProductModal from './EditProductModal';
@@ -18,7 +18,10 @@ import {
   Pencil,
   RefreshCw,
   Eye,
-  EyeOff
+  EyeOff,
+  CheckSquare,
+  Square,
+  X
 } from 'lucide-react';
 
 const ProductManager = ({ products, onProductsChange }) => {
@@ -27,7 +30,11 @@ const ProductManager = ({ products, onProductsChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [loading, setLoading] = useState(false);
-  // ❌ REMOVED: const [showProductList, setShowProductList] = useState(true);
+
+  // Bulk Selection State
+  const [selectedProductIds, setSelectedProductIds] = useState(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const longPressTimer = useRef(null);
 
   // Filter products based on search and category
   const filteredProducts = products.filter(product => {
@@ -68,6 +75,66 @@ const ProductManager = ({ products, onProductsChange }) => {
     } catch (error) {
       console.error('Error updating product visibility:', error);
       alert('Error updating visibility');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- Bulk Selection Logic ---
+
+  const handleLongPressStart = (productId) => {
+    if (isSelectionMode) return;
+    longPressTimer.current = setTimeout(() => {
+      setIsSelectionMode(true);
+      const newSelected = new Set(selectedProductIds);
+      newSelected.add(productId);
+      setSelectedProductIds(newSelected);
+    }, 500);
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+    }
+  };
+
+  const toggleSelection = (productId) => {
+    const newSelected = new Set(selectedProductIds);
+    if (newSelected.has(productId)) {
+      newSelected.delete(productId);
+    } else {
+      newSelected.add(productId);
+    }
+    setSelectedProductIds(newSelected);
+  };
+
+  const exitSelectionMode = () => {
+    setIsSelectionMode(false);
+    setSelectedProductIds(new Set());
+  };
+
+  // --- Bulk Actions ---
+
+  const handleBulkAction = async (action) => {
+    if (selectedProductIds.size === 0) return;
+    if (!window.confirm(`Are you sure you want to ${action} ${selectedProductIds.size} products?`)) return;
+
+    setLoading(true);
+    try {
+      const promises = Array.from(selectedProductIds).map(id => {
+        if (action === 'delete') return productsAPI.delete(id);
+        if (action === 'hide') return productsAPI.update(id, { isActive: false });
+        if (action === 'show') return productsAPI.update(id, { isActive: true });
+        return Promise.resolve();
+      });
+
+      await Promise.all(promises);
+      onProductsChange();
+      exitSelectionMode();
+      alert(`Bulk ${action} completed successfully!`);
+    } catch (error) {
+      console.error(`Error performing bulk ${action}:`, error);
+      alert(`Error performing bulk ${action}`);
     } finally {
       setLoading(false);
     }
@@ -121,6 +188,89 @@ const ProductManager = ({ products, onProductsChange }) => {
         </button>
       </div>
 
+      {/* Bulk Action Toolbar */}
+      {isSelectionMode && (
+        <div className="bulk-actions-toolbar" style={{
+          background: '#1e293b',
+          color: 'white',
+          padding: '10px 20px',
+          borderRadius: '8px',
+          marginBottom: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          animation: 'slideDown 0.3s ease'
+        }}>
+          <span style={{ fontWeight: 'bold', marginRight: 'auto' }}>
+            {selectedProductIds.size} Selected
+          </span>
+
+          <button
+            onClick={() => handleBulkAction('hide')}
+            className="btn-secondary"
+            style={{
+              background: '#475569',
+              border: 'none',
+              color: 'white',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 16px'
+            }}
+          >
+            <EyeOff size={16} /> Hide
+          </button>
+          <button
+            onClick={() => handleBulkAction('show')}
+            className="btn-secondary"
+            style={{
+              background: '#475569',
+              border: 'none',
+              color: 'white',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 16px'
+            }}
+          >
+            <Eye size={16} /> Show
+          </button>
+          <button
+            onClick={() => handleBulkAction('delete')}
+            className="btn-danger"
+            style={{
+              background: '#ef4444',
+              border: 'none',
+              color: 'white',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 16px',
+              marginLeft: '8px'
+            }}
+          >
+            <Trash2 size={16} /> Delete
+          </button>
+          <button
+            onClick={exitSelectionMode}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: '#94a3b8',
+              cursor: 'pointer',
+              marginLeft: '8px',
+              padding: '4px'
+            }}
+            title="ยกเลิก"
+          >
+            <X size={20} />
+          </button>
+        </div>
+      )}
+
       {/* 👇 (2) MODIFIED: Filters and Search (New Search Box + Refresh Button) */}
       <div className="filters-section">
         <div className="search-box">
@@ -173,6 +323,7 @@ const ProductManager = ({ products, onProductsChange }) => {
           <table className="products-table">
             <thead>
               <tr>
+                {isSelectionMode && <th>Select</th>}
                 <th>Image</th>
                 <th>Product Name</th>
                 <th>Category</th>
@@ -186,7 +337,35 @@ const ProductManager = ({ products, onProductsChange }) => {
               {filteredProducts.map(product => {
                 const stockStatus = getStockStatus(product.stock);
                 return (
-                  <tr key={product._id} style={{ opacity: product.isActive ? 1 : 0.6 }}>
+                  <tr
+                    key={product._id}
+                    style={{
+                      opacity: product.isActive ? 1 : 0.6,
+                      background: selectedProductIds.has(product._id) ? '#f1f5f9' : 'transparent',
+                      cursor: isSelectionMode ? 'pointer' : 'default'
+                    }}
+                    onMouseDown={() => handleLongPressStart(product._id)}
+                    onMouseUp={handleLongPressEnd}
+                    onTouchStart={() => handleLongPressStart(product._id)}
+                    onTouchEnd={handleLongPressEnd}
+                    onClick={() => {
+                      if (isSelectionMode) toggleSelection(product._id);
+                    }}
+                  >
+                    {isSelectionMode && (
+                      <td onClick={(e) => e.stopPropagation()}>
+                        <div
+                          onClick={() => toggleSelection(product._id)}
+                          style={{ cursor: 'pointer', display: 'flex', justifyContent: 'center' }}
+                        >
+                          {selectedProductIds.has(product._id) ? (
+                            <CheckSquare size={20} color="#2563eb" />
+                          ) : (
+                            <Square size={20} color="#cbd5e1" />
+                          )}
+                        </div>
+                      </td>
+                    )}
                     <td>
                       <img
                         src={product.image}

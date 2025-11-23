@@ -457,7 +457,7 @@ const AdminChatTab = () => {
   const handleDeleteChat = async (e, roomId) => {
     e.stopPropagation(); // Prevent selecting the chat when clicking delete
 
-    if (!window.confirm('คุณแน่ใจหรือไม่ที่จะลบแชทนี้? การกระทำนี้ไม่สามารถย้อนกลับได้')) {
+    if (!window.confirm('Are you sure you want to delete this chat? This action cannot be undone.')) {
       return;
     }
 
@@ -484,11 +484,11 @@ const AdminChatTab = () => {
 
         console.log('✅ Chat room deleted successfully');
       } else {
-        alert('เกิดข้อผิดพลาดในการลบแชท: ' + data.message);
+        alert('Error deleting chat: ' + data.message);
       }
     } catch (error) {
       console.error('Error deleting chat:', error);
-      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      alert('Connection error');
     }
   };
 
@@ -505,9 +505,9 @@ const AdminChatTab = () => {
     const diff = now - new Date(date);
     const minutes = Math.floor(diff / 60000);
 
-    if (minutes < 1) return 'เมื่อสักครู่';
-    if (minutes < 60) return `${minutes} นาทีที่แล้ว`;
-    if (minutes < 1440) return `${Math.floor(minutes / 60)} ชั่วโมงที่แล้ว`;
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes} mins ago`;
+    if (minutes < 1440) return `${Math.floor(minutes / 60)} hours ago`;
     return new Date(date).toLocaleDateString('th-TH');
   };
 
@@ -522,10 +522,10 @@ const AdminChatTab = () => {
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'active': return 'กำลังแชท';
-      case 'waiting': return 'รอตอบ';
-      case 'closed': return 'เสร็จสิ้น';
-      default: return 'ไม่ทราบ';
+      case 'active': return 'Active';
+      case 'waiting': return 'Waiting';
+      case 'closed': return 'Closed';
+      default: return 'Unknown';
     }
   };
 
@@ -549,7 +549,7 @@ const AdminChatTab = () => {
 
   const showBrowserNotification = (messageData) => {
     if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification('ข้อความใหม่จากลูกค้า', {
+      new Notification('New message from customer', {
         body: `${messageData.senderName}: ${messageData.message.substring(0, 50)}`,
         icon: '/logo192.png',
         badge: '/logo192.png'
@@ -562,7 +562,7 @@ const AdminChatTab = () => {
       <div className="admin-chat-loading">
         <div className="loading-content">
           <div className="loading-spinner"></div>
-          <p>กำลังเชื่อมต่อระบบแชท...</p>
+          <p>Connecting to chat system...</p>
         </div>
       </div>
     );
@@ -578,13 +578,13 @@ const AdminChatTab = () => {
               <MessageSquare size={28} className="section-icon" />
               Live Chat Management
             </h2>
-            <p>จัดการแชทลูกค้าแบบ Real-time</p>
+            <p>Manage customer chats in real-time</p>
           </div>
 
           {connected && (
             <div className="connection-badge">
               <Wifi size={16} />
-              เชื่อมต่อแล้ว • Live Updates
+              Connected • Live Updates
             </div>
           )}
         </div>
@@ -599,12 +599,12 @@ const AdminChatTab = () => {
             {refreshing ? (
               <>
                 <RefreshCw size={16} className="spinning" />
-                กำลังรีเฟรช...
+                Refreshing...
               </>
             ) : (
               <>
                 <RefreshCw size={16} />
-                รีเฟรชแชท
+                Refresh Chat
               </>
             )}
           </button>
@@ -615,7 +615,7 @@ const AdminChatTab = () => {
               className="control-btn disconnect-btn"
             >
               <Power size={16} />
-              ปิดระบบแชท
+              Disconnect Chat
             </button>
           ) : (
             <button
@@ -626,12 +626,12 @@ const AdminChatTab = () => {
               {loading ? (
                 <>
                   <Clock size={16} />
-                  กำลังเชื่อมต่อ...
+                  Connecting...
                 </>
               ) : (
                 <>
                   <Power size={16} />
-                  เปิดระบบแชท
+                  Connect Chat
                 </>
               )}
             </button>
@@ -648,7 +648,7 @@ const AdminChatTab = () => {
             </div>
             <div className="stat-content">
               <div className="stat-number">{chatStats.total}</div>
-              <div className="stat-label">ทั้งหมด</div>
+              <div className="stat-label">Total</div>
             </div>
           </div>
 
@@ -658,7 +658,7 @@ const AdminChatTab = () => {
             </div>
             <div className="stat-content">
               <div className="stat-number">{chatStats.active}</div>
-              <div className="stat-label">กำลังแชท</div>
+              <div className="stat-label">Active</div>
             </div>
           </div>
 
@@ -668,7 +668,7 @@ const AdminChatTab = () => {
             </div>
             <div className="stat-content">
               <div className="stat-number">{chatStats.waiting}</div>
-              <div className="stat-label">รอตอบ</div>
+              <div className="stat-label">Waiting</div>
             </div>
           </div>
 
@@ -678,7 +678,7 @@ const AdminChatTab = () => {
             </div>
             <div className="stat-content">
               <div className="stat-number">{chatStats.resolved}</div>
-              <div className="stat-label">เสร็จสิ้น</div>
+              <div className="stat-label">Closed</div>
             </div>
           </div>
         </div>
@@ -709,7 +709,7 @@ const AdminChatTab = () => {
               {lastRefresh && (
                 <div className="last-refresh">
                   <Clock size={14} />
-                  รีเฟรชล่าสุด: {lastRefresh.toLocaleTimeString('th-TH')}
+                  Last refresh: {lastRefresh.toLocaleTimeString('th-TH')}
                 </div>
               )}
               <div className={`admin-status ${isOnline ? 'online' : 'offline'}`}>
@@ -725,16 +725,16 @@ const AdminChatTab = () => {
             {!connected && (
               <div className="empty-state">
                 <WifiOff size={48} className="empty-icon" />
-                <h4>ระบบแชทปิดอยู่</h4>
-                <p>กดปุ่ม "เปิดระบบแชท" เพื่อเริ่มใช้งาน</p>
+                <h4>Chat System Offline</h4>
+                <p>Click 'Connect Chat' to start</p>
               </div>
             )}
 
             {connected && activeChatRooms.length === 0 && (
               <div className="empty-state">
                 <MessageSquare size={48} className="empty-icon" />
-                <h4>ไม่มีแชทที่ใช้งาน</h4>
-                <p>รอลูกค้าเริ่มการสนทนา หรือกดรีเฟรชเพื่ออัปเดต</p>
+                <h4>No Active Chats</h4>
+                <p>Wait for customers or refresh to update</p>
               </div>
             )}
 
@@ -758,7 +758,7 @@ const AdminChatTab = () => {
                   <div className="chat-content">
                     <div className="chat-header">
                       <span className="customer-name">
-                        {chatRoom.customerName || 'ลูกค้า'}
+                        {chatRoom.customerName || 'Customer'}
                       </span>
                       <span className="chat-time">
                         {formatTime(chatRoom.lastMessageTime)}
@@ -767,12 +767,12 @@ const AdminChatTab = () => {
 
                     <div className="chat-preview-row">
                       <div className="chat-message">
-                        {chatRoom.lastMessage || 'ยังไม่มีข้อความ'}
+                        {chatRoom.lastMessage || 'No messages yet'}
                       </div>
                       <button
                         className="delete-chat-btn"
                         onClick={(e) => handleDeleteChat(e, chatRoom._id)}
-                        title="ลบแชท"
+                        title="Delete Chat"
                       >
                         <Trash2 size={14} />
                       </button>
@@ -814,8 +814,8 @@ const AdminChatTab = () => {
                   </div>
                   {/* [🌟 THEME FIX] CSS จะลบพื้นหลัง/ขอบ ของ customer-info */}
                   <div className="customer-info">
-                    <h4>{selectedChatRoom.customerName || 'ลูกค้า'}</h4>
-                    <p>{selectedChatRoom.customerEmail || 'ไม่ระบุอีเมล'}</p>
+                    <h4>{selectedChatRoom.customerName || 'Customer'}</h4>
+                    <p>{selectedChatRoom.customerEmail || 'No email specified'}</p>
                   </div>
                 </div>
               </div>
@@ -825,9 +825,9 @@ const AdminChatTab = () => {
                 {chatMessages.length === 0 ? (
                   <div className="no-messages">
                     <MessageSquare size={64} className="no-messages-icon" />
-                    <p>ยังไม่มีข้อความในห้องแชทนี้</p>
+                    <p>No messages in this chat room yet</p>
                     <p className="no-messages-subtitle">
-                      ข้อความจะปรากฏที่นี่เมื่อมีการสนทนา
+                      Messages will appear here when a conversation starts
                     </p>
                   </div>
                 ) : (
@@ -870,7 +870,7 @@ const AdminChatTab = () => {
                           {selectedChatRoom.customerName?.charAt(0)?.toUpperCase() || 'C'}
                         </div>
                         <div className="typing-bubble">
-                          <span className="typing-text">กำลังพิมพ์</span>
+                          <span className="typing-text">Typing</span>
                           <span className="typing-dots">
                             <span></span><span></span><span></span>
                           </span>
@@ -887,7 +887,7 @@ const AdminChatTab = () => {
               <div className="chat-input-improved">
                 <input
                   type="text"
-                  placeholder="พิมพ์ข้อความถึงลูกค้า..."
+                  placeholder="Type a message..."
                   className="message-input-improved"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
@@ -906,12 +906,12 @@ const AdminChatTab = () => {
           ) : (
             <div className="no-chat-selected-improved">
               <MessageSquare size={80} className="no-chat-icon" />
-              <h3>เลือกแชทเพื่อเริ่มการสนทนา</h3>
-              <p>คลิกที่รายการแชทด้านซ้ายเพื่อดูรายละเอียด</p>
+              <h3>Select a chat to start conversation</h3>
+              <p>Click on a chat from the left list to view details</p>
               {connected && (
                 <div className="connected-status">
                   <Wifi size={16} />
-                  ระบบแชทพร้อมใช้งาน - Real-time Updates!
+                  Chat system ready - Real-time Updates!
                 </div>
               )}
             </div>
