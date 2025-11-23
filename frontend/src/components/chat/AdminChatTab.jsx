@@ -462,8 +462,8 @@ const AdminChatTab = () => {
     }
 
     try {
-      // Assuming you have an API utility or using fetch directly
-      const response = await fetch(`http://localhost:3001/api/chat/room/${roomId}`, {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+      const response = await fetch(`${API_URL}/chat/room/${roomId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}` // Adjust auth header as needed
