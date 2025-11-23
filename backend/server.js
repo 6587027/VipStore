@@ -22,7 +22,7 @@ const allowedOrigins = [
   'https://vipstorewebsite.vercel.app',  // Production Frontend
 ];
 
-// 🆕 Socket.IO Setup with CORS
+// Socket.IO Setup with CORS
 const io = socketIo(server, {
   cors: {
     origin: allowedOrigins,

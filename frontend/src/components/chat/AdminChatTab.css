@@ -1351,3 +1351,41 @@ text-align: center;
     transition-duration: 0.01ms !important;
   }
 }
+/* Delete Chat Button */
+.chat-preview-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.delete-chat-btn {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  padding: 6px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  opacity: 0; /* Hidden by default */
+}
+
+.chat-item-improved:hover .delete-chat-btn {
+  opacity: 1; /* Show on hover */
+}
+
+.delete-chat-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+  transform: scale(1.1);
+}
+
+/* Ensure message text truncates properly with the button */
+.chat-preview-row .chat-message {
+  margin-bottom: 0;
+  flex: 1;
+}

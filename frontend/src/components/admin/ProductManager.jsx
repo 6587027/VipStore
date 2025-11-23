@@ -5,18 +5,20 @@ import { productsAPI } from '../../services/api';
 import AddProductForm from './AddProductForm';
 import EditProductModal from './EditProductModal';
 
-import { 
-  Package, 
-  Plus, 
-  Search, 
+import {
+  Package,
+  Plus,
+  Search,
   Filter,
-  Edit2, 
+  Edit2,
   Trash2,
   AlertCircle,
   CheckCircle,
   XCircle,
   Pencil,
-  RefreshCw 
+  RefreshCw,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 const ProductManager = ({ products, onProductsChange }) => {
@@ -30,7 +32,7 @@ const ProductManager = ({ products, onProductsChange }) => {
   // Filter products based on search and category
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
+      product.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = !categoryFilter || product.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
@@ -57,6 +59,20 @@ const ProductManager = ({ products, onProductsChange }) => {
     }
   };
 
+  // Handle toggle visibility
+  const handleToggleVisibility = async (product) => {
+    try {
+      setLoading(true);
+      await productsAPI.update(product._id, { isActive: !product.isActive });
+      onProductsChange();
+    } catch (error) {
+      console.error('Error updating product visibility:', error);
+      alert('Error updating visibility');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Handle edit product
   const handleEditProduct = (product) => {
     setEditingProduct(product);
@@ -72,22 +88,22 @@ const ProductManager = ({ products, onProductsChange }) => {
 
   // Get stock status
   const getStockStatus = (stock) => {
-  if (stock === 0) return { 
-    text: ' Out of Stock', 
-    class: 'stock-out',
-    icon: <XCircle size={13} />
+    if (stock === 0) return {
+      text: ' Out of Stock',
+      class: 'stock-out',
+      icon: <XCircle size={13} />
+    };
+    if (stock < 10) return {
+      text: ' Low Stock',
+      class: 'stock-low',
+      icon: <AlertCircle size={13} />
+    };
+    return {
+      text: ' In Stock',
+      class: 'stock-good',
+      icon: <CheckCircle size={13} />
+    };
   };
-  if (stock < 10) return { 
-    text: ' Low Stock', 
-    class: 'stock-low',
-    icon: <AlertCircle size={13} />
-  };
-  return { 
-    text: ' In Stock', 
-    class: 'stock-good',
-    icon: <CheckCircle size={13} />
-  };
-};
 
   return (
     <div className="product-manager">
@@ -97,7 +113,7 @@ const ProductManager = ({ products, onProductsChange }) => {
           <h2><Package size={33} className="section-icon" /> Product Management</h2>
           <p>Manage your store inventory</p>
         </div>
-        <button 
+        <button
           className="btn-primary"
           onClick={() => setShowAddForm(true)}
         >
@@ -107,8 +123,8 @@ const ProductManager = ({ products, onProductsChange }) => {
 
       {/* 👇 (2) MODIFIED: Filters and Search (New Search Box + Refresh Button) */}
       <div className="filters-section">
-        <div className="search-box">  
-          <Search size={18} className="search-icon" /> 
+        <div className="search-box">
+          <Search size={18} className="search-icon" />
           <input
             type="text"
             placeholder="Search products..." // 👈 Removed emoji
@@ -117,7 +133,7 @@ const ProductManager = ({ products, onProductsChange }) => {
             className="search-input"
           />
         </div>
-        
+
         <div className="filter-box">
           <select
             value={categoryFilter}
@@ -170,10 +186,10 @@ const ProductManager = ({ products, onProductsChange }) => {
               {filteredProducts.map(product => {
                 const stockStatus = getStockStatus(product.stock);
                 return (
-                  <tr key={product._id}>
+                  <tr key={product._id} style={{ opacity: product.isActive ? 1 : 0.6 }}>
                     <td>
-                      <img 
-                        src={product.image} 
+                      <img
+                        src={product.image}
                         alt={product.name}
                         className="product-thumbnail"
                         onError={(e) => {
@@ -185,7 +201,7 @@ const ProductManager = ({ products, onProductsChange }) => {
                       <div className="product-info">
                         <strong>{product.name}</strong>
                         <p className="product-description">
-                          {product.description.length > 50 
+                          {product.description.length > 50
                             ? product.description.substring(0, 50) + '...'
                             : product.description
                           }
@@ -213,6 +229,14 @@ const ProductManager = ({ products, onProductsChange }) => {
                     </td>
                     <td>
                       <div className="action-buttons">
+                        <button
+                          className="btn-edit"
+                          onClick={() => handleToggleVisibility(product)}
+                          title={product.isActive ? "Hide Product" : "Show Product"}
+                          style={{ color: product.isActive ? '#64748b' : '#ef4444' }}
+                        >
+                          {product.isActive ? <Eye size={20} /> : <EyeOff size={20} />}
+                        </button>
                         <button
                           className="btn-edit"
                           onClick={() => handleEditProduct(product)}

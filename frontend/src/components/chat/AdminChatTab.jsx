@@ -3,10 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { socketManager, chatSocket, socketUtils } from '../../services/socketClient';
-import './AdminChatTab.css'; 
+import './AdminChatTab.css';
 
 // Lucide Icons
-import { 
+import {
   MessageSquare,
   Users,
   Clock,
@@ -19,7 +19,8 @@ import {
   MoreVertical,
   FileText,
   X,
-  Circle
+  Circle,
+  Trash2
 } from 'lucide-react';
 
 const AdminChatTab = () => {
@@ -36,15 +37,15 @@ const AdminChatTab = () => {
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(false);
   const [typingUsers, setTypingUsers] = useState(new Set());
-  
+
   // Manual Control States
   const [isOnline, setIsOnline] = useState(false);
   const [lastRefresh, setLastRefresh] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  
+
   // Global Messages State
   const [allRoomMessages, setAllRoomMessages] = useState(new Map());
-  
+
   const { user } = useAuth();
   const messagesEndRef = useRef(null);
 
@@ -62,14 +63,14 @@ const AdminChatTab = () => {
     if (selectedChatRoom) {
       // 1. ดึงข้อความล่าสุดจาก "Source of Truth"
       const messages = allRoomMessages.get(selectedChatRoom._id) || [];
-      
+
       // 2. อัปเดต State ที่ใช้แสดงผล
       setChatMessages(messages);
-      
+
       console.log(`🔄 Synced messages for room ${selectedChatRoom._id}, found ${messages.length}`);
-      
+
       // 3. เลื่อนลงล่างสุด (เพราะอาจมีข้อความใหม่)
-      setTimeout(() => scrollToBottom(), 100); 
+      setTimeout(() => scrollToBottom(), 100);
     } else {
       setChatMessages([]); // ถ้าไม่ได้เลือกห้อง ก็เคลียร์แชท
     }
@@ -87,7 +88,7 @@ const AdminChatTab = () => {
       console.log('🎯 Admin component mounted, connecting to chat...');
       connectToAdminChat();
     }
-    
+
     return () => {
       if (connected) {
         console.log('🧹 Admin component unmounting, cleaning up...');
@@ -110,7 +111,7 @@ const AdminChatTab = () => {
       });
 
       setupAdminEventListeners();
-      
+
       chatSocket.joinAdminDashboard({
         userId: user._id || user.id,
         userType: 'admin',
@@ -150,7 +151,7 @@ const AdminChatTab = () => {
     try {
       setRefreshing(true);
       console.log('🔄 Manual refresh requested by admin...');
-      
+
       chatSocket.joinAdminDashboard({
         userId: user._id || user.id,
         userType: 'admin',
@@ -159,7 +160,7 @@ const AdminChatTab = () => {
       });
 
       setLastRefresh(new Date());
-      
+
       setTimeout(() => {
         setRefreshing(false);
       }, 1000);
@@ -172,16 +173,16 @@ const AdminChatTab = () => {
 
   const setupAdminEventListeners = () => {
     console.log('🎧 Setting up admin event listeners...');
-    
+
     // Chat rooms updated
     chatSocket.onChatRoomsUpdated((data) => {
       console.log('📋 Chat rooms updated received:', data);
-      
+
       if (data && data.chatRooms) {
         console.log(`📊 Updating ${data.chatRooms.length} chat rooms`);
         setActiveChatRooms(data.chatRooms);
         updateStats(data.chatRooms);
-      
+
       } else if (data && Array.isArray(data)) {
         console.log(`📊 Updating ${data.length} chat rooms (direct array)`);
         setActiveChatRooms(data);
@@ -192,7 +193,7 @@ const AdminChatTab = () => {
     // New message received - Real-time!
     chatSocket.onNewMessage((messageData) => {
       console.log('📩 🔥 Admin received new message:', messageData);
-      
+
       const newMessage = {
         id: messageData._id || `${Date.now()}_${Math.random()}`,
         message: messageData.message,
@@ -207,31 +208,31 @@ const AdminChatTab = () => {
         const newMap = new Map(prev);
         const roomId = messageData.chatRoomId;
         const existingMessages = newMap.get(roomId) || [];
-        
+
         // Check duplicate
-        const isDuplicate = existingMessages.some(msg => 
-          msg.id === newMessage.id || 
-          (msg.message === newMessage.message && 
-           msg.senderType === newMessage.senderType &&
-           Math.abs(new Date(msg.timestamp) - new Date(newMessage.timestamp)) < 1000)
+        const isDuplicate = existingMessages.some(msg =>
+          msg.id === newMessage.id ||
+          (msg.message === newMessage.message &&
+            msg.senderType === newMessage.senderType &&
+            Math.abs(new Date(msg.timestamp) - new Date(newMessage.timestamp)) < 1000)
         );
-        
+
         if (!isDuplicate) {
           newMap.set(roomId, [...existingMessages, newMessage]);
           console.log(`✅ Added message to room ${roomId}`);
         }
-        
+
         return newMap;
       });
       setActiveChatRooms(prev => {
         const roomToUpdate = prev.find(room => room._id === messageData.chatRoomId);
         const otherRooms = prev.filter(room => room._id !== messageData.chatRoomId);
         if (roomToUpdate) {
-          const updatedRoom = { 
-            ...roomToUpdate, 
+          const updatedRoom = {
+            ...roomToUpdate,
             lastMessage: messageData.message,
             lastMessageTime: new Date(messageData.createdAt || Date.now()),
-            unreadCount: (messageData.senderType === 'customer' && selectedChatRoom?._id !== messageData.chatRoomId) ? 
+            unreadCount: (messageData.senderType === 'customer' && selectedChatRoom?._id !== messageData.chatRoomId) ?
               (roomToUpdate.unreadCount || 0) + 1 : roomToUpdate.unreadCount
           };
           return [updatedRoom, ...otherRooms];
@@ -251,8 +252,8 @@ const AdminChatTab = () => {
     // Customer online/offline
     chatSocket.onCustomerOnline((data) => {
       console.log('👥 Customer online:', data);
-      setActiveChatRooms(prev => prev.map(room => 
-        room.customerId === data.userId 
+      setActiveChatRooms(prev => prev.map(room =>
+        room.customerId === data.userId
           ? { ...room, isOnline: true }
           : room
       ));
@@ -260,8 +261,8 @@ const AdminChatTab = () => {
 
     chatSocket.onCustomerOffline((data) => {
       console.log('👥 Customer offline:', data);
-      setActiveChatRooms(prev => prev.map(room => 
-        room.customerId === data.userId 
+      setActiveChatRooms(prev => prev.map(room =>
+        room.customerId === data.userId
           ? { ...room, isOnline: false }
           : room
       ));
@@ -279,7 +280,7 @@ const AdminChatTab = () => {
           timestamp: new Date(msg.createdAt || msg.timestamp),
           chatRoomId: data.roomId
         }));
-        
+
         // Store in global map
         if (data.roomId) {
           setAllRoomMessages(prev => {
@@ -288,7 +289,7 @@ const AdminChatTab = () => {
             return newMap;
           });
         }
-        
+
         // setChatMessages(messages); 
         console.log(`✅ Loaded ${messages.length} room messages into Global Map`);
         // setTimeout(() => scrollToBottom(), 100);
@@ -308,7 +309,7 @@ const AdminChatTab = () => {
     chatSocket.onUserTyping((data) => {
       if (data.userType === 'customer' && selectedChatRoom && data.roomId === selectedChatRoom._id) {
         setTypingUsers(prev => new Set([...prev, data.userId]));
-        
+
         setTimeout(() => {
           setTypingUsers(prev => {
             const newSet = new Set(prev);
@@ -345,27 +346,27 @@ const AdminChatTab = () => {
 
   const handleChatSelect = (chatRoom) => {
     console.log('🎯 Selecting chat room:', chatRoom);
-    
+
     setSelectedChatRoom(chatRoom);
-    
-   
+
+
     // Use existing messages from global map
     // const existingMessages = allRoomMessages.get(chatRoom._id) || [];
     // setChatMessages(existingMessages);
-    
+
     // Join the specific chat room
     if (connected) {
       console.log(`🚪 Admin joining room: ${chatRoom._id}`);
       chatSocket.adminJoinRoom(chatRoom._id);
     }
-    
+
     // Mark messages as read & reset unread count
-    setActiveChatRooms(prev => prev.map(room => 
-      room._id === chatRoom._id 
+    setActiveChatRooms(prev => prev.map(room =>
+      room._id === chatRoom._id
         ? { ...room, unreadCount: 0 }
         : room
     ));
-    
+
     console.log(`✅ Selected chat room: ${chatRoom.customerName}`);
     // setTimeout(() => scrollToBottom(), 100); // <-- useEffect Sync handles scrolling now
   };
@@ -391,11 +392,11 @@ const AdminChatTab = () => {
       sending: true,
       chatRoomId: selectedChatRoom._id
     };
-    
+
     // [ ❌ JAVIS NOTE: We let the useEffect Sync handle this now ❌ ]
     // // Update UI immediately
     // setChatMessages(prev => [...prev, adminMessage]);
-    
+
     // Update global messages map
     setAllRoomMessages(prev => {
       const newMap = new Map(prev);
@@ -404,12 +405,12 @@ const AdminChatTab = () => {
       newMap.set(roomId, [...existingMessages, adminMessage]);
       return newMap;
     });
-    
+
     setNewMessage('');
 
     // Send via Socket.IO
     const success = chatSocket.sendMessage(selectedChatRoom._id, messageText);
-    
+
     if (success) {
       setTimeout(() => {
         // [ ❌ JAVIS NOTE: We let the useEffect Sync handle this now ❌ ]
@@ -420,36 +421,74 @@ const AdminChatTab = () => {
         //       : msg
         //   )
         // );
-        
+
         // Update global map
         setAllRoomMessages(prev => {
           const newMap = new Map(prev);
           const roomId = selectedChatRoom._id;
           const messages = newMap.get(roomId) || [];
-          newMap.set(roomId, messages.map(msg => 
-            msg.id === messageId 
+          newMap.set(roomId, messages.map(msg =>
+            msg.id === messageId
               ? { ...msg, sending: false, sent: true }
               : msg
           ));
           return newMap;
         });
       }, 300);
-      
+
       console.log('✅ Admin message sent successfully');
     } else {
       console.error('❌ Failed to send admin message');
       // [ ❌ JAVIS NOTE: We let the useEffect Sync handle this now ❌ ]
       // setChatMessages(prev => prev.filter(msg => msg.id !== messageId));
-      
+
       // Remove failed message from global map
       setAllRoomMessages(prev => {
-          const newMap = new Map(prev);
-          const roomId = selectedChatRoom._id;
-          const messages = newMap.get(roomId) || [];
-          newMap.set(roomId, messages.filter(msg => msg.id !== messageId));
-          return newMap;
+        const newMap = new Map(prev);
+        const roomId = selectedChatRoom._id;
+        const messages = newMap.get(roomId) || [];
+        newMap.set(roomId, messages.filter(msg => msg.id !== messageId));
+        return newMap;
       });
       setNewMessage(messageText);
+    }
+  };
+
+  const handleDeleteChat = async (e, roomId) => {
+    e.stopPropagation(); // Prevent selecting the chat when clicking delete
+
+    if (!window.confirm('คุณแน่ใจหรือไม่ที่จะลบแชทนี้? การกระทำนี้ไม่สามารถย้อนกลับได้')) {
+      return;
+    }
+
+    try {
+      // Assuming you have an API utility or using fetch directly
+      const response = await fetch(`http://localhost:3001/api/chat/room/${roomId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // Adjust auth header as needed
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Remove from UI
+        setActiveChatRooms(prev => prev.filter(room => room._id !== roomId));
+
+        // If the deleted room was selected, deselect it
+        if (selectedChatRoom && selectedChatRoom._id === roomId) {
+          setSelectedChatRoom(null);
+          setChatMessages([]);
+        }
+
+        console.log('✅ Chat room deleted successfully');
+      } else {
+        alert('เกิดข้อผิดพลาดในการลบแชท: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+      alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
     }
   };
 
@@ -465,7 +504,7 @@ const AdminChatTab = () => {
     const now = new Date();
     const diff = now - new Date(date);
     const minutes = Math.floor(diff / 60000);
-    
+
     if (minutes < 1) return 'เมื่อสักครู่';
     if (minutes < 60) return `${minutes} นาทีที่แล้ว`;
     if (minutes < 1440) return `${Math.floor(minutes / 60)} ชั่วโมงที่แล้ว`;
@@ -541,7 +580,7 @@ const AdminChatTab = () => {
             </h2>
             <p>จัดการแชทลูกค้าแบบ Real-time</p>
           </div>
-          
+
           {connected && (
             <div className="connection-badge">
               <Wifi size={16} />
@@ -549,7 +588,7 @@ const AdminChatTab = () => {
             </div>
           )}
         </div>
-        
+
         {/* [🌟 MOVED] ย้ายปุ่ม Control มาไว้ที่นี่ */}
         <div className="control-buttons">
           <button
@@ -612,7 +651,7 @@ const AdminChatTab = () => {
               <div className="stat-label">ทั้งหมด</div>
             </div>
           </div>
-          
+
           <div className="stat-card stat-active">
             <div className="stat-icon">
               <Circle size={24} />
@@ -622,7 +661,7 @@ const AdminChatTab = () => {
               <div className="stat-label">กำลังแชท</div>
             </div>
           </div>
-          
+
           <div className="stat-card stat-waiting">
             <div className="stat-icon">
               <Clock size={24} />
@@ -632,7 +671,7 @@ const AdminChatTab = () => {
               <div className="stat-label">รอตอบ</div>
             </div>
           </div>
-          
+
           <div className="stat-card stat-resolved">
             <div className="stat-icon">
               <CheckCircle size={24} />
@@ -681,7 +720,7 @@ const AdminChatTab = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="chat-items-improved">
             {!connected && (
               <div className="empty-state">
@@ -702,10 +741,10 @@ const AdminChatTab = () => {
             {activeChatRooms.map(chatRoom => {
               // [🌟 JAVIS NOTE: ใช้ unreadCount จาก state โดยตรง]
               const unreadCount = chatRoom.unreadCount || 0;
-              
+
               return (
-                <div 
-                  key={chatRoom._id} 
+                <div
+                  key={chatRoom._id}
                   className={`chat-item-improved ${selectedChatRoom?._id === chatRoom._id ? 'selected' : ''}`}
                   onClick={() => handleChatSelect(chatRoom)}
                 >
@@ -715,7 +754,7 @@ const AdminChatTab = () => {
                     </div>
                     {chatRoom.isOnline && <div className="online-dot"></div>}
                   </div>
-                  
+
                   <div className="chat-content">
                     <div className="chat-header">
                       <span className="customer-name">
@@ -725,15 +764,24 @@ const AdminChatTab = () => {
                         {formatTime(chatRoom.lastMessageTime)}
                       </span>
                     </div>
-                    
-                    <div className="chat-message">
-                      {chatRoom.lastMessage || 'ยังไม่มีข้อความ'}
+
+                    <div className="chat-preview-row">
+                      <div className="chat-message">
+                        {chatRoom.lastMessage || 'ยังไม่มีข้อความ'}
+                      </div>
+                      <button
+                        className="delete-chat-btn"
+                        onClick={(e) => handleDeleteChat(e, chatRoom._id)}
+                        title="ลบแชท"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
-                    
+
                     <div className="chat-footer">
-                      <span 
+                      <span
                         className="chat-status"
-                        style={{ 
+                        style={{
                           color: getStatusColor(chatRoom.status),
                           borderColor: getStatusColor(chatRoom.status)
                         }}
@@ -771,7 +819,7 @@ const AdminChatTab = () => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Messages Area */}
               <div className="chat-messages-container">
                 {chatMessages.length === 0 ? (
@@ -794,7 +842,7 @@ const AdminChatTab = () => {
                             {selectedChatRoom.customerName?.charAt(0)?.toUpperCase() || 'C'}
                           </div>
                         )}
-                        
+
                         <div className="message-content">
                           <div className="message-text">
                             {message.message}
@@ -829,16 +877,16 @@ const AdminChatTab = () => {
                         </div>
                       </div>
                     )}
-                    
+
                     <div ref={messagesEndRef} />
                   </>
                 )}
               </div>
-              
+
               {/* Input Area */}
               <div className="chat-input-improved">
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   placeholder="พิมพ์ข้อความถึงลูกค้า..."
                   className="message-input-improved"
                   value={newMessage}
@@ -846,7 +894,7 @@ const AdminChatTab = () => {
                   onKeyPress={handleKeyPress}
                   disabled={!connected}
                 />
-                <button 
+                <button
                   className="send-btn-improved"
                   onClick={handleSendMessage}
                   disabled={!connected || !newMessage.trim()}

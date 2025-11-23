@@ -5,9 +5,18 @@ const Product = require('../models/Product');
 // GET /api/products - ดึงสินค้าทั้งหมด
 router.get('/', async (req, res) => {
   try {
-    const { category, search, limit = 200 } = req.query;
+    const { category, search, limit = 300, includeInactive } = req.query;
     
-    let filter = { isActive: true };
+    console.log('🔍 GET /products query:', req.query); 
+
+    let filter = {};
+    
+    // Check if we should include inactive products
+    const shouldIncludeInactive = includeInactive === 'true' || includeInactive === true;
+    
+    if (!shouldIncludeInactive) {
+      filter.isActive = true;
+    }
     
     // กรองตาม category
     if (category) {

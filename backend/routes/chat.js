@@ -175,4 +175,36 @@ router.put('/room/:roomId/status', async (req, res) => {
   }
 });
 
+// 🗑️ Delete chat room and messages
+router.delete('/room/:roomId', async (req, res) => {
+  try {
+    const { roomId } = req.params;
+
+    // Delete all messages in the room
+    await ChatMessage.deleteMany({ chatRoomId: roomId });
+
+    // Delete the room itself
+    const deletedRoom = await ChatRoom.findByIdAndDelete(roomId);
+
+    if (!deletedRoom) {
+      return res.status(404).json({
+        success: false,
+        message: 'Chat room not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Chat room and messages deleted successfully',
+      data: { roomId }
+    });
+  } catch (error) {
+    console.error('Error deleting chat room:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting chat room'
+    });
+  }
+});
+
 module.exports = router;

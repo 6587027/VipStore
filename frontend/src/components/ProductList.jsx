@@ -110,7 +110,7 @@ const ProductList = ({ onProductClick, savedState, onStateUpdate, shouldFetch = 
       setIsInitialLoad(false); 
       fetchProducts();
 
-    }, 5000);
+    }, 2000);
     return () => {
       // console.log('Clearing auto-reload interval.');
       clearInterval(intervalId);
